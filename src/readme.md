@@ -1,2 +1,0 @@
-# QuantX
-Trade Client
