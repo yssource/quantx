@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+.metadata
+.settings
+.project
+.pydevproject

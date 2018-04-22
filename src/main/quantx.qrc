@@ -1,0 +1,18 @@
+<!DOCTYPE RCC>
+
+<RCC version="1.0">
+
+<qresource>
+
+    <file>pics/quantx_logo.ico</file>
+    <file>pics/action_main_tab_show.ico</file>
+    <file>pics/action_main_tab_hide.ico</file>
+    <file>pics/strategy_reload.ico</file>
+    <file>pics/strategy_working.ico</file>
+    <file>pics/strategy_suspend.ico</file>
+    <file>pics/strategy_abnormal.ico</file>
+    <file>pics/strategy_terminal.ico</file>
+
+</qresource>
+
+</RCC>
