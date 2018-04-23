@@ -27,9 +27,9 @@ import socket
 import logging
 import sqlite3
 import datetime
-import StringIO
+#import StringIO
 import threading
-import exceptions
+#import exceptions
 
 from PyQt5 import QtCore, QtWidgets
 from logging.handlers import TimedRotatingFileHandler
@@ -249,3 +249,201 @@ class Logger(common.Singleton):
         self.PutTbData_Logger()
 
 ####################################################################################################
+
+    def StartServer(self, port, type):
+        self.log_type = type
+        if self.started == False:
+            try:
+                self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            except socket.error as e:
+                self.log_text = "日志服务 创建 socket 失败！端口：%d，%s" % (port, e)
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+                return False
+            try:
+                self.sock.bind(("0.0.0.0", port))
+            except socket.error as e:
+                self.log_text = "日志服务 绑定 socket 失败！端口：%d，%s" % (port, e)
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+                return False
+            try:
+                self.sock.listen(100) # 貌似不会受到连接数量限制
+            except socket.error as e:
+                self.log_text = "日志服务 监听 socket 失败！端口：%d，%s" % (port, e)
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+                return False
+            self.started = True
+            self.thread_handle_accept = threading.Thread(target = self.HandleAccept)
+            self.thread_handle_accept.start()
+            self.thread_heart_checker = threading.Thread(target = self.HeartChecker)
+            self.thread_heart_checker.start()
+        return True
+
+    def StopServer(self):
+        if self.started == True:
+            self.started = False
+            self.connect_lock.acquire()
+            for describe, connect in self.connect_dict.items():
+                if connect.available == True:
+                    connect.socket.close()
+                    connect.available = False
+            self.connect_dict.clear()
+            self.connect_lock.release()
+            self.sock.close() # 对于 accept 无效，只能从 IDE 结束进程了
+
+    def HandleAccept(self):
+        while self.started == True:
+            try:
+                client, address = self.sock.accept()
+                describe = "%s:%d" % (address[0], address[1])
+                connect = Connect(client, describe, True, address[0], address[1])
+                self.connect_lock.acquire()
+                self.connect_dict[describe] = connect
+                self.connect_lock.release()
+                self.log_text = "日志服务新增连接：%s" % describe
+                self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+            except socket.error as e:
+                self.log_text = "日志服务接受连接发生异常！%s" % e
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+            except Exception as e:
+                self.log_text = "日志服务接受连接发生异常！%s" % e
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+        
+        self.log_text = "日志服务连接处理线程退出！"
+        self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
+
+    def HeartChecker(self):
+        while self.started == True:
+            self.SendNoneAll()
+            time.sleep(10)
+        
+        self.log_text = "日志服务心跳检测线程退出！"
+        self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
+
+    def SendNone(self, sock, describe):
+        try:
+            msg_type = "0" # NW_MSG_TYPE_HEART_CHECK
+            msg_code = "0" # NW_MSG_CODE_NONE
+            msg_size = "%6x" % 0
+            msg_send = msg_type + msg_code + msg_size
+            sock.send(msg_send)
+            return True
+        except socket.error as e:
+            self.log_text = "日志服务发送 心跳 发生异常！%s %s" % (describe, e)
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+            return False
+        except Exception as e:
+            self.log_text = "日志服务发送 心跳 发生异常！%s %s" % (describe, e)
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+            return False
+
+    def SendData(self, sock, describe, msg_data):
+        try:
+            msg_type = "8" # NW_MSG_TYPE_USER_DATA
+            msg_code = "2" # NW_MSG_CODE_JSON
+            msg_json = json.dumps(msg_data)
+            msg_size = "%6x" % len(msg_json)
+            msg_send = msg_type + msg_code + msg_size + msg_json
+            sock.send(msg_send)
+            return True
+        except socket.error as e:
+            self.log_text = "日志服务发送 数据 发生异常！%s %s" % (describe, e)
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+            return False
+        except Exception as e:
+            self.log_text = "日志服务发送 数据 发生异常！%s %s" % (describe, e)
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+            return False
+
+    def SendNoneAll(self):
+        self.connect_lock.acquire()
+        try:
+            for describe, connect in self.connect_dict.items():
+                if connect.available == True:
+                    if self.SendNone(connect.socket, describe) == False:
+                        connect.available = False
+                        connect.socket.close()
+                        self.log_text = "日志服务 心跳 主动断开连接！%s" % describe
+                        self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
+        except Exception as e:
+            self.log_text = "日志服务批量发送 心跳 发生异常！%s" % e
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+        self.connect_lock.release()
+
+    def SendDataAll(self, msg_data):
+        self.connect_lock.acquire()
+        try:
+            for describe, connect in self.connect_dict.items():
+                if connect.available == True:
+                    if self.SendData(connect.socket, describe, msg_data) == False:
+                        connect.available = False
+                        connect.socket.close()
+                        self.log_text = "日志服务 数据 主动断开连接！%s" % describe
+                        self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
+        except Exception as e:
+            self.log_text = "日志服务批量发送 数据 发生异常！%s" % e
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+        self.connect_lock.release()
+
+####################################################################################################
+
+import threading
+
+def TestFunc_01(logger, locker, flag):
+    for i in range(10000):
+        #locker.acquire()
+        log_text = "%d 金属类行情 距上次数据更新时间已超过 %s 秒！" % (flag, datetime.datetime.now().strftime("%H:%M:%S.%f"))
+        logger.SendMessage("D", 0, "test", log_text, "")
+        #locker.release()
+
+def TestFunc_02(locker, flag):
+    for i in range(10000):
+        #locker.acquire()
+        print("%d 金属类行情 距上次数据更新时间已超过 %s 秒！" % (flag, datetime.datetime.now().strftime("%H:%M:%S.%f")))
+        #locker.release()
+
+if __name__ == "__main__":
+    # 测试显示，在开启系统时间优化为 0.5 毫秒以后，Logger 输出时间精度在 1 到 2 毫秒，一毫秒平均输出日志 15 条，即每秒约 1.5 万条
+    #logger = Logger()
+    #for i in range(10000):
+    #    log_text = "金属类行情 距上次数据更新时间已超过 %s 秒！" % datetime.datetime.now().strftime("%H:%M:%S.%f")
+    #    logger.SendMessage("D", 0, "test", log_text, "")
+
+    # 测试显示，平均每毫秒可打印 35 条左右，从打印内容所含时间看似乎可以 1 毫秒打印 90 到 110 条
+    #time1 = datetime.datetime.now()
+    #for i in range(100000):
+    #    print("金属类行情 距上次数据更新时间已超过 %s 秒！" % datetime.datetime.now().strftime("%H:%M:%S.%f"))
+    #time2 = datetime.datetime.now()
+    #print(time2 - time1)
+
+    # 测试显示，两个线程下，无锁时一毫秒平均输出日志 11 条，有锁时一毫秒平均输出日志 12.36 条，五线程无锁一毫秒平均输出日志 10.96 条
+    logger = Logger()
+    locker = threading.Lock()
+    thread_1 = threading.Thread(target = TestFunc_01, args = (logger, locker, 1))
+    thread_2 = threading.Thread(target = TestFunc_01, args = (logger, locker, 2))
+    thread_3 = threading.Thread(target = TestFunc_01, args = (logger, locker, 3))
+    thread_4 = threading.Thread(target = TestFunc_01, args = (logger, locker, 4))
+    thread_5 = threading.Thread(target = TestFunc_01, args = (logger, locker, 5))
+
+    # 测试显示，五线程下，无锁时一毫秒平均打印 34 条左右，有锁时一毫秒平均打印 34.27 条左右
+    #locker = threading.Lock()
+    #thread_1 = threading.Thread(target = TestFunc_02, args = (locker, 1))
+    #thread_2 = threading.Thread(target = TestFunc_02, args = (locker, 2))
+    #thread_3 = threading.Thread(target = TestFunc_02, args = (locker, 3))
+    #thread_4 = threading.Thread(target = TestFunc_02, args = (locker, 4))
+    #thread_5 = threading.Thread(target = TestFunc_02, args = (locker, 5))
+    
+    time1 = datetime.datetime.now()
+    thread_1.start()
+    thread_2.start()
+    thread_3.start()
+    thread_4.start()
+    thread_5.start()
+    thread_1.join()
+    thread_2.join()
+    thread_3.join()
+    thread_4.join()
+    thread_5.join()
+    time2 = datetime.datetime.now()
+    print(time2 - time1)
