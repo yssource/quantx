@@ -21,15 +21,14 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
+import sys
 import time
 import json
 import socket
 import logging
 import sqlite3
 import datetime
-#import StringIO
 import threading
-#import exceptions
 
 from PyQt5 import QtCore, QtWidgets
 from logging.handlers import TimedRotatingFileHandler
@@ -388,8 +387,6 @@ class Logger(common.Singleton):
 
 ####################################################################################################
 
-import threading
-
 def TestFunc_01(logger, locker, flag):
     for i in range(10000):
         #locker.acquire()
@@ -404,6 +401,8 @@ def TestFunc_02(locker, flag):
         #locker.release()
 
 if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    
     # 测试显示，在开启系统时间优化为 0.5 毫秒以后，Logger 输出时间精度在 1 到 2 毫秒，一毫秒平均输出日志 15 条，即每秒约 1.5 万条
     #logger = Logger()
     #for i in range(10000):
@@ -412,12 +411,12 @@ if __name__ == "__main__":
 
     # 测试显示，平均每毫秒可打印 35 条左右，从打印内容所含时间看似乎可以 1 毫秒打印 90 到 110 条
     #time1 = datetime.datetime.now()
-    #for i in range(100000):
+    #for i in range(10000):
     #    print("金属类行情 距上次数据更新时间已超过 %s 秒！" % datetime.datetime.now().strftime("%H:%M:%S.%f"))
     #time2 = datetime.datetime.now()
     #print(time2 - time1)
 
-    # 测试显示，两个线程下，无锁时一毫秒平均输出日志 11 条，有锁时一毫秒平均输出日志 12.36 条，五线程无锁一毫秒平均输出日志 10.96 条
+    # 测试显示，两个线程下，无锁时一毫秒平均输出日志 12.545 条，有锁时一毫秒平均输出日志 14.326 条，五线程无锁一毫秒平均输出日志 11.797 条，有锁时一毫秒平均输出日志 15.035 条
     logger = Logger()
     locker = threading.Lock()
     thread_1 = threading.Thread(target = TestFunc_01, args = (logger, locker, 1))
@@ -426,7 +425,7 @@ if __name__ == "__main__":
     thread_4 = threading.Thread(target = TestFunc_01, args = (logger, locker, 4))
     thread_5 = threading.Thread(target = TestFunc_01, args = (logger, locker, 5))
 
-    # 测试显示，五线程下，无锁时一毫秒平均打印 34 条左右，有锁时一毫秒平均打印 34.27 条左右
+    # 测试显示，五线程下，无锁时一毫秒平均打印 44 条左右，有锁时一毫秒平均打印 50 条左右
     #locker = threading.Lock()
     #thread_1 = threading.Thread(target = TestFunc_02, args = (locker, 1))
     #thread_2 = threading.Thread(target = TestFunc_02, args = (locker, 2))
@@ -447,3 +446,5 @@ if __name__ == "__main__":
     thread_5.join()
     time2 = datetime.datetime.now()
     print(time2 - time1)
+    
+    sys.exit(app.exec_())
