@@ -44,7 +44,7 @@ import config
 import fixcfg
 import logger
 import straBasicX
-import straTrader
+import trader
 import straStrate
 
 #import StrategyBase # 只是为了打包时能被编译到
