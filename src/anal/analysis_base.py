@@ -42,7 +42,7 @@ class AnalysisBase(threading.Thread):
         self.analysis_introduction = analysis_introduction
         self.started = False
         self.analysis_panel = None
-        self.analysis_info = self.analys.AnalysisInfo # 已经存在
+        self.analysis_info = self.analys.analysis_info # 已经存在
 
     def CheckUserCtrl(self):
         self.analysis_info.state_locker.acquire()
