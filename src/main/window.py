@@ -45,10 +45,10 @@ import fixcfg
 import logger
 import straBasicX
 import trader
-import straStrate
+import strate
 
-#import StrategyBase # 只是为了打包时能被编译到
-#import AnalysisBase # 只是为了打包时能被编译到
+import strategy_base # 只是为了打包时能被编译到
+import analysis_base # 只是为了打包时能被编译到
 #import StraPanel_Basket_Stk_Ape # 只是为了打包时能被编译到
 #import StraPanel_Spread_Fue_Ctp # 只是为了打包时能被编译到
 #import StraPanel_Trader_FUE_CTP # 只是为了打包时能被编译到

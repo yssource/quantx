@@ -76,10 +76,10 @@ class Strate(common.Singleton, threading.Thread):
                                 stra_info.state = define.USER_CTRL_LOAD
                                 self.center.data.strategies[stra_info.strategy] = stra_info # 先放进去，策略类初始化时要用
                                 stra_info.instance = stra_info.classer() # 策略类初始化
-                                stra_info.name = stra_info.instance.stra_name
-                                stra_info.intro = stra_info.instance.stra_intro
+                                stra_info.name = stra_info.instance.strategy_name
+                                stra_info.introduction = stra_info.instance.strategy_introduction
                                 stra_info.instance.Reload() # 可以执行一些初始化工作
-                                self.log_text = "加载策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.intro, stra_info.state, stra_info.file_path)
+                                self.log_text = "加载策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                             except Exception as e:
                                 self.log_text = "策略 %s.py 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
@@ -99,10 +99,10 @@ class Strate(common.Singleton, threading.Thread):
                                 stra_info.state = define.USER_CTRL_LOAD
                                 self.center.data.strategies[stra_info.strategy] = stra_info # 先放进去，策略类初始化时要用
                                 stra_info.instance = stra_info.classer() # 策略类初始化
-                                stra_info.name = stra_info.instance.stra_name
-                                stra_info.intro = stra_info.instance.stra_intro
+                                stra_info.name = stra_info.instance.strategy_name
+                                stra_info.introduction = stra_info.instance.strategy_introduction
                                 stra_info.instance.Reload() # 可以执行一些初始化工作
-                                self.log_text = "加载策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.intro, stra_info.state, stra_info.file_path)
+                                self.log_text = "加载策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                             except Exception as e:
                                 self.log_text = "策略 %s.pyd 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
@@ -175,10 +175,10 @@ class Strate(common.Singleton, threading.Thread):
                             stra_info.state = define.USER_CTRL_LOAD
                             self.center.data.strategies[stra_info.strategy] = stra_info # 先放进去，策略类初始化时要用
                             stra_info.instance = stra_info.classer() # 策略类初始化
-                            stra_info.name = stra_info.instance.stra_name
-                            stra_info.intro = stra_info.instance.stra_intro
+                            stra_info.name = stra_info.instance.strategy_name
+                            stra_info.introduction = stra_info.instance.strategy_introduction
                             stra_info.instance.Reload() # 可以执行一些初始化工作
-                            self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.intro, stra_info.state, stra_info.file_path)
+                            self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
                             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                         except Exception as e:
                             self.log_text = "策略 %s.py 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
@@ -202,10 +202,10 @@ class Strate(common.Singleton, threading.Thread):
                             stra_info.state = define.USER_CTRL_LOAD
                             self.center.data.strategies[stra_info.strategy] = stra_info # 先放进去，策略类初始化时要用
                             stra_info.instance = stra_info.classer() # 策略类初始化
-                            stra_info.name = stra_info.instance.stra_name
-                            stra_info.intro = stra_info.instance.stra_intro
+                            stra_info.name = stra_info.instance.strategy_name
+                            stra_info.introduction = stra_info.instance.strategy_introduction
                             stra_info.instance.Reload() # 可以执行一些初始化工作
-                            self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.intro, stra_info.state, stra_info.file_path)
+                            self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
                             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                         except Exception as e:
                             self.log_text = "策略 %s.pyd 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
@@ -228,7 +228,7 @@ class Strate(common.Singleton, threading.Thread):
         self.center.data.strategies_locker.release()
         if strategy in sys.modules.keys():
             del sys.modules[strategy]
-        self.log_text = "用户 卸载 策略：%s, %s, %s" % (strategy_info.strategy, strategy_info.name, strategy_info.intro)
+        self.log_text = "用户 卸载 策略：%s, %s, %s" % (strategy_info.strategy, strategy_info.name, strategy_info.introduction)
         self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def run(self):

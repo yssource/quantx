@@ -41,7 +41,7 @@ class AnalysisInfo(object):
         self.instance = None
         
         self.name = ""
-        self.intro = ""
+        self.introduction = ""
         self.file_path = ""
         self.state_locker = threading.Lock()
         self.state = define.USER_CTRL_LOAD
@@ -54,7 +54,7 @@ class StrategyInfo(object):
         self.instance = None
         
         self.name = ""
-        self.intro = ""
+        self.introduction = ""
         self.file_path = ""
         self.state_locker = threading.Lock()
         self.state = define.USER_CTRL_LOAD

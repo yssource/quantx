@@ -119,10 +119,10 @@ class Analys(common.Singleton):
                             analy_info.state = define.USER_CTRL_LOAD
                             self.analysis_info = analy_info # 先赋值，策略类初始化时要用
                             analy_info.instance = analy_info.classer() # 策略类初始化
-                            analy_info.name = analy_info.instance.analy_name
-                            analy_info.intro = analy_info.instance.analy_intro
+                            analy_info.name = analy_info.instance.analysis_name
+                            analy_info.introduction = analy_info.instance.analy_intro
                             analy_info.instance.Reload() # 可以执行一些初始化工作
-                            self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.intro, analy_info.state, analy_info.file_path)
+                            self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
                             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                         except Exception as e:
                             self.log_text = "回测 %s.py 加载发生错误！%s %s" % (analy_info.analysis, Exception, e)
@@ -146,10 +146,10 @@ class Analys(common.Singleton):
                             analy_info.state = define.USER_CTRL_LOAD
                             self.analysis_info = analy_info # 先赋值，策略类初始化时要用
                             analy_info.instance = analy_info.classer() # 策略类初始化
-                            analy_info.name = analy_info.instance.analy_name
-                            analy_info.intro = analy_info.instance.analy_intro
+                            analy_info.name = analy_info.instance.analysis_name
+                            analy_info.introduction = analy_info.instance.analy_intro
                             analy_info.instance.Reload() # 可以执行一些初始化工作
-                            self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.intro, analy_info.state, analy_info.file_path)
+                            self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
                             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                         except Exception as e:
                             self.log_text = "回测 %s.pyd 加载发生错误！%s %s" % (analy_info.analysis, Exception, e)
@@ -168,5 +168,5 @@ class Analys(common.Singleton):
         if analysis_info.analysis in sys.modules.keys():
             del sys.modules[analysis_info.analysis]
         self.analysis_info = None
-        self.log_text = "用户 卸载 回测：%s, %s, %s" % (analysis_info.analysis, analysis_info.name, analysis_info.intro)
+        self.log_text = "用户 卸载 回测：%s, %s, %s" % (analysis_info.analysis, analysis_info.name, analysis_info.introduction)
         self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
