@@ -52,27 +52,27 @@ class StrategyBase(threading.Thread):
 
     def CheckUserCtrl(self):
         self.strategy_info.state_locker.acquire()
-        stra_state = self.strategy_info.state
+        strategy_state = self.strategy_info.state
         self.strategy_info.state_locker.release()
-        if stra_state == define.USER_CTRL_EXEC:
+        if strategy_state == define.USER_CTRL_EXEC:
             return 1
-        elif stra_state == define.USER_CTRL_STOP:
+        elif strategy_state == define.USER_CTRL_STOP:
             self.log_text = "用户 停止 策略 %s %s 执行！" % (self.strategy, self.strategy_name)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             return -1
-        elif stra_state == define.USER_CTRL_WAIT:
+        elif strategy_state == define.USER_CTRL_WAIT:
             self.log_text = "用户 暂停 策略 %s %s 执行！" % (self.strategy, self.strategy_name)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
-            while stra_state == define.USER_CTRL_WAIT:
+            while strategy_state == define.USER_CTRL_WAIT:
                 time.sleep(1.0)
                 self.strategy_info.state_locker.acquire()
-                stra_state = self.strategy_info.state
+                strategy_state = self.strategy_info.state
                 self.strategy_info.state_locker.release()
-            if stra_state == define.USER_CTRL_EXEC:
+            if strategy_state == define.USER_CTRL_EXEC:
                 self.log_text = "用户 继续 策略 %s %s 执行！" % (self.strategy, self.strategy_name)
                 self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
                 return 1
-            elif stra_state == define.USER_CTRL_STOP:
+            elif strategy_state == define.USER_CTRL_STOP:
                 self.log_text = "用户 停止 策略 %s %s 执行！" % (self.strategy, self.strategy_name)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                 return -1
@@ -151,5 +151,5 @@ class StrategyBase(threading.Thread):
     def OnTraderEvent(self, trader, ret_func, task_item): # 交易模块事件通知，供具体策略继承调用
         pass
 
-    def IsTradeError(self): # 供具体策略继承调用，判断交易是否异常 #如果继承后仍然 pass 则函数返回会被视为 None，既非 True 也非 False
+    def IsTradeError(self): # 供具体策略继承调用，判断交易是否异常 # 如果继承后仍然 pass 则函数返回会被视为 None，既非 True 也非 False
         pass
