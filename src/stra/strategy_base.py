@@ -33,7 +33,7 @@ class StrategyBase(threading.Thread):
     def __init__(self, strategy, strategy_name, strategy_introduction):
         self.log_text = ""
         self.log_cate = "StrategyBase"
-        self.fix_time_calc = None
+        self.beat_calc = None
         self.strategy_panel = None
         self.config = config.Config()
         self.logger = logger.Logger()
@@ -82,10 +82,10 @@ class StrategyBase(threading.Thread):
         while self.started:
             if self.CheckUserCtrl() != 1:
                 break
-            if self.fix_time_calc != None:
-                time.sleep(self.fix_time_calc.wait_for_calc) # TODO: 先等待，避免动态加载策略模块后类 fix_time_calc 中 self.parent.SendMessage 冲突，目前原因未明
-                self.fix_time_calc.CalcStra()
-                #time.sleep(self.fix_time_calc.wait_for_calc)
+            if self.beat_calc != None:
+                time.sleep(self.beat_calc.calc_wait) # TODO: 先等待，避免动态加载策略模块后类 beat_calc 中 self.parent.SendMessage 冲突，目前原因未明
+                self.beat_calc.MakeCalc()
+                #time.sleep(self.beat_calc.calc_wait)
             else:
                 time.sleep(3)
         self.started = False
