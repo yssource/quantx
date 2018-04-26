@@ -22,7 +22,7 @@
 # Be sure to retain the above copyright notice and conditions.
 
 import configobj
-import ConfigParser
+import configparser
 
 import common
 
@@ -102,7 +102,7 @@ class CfgMain(object):
         self.user_asset_account_ctp = "asset_account"
 
     def LoadConfig(self, filePath):
-        config = ConfigParser.SafeConfigParser()
+        config = configparser.ConfigParser()
         config.read(filePath)
         
         self.quote_stock_ltb_need = int(config.get("nets", "quote_stock_ltb_need"))

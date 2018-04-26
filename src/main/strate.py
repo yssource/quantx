@@ -27,9 +27,7 @@ import time
 import threading
 import traceback
 
-from pubsub import setuparg1 # 必须在 pub 之前导入
 from pubsub import pub
-
 from PyQt5 import QtGui
 
 import config

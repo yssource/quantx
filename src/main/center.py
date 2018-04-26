@@ -26,7 +26,6 @@ import datetime
 import traceback
 import threading
 
-from pubsub import setuparg1 # 必须在 pub 之前导入
 from pubsub import pub
 
 import config

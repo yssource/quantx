@@ -24,10 +24,8 @@
 import sys
 import time
 
-from pubsub import setuparg1 # 必须在 pub 之前导入
-from pubsub import pub
-
 import qdarkstyle
+from pubsub import pub
 from PyQt5 import QtGui, QtCore
 
 #import AboutDialog
@@ -43,7 +41,7 @@ import define
 import config
 import fixcfg
 import logger
-import straBasicX
+import basicx
 import trader
 import strate
 
@@ -439,7 +437,7 @@ class MainWindow(QtGui.QMainWindow):
         self.log_text = "开始系统初始化 ..."
         self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
         
-        self.basicx = straBasicX.StraBasicX()
+        self.basicx = basicx.BasicX()
         if self.config.cfg_main.data_db_need == 0:
             self.basicx.InitBasicData(folder = self.config.cfg_main.data_folder) # 不使用数据库
         if self.config.cfg_main.data_db_need == 1:
@@ -447,10 +445,10 @@ class MainWindow(QtGui.QMainWindow):
                                       user = self.config.cfg_main.data_db_user, passwd = self.config.cfg_main.data_db_pass, 
                                       folder = self.config.cfg_main.data_folder)
         
-        self.trader = straTrader.StraTrader()
+        self.trader = trader.Trader()
         self.trader.start()
         
-        self.strate = straStrate.StraStrate()
+        self.strate = strate.Strate()
         self.strate.LoadStrategy()
         self.main_tab_panel_1.OnReloadStrategy()
         self.strate.start()
