@@ -23,7 +23,7 @@
 
 import datetime
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import config
 import logger
@@ -40,13 +40,13 @@ class QuoteBarItem(object):
         self.logger = logger.Logger()
         self.trader = trader.Trader()
         
-        self.check_box = QtGui.QCheckBox()
+        self.check_box = QtWidgets.QCheckBox()
         self.check_box.setCheckable(True)
         self.check_box.setChecked(False)
         self.check_box.setFont(QtGui.QFont("SimSun", 8, QtGui.QFont.Bold))
         self.check_box.setText(show)
         self.check_box.setToolTip(tips)
-        self.state_label = QtGui.QLabel()
+        self.state_label = QtWidgets.QLabel()
         self.state_label.setFont(QtGui.QFont("SimSun", 8, QtGui.QFont.Bold))
         self.state_label.setMinimumWidth(40)
         self.state_label.setMinimumHeight(17)
@@ -70,7 +70,7 @@ class QuoteBarItem(object):
                 self.log_text = "行情服务 %s %s 尚未载入！" % (self.flag, self.show)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
-class QuoteCenterBar(QtGui.QToolBar):
+class QuoteCenterBar(QtWidgets.QToolBar):
     def __init__(self, parent):
         super(QuoteCenterBar, self).__init__(parent)
         self.parent = parent
@@ -88,25 +88,25 @@ class QuoteCenterBar(QtGui.QToolBar):
     def InitUserInterface(self):
         if self.config.cfg_main.quote_stock_ltb_need == 1:
             self.bar_item_stock_ltb = QuoteBarItem(self.config.cfg_main.quote_stock_ltb_flag, self.config.cfg_main.quote_stock_ltb_show, self.config.cfg_main.quote_stock_ltb_tips)
-            self.addWidget(self.bar_item_stock_ltb.check_cox)
+            self.addWidget(self.bar_item_stock_ltb.check_box)
             self.addWidget(self.bar_item_stock_ltb.state_label)
             self.addSeparator()
         
         if self.config.cfg_main.quote_stock_ltp_need == 1:
             self.bar_item_stock_ltp = QuoteBarItem(self.config.cfg_main.quote_stock_ltp_flag, self.config.cfg_main.quote_stock_ltp_show, self.config.cfg_main.quote_stock_ltp_tips)
-            self.addWidget(self.bar_item_stock_ltp.check_cox)
+            self.addWidget(self.bar_item_stock_ltp.check_box)
             self.addWidget(self.bar_item_stock_ltp.state_label)
             self.addSeparator()
         
         if self.config.cfg_main.quote_stock_tdf_need == 1:
             self.bar_item_stock_tdf = QuoteBarItem(self.config.cfg_main.quote_stock_tdf_flag, self.config.cfg_main.quote_stock_tdf_show, self.config.cfg_main.quote_stock_tdf_tips)
-            self.addWidget(self.bar_item_stock_tdf.check_cox)
+            self.addWidget(self.bar_item_stock_tdf.check_box)
             self.addWidget(self.bar_item_stock_tdf.state_label)
             self.addSeparator()
         
         if self.config.cfg_main.quote_future_np_need == 1:
             self.bar_item_future_np = QuoteBarItem(self.config.cfg_main.quote_future_np_flag, self.config.cfg_main.quote_future_np_show, self.config.cfg_main.quote_future_np_tips)
-            self.addWidget(self.bar_item_future_np.check_cox)
+            self.addWidget(self.bar_item_future_np.check_box)
             self.addWidget(self.bar_item_future_np.state_label)
             self.addSeparator()
         

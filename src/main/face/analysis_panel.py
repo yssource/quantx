@@ -26,16 +26,16 @@ import datetime
 import operator
 import threading
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import config
 import define
 import common
 import logger
 import analys
-import basicX
+import basicx
 
-class AnalysisPanel(QtGui.QDialog):
+class AnalysisPanel(QtWidgets.QDialog):
     def __init__(self, parent):
         super(AnalysisPanel, self).__init__(parent)
         self.parent = parent
@@ -43,7 +43,7 @@ class AnalysisPanel(QtGui.QDialog):
         self.log_cate = "AnalysisPanel"
         self.config = config.Config()
         self.logger = logger.Logger()
-        self.basicX = basicX.BasicX()
+        self.basicx = basicx.BasicX()
         self.analysis_progress = 0
         self.get_quote_data_progress = 0
         self.getting = False

@@ -101,9 +101,9 @@ class CfgMain(object):
         self.user_password_ctp = "password"
         self.user_asset_account_ctp = "asset_account"
 
-    def LoadConfig(self, filePath):
+    def LoadConfig(self, file_path):
         config = configparser.ConfigParser()
-        config.read(filePath)
+        config.read(file_path, encoding = "utf-8") # BOM：utf-8-sig
         
         self.quote_stock_ltb_need = int(config.get("nets", "quote_stock_ltb_need"))
         self.quote_stock_ltb_flag = config.get("nets", "quote_stock_ltb_flag")

@@ -21,7 +21,7 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import config
 import logger
@@ -37,13 +37,13 @@ class TradeBarItem(object):
         self.logger = logger.Logger()
         self.trader = trader.Trader()
         
-        self.check_box = QtGui.QCheckBox()
+        self.check_box = QtWidgets.QCheckBox()
         self.check_box.setCheckable(True)
         self.check_box.setChecked(False)
         self.check_box.setFont(QtGui.QFont("SimSun", 8, QtGui.QFont.Bold))
         self.check_box.setText(show)
         self.check_box.setToolTip(tips)
-        self.state_label = QtGui.QLabel()
+        self.state_label = QtWidgets.QLabel()
         self.state_label.setFont(QtGui.QFont("SimSun", 8, QtGui.QFont.Bold))
         self.state_label.setMinimumWidth(40)
         self.state_label.setMinimumHeight(17)
@@ -67,7 +67,7 @@ class TradeBarItem(object):
                 self.log_text = "交易服务 %s %s 尚未载入！" % (self.flag, self.show)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
-class TradeCenterBar(QtGui.QToolBar):
+class TradeCenterBar(QtWidgets.QToolBar):
     def __init__(self, parent):
         super(TradeCenterBar, self).__init__(parent)
         self.parent = parent

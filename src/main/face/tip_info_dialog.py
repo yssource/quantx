@@ -22,9 +22,9 @@
 # Be sure to retain the above copyright notice and conditions.
 
 from pubsub import pub
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
-class TipInfoDialog(QtGui.QDialog):
+class TipInfoDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super(TipInfoDialog, self).__init__(parent)
         self.parent = parent
@@ -41,24 +41,24 @@ class TipInfoDialog(QtGui.QDialog):
         self.resize(win_size_x, win_size_y)
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint | QtCore.Qt.FramelessWindowHint | QtCore.Qt.Tool)
         
-        self.widget = QtGui.QWidget()
+        self.widget = QtWidgets.QWidget()
         self.widget.setGeometry(QtCore.QRect(0, 0, win_size_x, win_size_y))
         
-        self.text_edit = QtGui.QTextEdit()
+        self.text_edit = QtWidgets.QTextEdit()
         self.text_edit.setFont(QtGui.QFont("SimSun", 10))
         self.text_edit.setReadOnly(True)
-        self.text_edit.setLineWrapMode(QtGui.QTextEdit.WidgetWidth)
+        self.text_edit.setLineWrapMode(QtWidgets.QTextEdit.WidgetWidth)
         self.text_edit.document().setDefaultTextOption(QtGui.QTextOption(QtCore.Qt.AlignCenter))
         
-        self.button_box = QtGui.QDialogButtonBox(self.widget)
-        self.button_box.setStandardButtons(QtGui.QDialogButtonBox.Ok)
-        self.button_box.button(QtGui.QDialogButtonBox.Ok).setText("已  阅")
+        self.button_box = QtWidgets.QDialogButtonBox(self.widget)
+        self.button_box.setStandardButtons(QtWidgets.QDialogButtonBox.Ok)
+        self.button_box.button(QtWidgets.QDialogButtonBox.Ok).setText("已  阅")
         self.button_box.setCenterButtons(True)
         self.button_box.accepted.connect(self.OnButtonClose)
         
-        self.v_box = QtGui.QVBoxLayout()
+        self.v_box = QtWidgets.QVBoxLayout()
         self.v_box.setContentsMargins(5, 5, 5, 5)
-        self.spacer = QtGui.QSpacerItem(20, 40, QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Expanding)
+        self.spacer = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.v_box.addWidget(self.text_edit)
         self.v_box.addItem(self.spacer)
         self.v_box.addWidget(self.button_box)
@@ -81,7 +81,7 @@ class TipInfoDialog(QtGui.QDialog):
         if self.is_show == True:
             self.OnButtonClose()
         
-        self.rect_desktop = QtGui.QApplication.desktop().availableGeometry()
+        self.rect_desktop = QtWidgets.QApplication.desktop().availableGeometry()
         self.desktop_height = self.rect_desktop.height()
         self.point.setX(self.rect_desktop.width() - self.width())
         self.point.setY(self.rect_desktop.height() - self.height())

@@ -21,11 +21,11 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import define
 
-class AboutDialog(QtGui.QDialog):
+class AboutDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super(AboutDialog, self).__init__(parent)
         self.parent = parent
@@ -74,16 +74,16 @@ class AboutDialog(QtGui.QDialog):
         self.label_copyright.setAlignment(QtCore.Qt.AlignCenter)
         self.label_copyright.setFont(QtGui.QFont("YaHei", 9))
         
-        self.button_ok = QtGui.QPushButton("确  定")
+        self.button_ok = QtWidgets.QPushButton("确  定")
         self.button_ok.setFont(QtGui.QFont("YaHei", 9))
         self.button_ok.clicked.connect(self.OnButtonClicked)
         
-        self.h_box = QtGui.QHBoxLayout()
+        self.h_box = QtWidgets.QHBoxLayout()
         self.h_box.addStretch(1)
         self.h_box.addWidget(self.button_ok)
         self.h_box.addStretch(1)
         
-        self.v_box = QtGui.QVBoxLayout()
+        self.v_box = QtWidgets.QVBoxLayout()
         self.v_box.addWidget(self.label_title)
         self.v_box.addWidget(self.label_version)
         self.v_box.addWidget(self.label_icon)

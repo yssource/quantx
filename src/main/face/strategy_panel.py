@@ -25,7 +25,7 @@ import os
 import csv
 
 from pubsub import pub
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import define
 import common
@@ -33,7 +33,7 @@ import logger
 import center
 import strate
 
-class StraLister(QtGui.QTableView):
+class StraLister(QtWidgets.QTableView):
     def __init__(self, parent):
         super(StraLister, self).__init__(parent)
         self.parent = parent
@@ -53,16 +53,16 @@ class StraLister(QtGui.QTableView):
         self.setFont(QtGui.QFont("SimSun", 9))
         self.setShowGrid(False)
         self.setSortingEnabled(True) # 设置表头排序
-        self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers) # 禁止编辑
-        self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows) # 选中整行
-        self.setSelectionMode(QtGui.QAbstractItemView.SingleSelection) # 选择方式 # 只允许选单行
+        self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers) # 禁止编辑
+        self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows) # 选中整行
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection) # 选择方式 # 只允许选单行
         #self.setAlternatingRowColors(True) # 隔行变色
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu) # 右键菜单
         self.customContextMenuRequested.connect(self.OnContextMenu) # 菜单触发
         self.vertical_header = self.verticalHeader() # 垂直表头
         self.vertical_header.setVisible(False)
         self.vertical_header.setDefaultSectionSize(17)
-        self.vertical_header.setResizeMode(QtGui.QHeaderView.Fixed) # 固定行高
+        self.vertical_header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed) # 固定行高
         self.horizontal_header = self.horizontalHeader() # 水平表头
         self.horizontal_header.setDefaultAlignment(QtCore.Qt.AlignCenter) # 显示居中
         self.stra_list_model = QtGui.QStandardItemModel()
@@ -92,15 +92,15 @@ class StraLister(QtGui.QTableView):
             self.stra_list_model.removeRows(0, row_count)
 
     def OnContextMenu(self):
-        self.action_refresh = QtGui.QAction(QtGui.QIcon(define.DEF_ICON_STRATEGY_MENU_REFRESH), "刷新列表", self)
+        self.action_refresh = QtWidgets.QAction(QtGui.QIcon(define.DEF_ICON_STRATEGY_MENU_REFRESH), "刷新列表", self)
         self.action_refresh.setStatusTip("刷新策略列表显示")
         self.action_refresh.triggered.connect(self.OnActionRefresh)
         
-        self.action_export = QtGui.QAction(QtGui.QIcon(define.DEF_ICON_STRATEGY_MENU_REFRESH), "导出数据", self)
+        self.action_export = QtWidgets.QAction(QtGui.QIcon(define.DEF_ICON_STRATEGY_MENU_REFRESH), "导出数据", self)
         self.action_export.setStatusTip("导出策略列表数据")
         self.action_export.triggered.connect(self.OnActionExport)
         
-        self.menu = QtGui.QMenu(self)
+        self.menu = QtWidgets.QMenu(self)
         self.menu.addAction(self.action_refresh)
         self.menu.addAction(self.action_export)
         self.menu.popup(QtGui.QCursor.pos())
@@ -110,7 +110,7 @@ class StraLister(QtGui.QTableView):
         self.OnReloadStrategy()
 
     def OnActionExport(self):
-        dlg_file = QtGui.QFileDialog.getSaveFileName(None, caption = "文件保存为...", filter = "CSV(逗号分隔)(*.csv)")
+        dlg_file = QtWidgets.QFileDialog.getSaveFileName(None, caption = "文件保存为...", filter = "CSV(逗号分隔)(*.csv)")
         if dlg_file != "":
             file_path = dlg_file.__str__()
             if file_path.endswith(".csv") == False:
@@ -122,9 +122,9 @@ class StraLister(QtGui.QTableView):
                     writer.writerow([stra_info.strategy.encode("gbk"), stra_info.name.encode("gbk"), 
                                      common.TransStrategyState(stra_info.state).encode("gbk"), 
                                      stra_info.introduction.encode("gbk"), stra_info.file_path.encode("gbk")])
-                QtGui.QMessageBox.information(None, "提示", "策略列表数据导出成功。", QtGui.QMessageBox.Ok)
+                QtWidgets.QMessageBox.information(None, "提示", "策略列表数据导出成功。", QtWidgets.QMessageBox.Ok)
             except:
-                QtGui.QMessageBox.information(None, "提示", "策略列表数据导出失败！", QtGui.QMessageBox.Ok)
+                QtWidgets.QMessageBox.information(None, "提示", "策略列表数据导出失败！", QtWidgets.QMessageBox.Ok)
 
     def OnReloadStrategy(self):
         for stra_info in self.center.data.strategies.values():
@@ -167,7 +167,7 @@ class StraLister(QtGui.QTableView):
                 break
 
     def mouseDoubleClickEvent(self, event):
-        QtGui.QTableView.mouseDoubleClickEvent(self, event)
+        QtWidgets.QTableView.mouseDoubleClickEvent(self, event)
         pos = event.pos()
         item = self.indexAt(pos)
         if item and item.row() >= 0:
@@ -204,7 +204,7 @@ class StraLister(QtGui.QTableView):
         else:
             return QtGui.QColor(128, 128, 128)
 
-class StrategyPanel(QtGui.QDialog):
+class StrategyPanel(QtWidgets.QDialog):
     def __init__(self, parent):
         super(StrategyPanel, self).__init__(parent)
         self.parent = parent
@@ -214,20 +214,20 @@ class StrategyPanel(QtGui.QDialog):
         pass
 
     def InitUserInterface(self):
-        self.button_reload = QtGui.QPushButton("加  载")
+        self.button_reload = QtWidgets.QPushButton("加  载")
         self.button_reload.setFont(QtGui.QFont("SimSun", 9))
-        self.button_run = QtGui.QPushButton("运  行")
+        self.button_run = QtWidgets.QPushButton("运  行")
         self.button_run.setFont(QtGui.QFont("SimSun", 9))
-        self.button_suspend = QtGui.QPushButton("暂  停")
+        self.button_suspend = QtWidgets.QPushButton("暂  停")
         self.button_suspend.setFont(QtGui.QFont("SimSun", 9))
-        self.button_continue = QtGui.QPushButton("继  续")
+        self.button_continue = QtWidgets.QPushButton("继  续")
         self.button_continue.setFont(QtGui.QFont("SimSun", 9))
-        self.button_stop = QtGui.QPushButton("停  止")
+        self.button_stop = QtWidgets.QPushButton("停  止")
         self.button_stop.setFont(QtGui.QFont("SimSun", 9))
-        self.button_unload = QtGui.QPushButton("卸  载")
+        self.button_unload = QtWidgets.QPushButton("卸  载")
         self.button_unload.setFont(QtGui.QFont("SimSun", 9))
         
-        self.h_box_buttons = QtGui.QHBoxLayout()
+        self.h_box_buttons = QtWidgets.QHBoxLayout()
         self.h_box_buttons.addStretch(1)
         self.h_box_buttons.addWidget(self.button_reload)
         self.h_box_buttons.addStretch(1)
@@ -251,15 +251,15 @@ class StrategyPanel(QtGui.QDialog):
         
         self.stra_lister = StraLister(self)
         
-        #self.button_Test = QtGui.QPushButton("Button Test", self)
+        #self.button_Test = QtWidgets.QPushButton("Button Test", self)
         #self.button_Test.clicked.connect(self.OnButtonClicked_Test)
         
-        self.h_box = QtGui.QHBoxLayout()
+        self.h_box = QtWidgets.QHBoxLayout()
         self.h_box.addStretch(1)
         #self.h_box.addWidget(self.button_Test)
         #self.h_box.addStretch(1)
         
-        self.v_box = QtGui.QVBoxLayout()
+        self.v_box = QtWidgets.QVBoxLayout()
         self.v_box.setContentsMargins(0, 0, 0, 0)
         self.v_box.addWidget(self.stra_lister, 1)
         self.v_box.addLayout(self.h_box_buttons)
@@ -293,7 +293,7 @@ class StrategyPanel(QtGui.QDialog):
             self.stra_lister.OnReloadStrategy() # 再更新界面显示
         else:
             if self.stra_lister.GetSelectedRowIndex() < 0:
-                QtGui.QMessageBox.information(self, "提示", "请先选择要 %s 的策略。" % str_type, QtGui.QMessageBox.Ok)
+                QtWidgets.QMessageBox.information(self, "提示", "请先选择要 %s 的策略。" % str_type, QtWidgets.QMessageBox.Ok)
                 return
             else:
                 strategy = self.stra_lister.GetSelectedStrategy()
@@ -303,23 +303,23 @@ class StrategyPanel(QtGui.QDialog):
                 dlg = None
                 if str_type == "运行":
                     if strategy_info.state != define.USER_CTRL_LOAD and strategy_info.state != define.USER_CTRL_STOP:
-                        dlg = QtGui.QMessageBox.information(self, "提示", "%s：状态不是已加载或已停止，无需运行。" % strategy, QtGui.QMessageBox.Ok)
+                        dlg = QtWidgets.QMessageBox.information(self, "提示", "%s：状态不是已加载或已停止，无需运行。" % strategy, QtWidgets.QMessageBox.Ok)
                 elif str_type == "暂停":
                     if strategy_info.state != define.USER_CTRL_EXEC:
-                        dlg = QtGui.QMessageBox.information(self, "提示", "%s：状态不是运行中，无需暂停。" % strategy, QtGui.QMessageBox.Ok)
+                        dlg = QtWidgets.QMessageBox.information(self, "提示", "%s：状态不是运行中，无需暂停。" % strategy, QtWidgets.QMessageBox.Ok)
                 elif str_type == "继续":
                     if strategy_info.state != define.USER_CTRL_WAIT:
-                        dlg = QtGui.QMessageBox.information(self, "提示", "%s：状态不是已暂停，无需继续。" % strategy, QtGui.QMessageBox.Ok)
+                        dlg = QtWidgets.QMessageBox.information(self, "提示", "%s：状态不是已暂停，无需继续。" % strategy, QtWidgets.QMessageBox.Ok)
                 elif str_type == "停止":
                     if strategy_info.state != define.USER_CTRL_EXEC and strategy_info.state != define.USER_CTRL_WAIT and strategy_info.state != define.USER_CTRL_FAIL:
-                        dlg = QtGui.QMessageBox.information(self, "提示", "%s：状态不是运行中或已暂停或已异常，无需停止。" % strategy, QtGui.QMessageBox.Ok)
+                        dlg = QtWidgets.QMessageBox.information(self, "提示", "%s：状态不是运行中或已暂停或已异常，无需停止。" % strategy, QtWidgets.QMessageBox.Ok)
                 elif str_type == "卸载":
                     if strategy_info.state != define.USER_CTRL_LOAD and strategy_info.state != define.USER_CTRL_STOP:
-                        dlg = QtGui.QMessageBox.information(self, "提示", "%s：请先停止策略运行，再进行卸载。" % strategy, QtGui.QMessageBox.Ok)
+                        dlg = QtWidgets.QMessageBox.information(self, "提示", "%s：请先停止策略运行，再进行卸载。" % strategy, QtWidgets.QMessageBox.Ok)
                 if dlg != None:
                     return
-                reply = QtGui.QMessageBox.question(self, "询问", u"确定 %s 策略 %s ？" % (str_type, strategy), QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
-                if reply == QtGui.QMessageBox.Yes:
+                reply = QtWidgets.QMessageBox.question(self, "询问", u"确定 %s 策略 %s ？" % (str_type, strategy), QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+                if reply == QtWidgets.QMessageBox.Yes:
                     if str_type == "卸载":
                        self.stra_lister.OnUnloadStrategy(strategy_info) # 先删除界面显示
                        self.strate.OnUnloadStrategy(strategy_info) # 再删除内部数据

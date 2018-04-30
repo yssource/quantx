@@ -26,15 +26,15 @@ import time
 
 import qdarkstyle
 from pubsub import pub
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
-#import AboutDialog
-#import LogInfoPanel
-#import AnalysisPanel
-#import StrategyPanel
-#import TipInfoDialog
-#import QuoteCenterBar
-#import TradeCenterBar
+import about_dialog
+import log_info_panel
+import analysis_panel
+import strategy_panel
+import tip_info_dialog
+import quote_center_bar
+import trade_center_bar
 
 import images
 import define
@@ -52,7 +52,7 @@ import analysis_base # 只是为了打包时能被编译到
 #import StraPanel_Trader_FUE_CTP # 只是为了打包时能被编译到
 #import StraPanel_Trader_STK_APE # 只是为了打包时能被编译到
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.is_system_initialization = False # 主要用来避免菜单中主题选择项的重复勾选问题
@@ -97,7 +97,7 @@ class MainWindow(QtGui.QMainWindow):
         self.resize(define.DEF_MAIN_WINDOW_W, define.DEF_MAIN_WINDOW_H)
         
         geometry = self.frameGeometry()
-        center = QtGui.QDesktopWidget().availableGeometry().center()
+        center = QtWidgets.QDesktopWidget().availableGeometry().center()
         geometry.moveCenter(center)
         self.move(geometry.topLeft())
         
@@ -105,7 +105,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setCorner(QtCore.Qt.TopRightCorner, QtCore.Qt.RightDockWidgetArea) # 默认顶部收缩
         self.setCorner(QtCore.Qt.BottomRightCorner, QtCore.Qt.BottomDockWidgetArea) # 默认底部扩展
         self.setCorner(QtCore.Qt.BottomLeftCorner, QtCore.Qt.BottomDockWidgetArea) # 默认底部扩展
-        self.setDockOptions(QtGui.QMainWindow.AnimatedDocks | QtGui.QMainWindow.AllowNestedDocks | QtGui.QMainWindow.AllowTabbedDocks);
+        self.setDockOptions(QtWidgets.QMainWindow.AnimatedDocks | QtWidgets.QMainWindow.AllowNestedDocks | QtWidgets.QMainWindow.AllowTabbedDocks);
         #self.setTabPosition(QtCore.Qt.TopDockWidgetArea, QtGui.QTabWidget.North) # 使顶部的停靠窗口嵌套后标签页在上面
         
         self.CreateActions()
@@ -114,14 +114,14 @@ class MainWindow(QtGui.QMainWindow):
         self.CreateStatusBar()
         self.CreateLogsDock()
         
-        self.main_widget = QtGui.QWidget()
+        self.main_widget = QtWidgets.QWidget()
         self.setCentralWidget(self.main_widget)
         
-        self.main_tab_panel_1 = StrategyPanel.StrategyPanel(self)
-        self.main_tab_panel_2 = AnalysisPanel.AnalysisPanel(self)
-        self.main_tab_panel_3 = QtGui.QTextEdit(self)
-        self.main_tab_widget = QtGui.QTabWidget()
-        self.main_tab_widget.setTabPosition(QtGui.QTabWidget.North)
+        self.main_tab_panel_1 = strategy_panel.StrategyPanel(self)
+        self.main_tab_panel_2 = analysis_panel.AnalysisPanel(self)
+        self.main_tab_panel_3 = QtWidgets.QTextEdit(self)
+        self.main_tab_widget = QtWidgets.QTabWidget()
+        self.main_tab_widget.setTabPosition(QtWidgets.QTabWidget.North)
         self.main_tab_widget.addTab(self.main_tab_panel_1, define.DEF_TEXT_MAIN_TAB_NAME_1)
         self.main_tab_widget.addTab(self.main_tab_panel_2, define.DEF_TEXT_MAIN_TAB_NAME_2)
         self.main_tab_widget.addTab(self.main_tab_panel_3, define.DEF_TEXT_MAIN_TAB_NAME_3)
@@ -136,13 +136,13 @@ class MainWindow(QtGui.QMainWindow):
         self.main_tab_widget.setUsesScrollButtons(True)
         self.main_tab_widget.currentChanged.connect(self.OnClickMainTabBar)
         
-        self.v_box = QtGui.QVBoxLayout()
+        self.v_box = QtWidgets.QVBoxLayout()
         self.v_box.setContentsMargins(5, 5, 5, 5)
         self.v_box.addWidget(self.main_tab_widget, 1)
         
         self.main_widget.setLayout(self.v_box)
         
-        self.tip_info_dialog = TipInfoDialog.TipInfoDialog(self)
+        self.tip_info_dialog = tip_info_dialog.TipInfoDialog(self)
         
         self.action_show_tab_1.setChecked(True)
         self.action_show_tab_2.setChecked(True)
@@ -152,47 +152,47 @@ class MainWindow(QtGui.QMainWindow):
         self.action_save_layout.setChecked(False)
 
     def CreateActions(self):
-        self.action_exit = QtGui.QAction(QtGui.QIcon(define.DEF_ICON_ACTION_EXIT), "退出(&Q)", self)
+        self.action_exit = QtWidgets.QAction(QtGui.QIcon(define.DEF_ICON_ACTION_EXIT), "退出(&Q)", self)
         self.action_exit.setShortcut("Ctrl+Q")
         self.action_exit.setStatusTip("退出当前系统")
         self.action_exit.triggered.connect(self.OnActionExit)
         
-        self.action_about = QtGui.QAction(QtGui.QIcon(define.DEF_ICON_ACTION_ABOUT), "关于(&A)", self)
+        self.action_about = QtWidgets.QAction(QtGui.QIcon(define.DEF_ICON_ACTION_ABOUT), "关于(&A)", self)
         self.action_about.setShortcut("Ctrl+A")
         self.action_about.setStatusTip("系统相关信息")
         self.action_about.triggered.connect(self.OnActionAbout)
         
-        self.action_show = QtGui.QAction(QtGui.QIcon(define.DEF_ICON_ACTION_SHOW), "显示(&S)", self)
+        self.action_show = QtWidgets.QAction(QtGui.QIcon(define.DEF_ICON_ACTION_SHOW), "显示(&S)", self)
         self.action_show.setShortcut("Ctrl+S")
         self.action_show.setStatusTip("显示主界面")
         self.action_show.triggered.connect(self.OnShowMainWindow)
         
-        self.action_hide = QtGui.QAction(QtGui.QIcon(define.DEF_ICON_ACTION_HIDE), "隐藏(&H)", self)
+        self.action_hide = QtWidgets.QAction(QtGui.QIcon(define.DEF_ICON_ACTION_HIDE), "隐藏(&H)", self)
         self.action_hide.setShortcut("Ctrl+H")
         self.action_hide.setStatusTip("隐藏主界面")
         self.action_hide.triggered.connect(self.OnHideMainWindow)
         
-        self.action_show_tab_1 = QtGui.QAction(define.DEF_TEXT_MAIN_TAB_NAME_1, self)
+        self.action_show_tab_1 = QtWidgets.QAction(define.DEF_TEXT_MAIN_TAB_NAME_1, self)
         self.action_show_tab_1.setCheckable(True)
         self.action_show_tab_1.triggered.connect(self.OnShowTabWidget_1)
         
-        self.action_show_tab_2 = QtGui.QAction(define.DEF_TEXT_MAIN_TAB_NAME_2, self)
+        self.action_show_tab_2 = QtWidgets.QAction(define.DEF_TEXT_MAIN_TAB_NAME_2, self)
         self.action_show_tab_2.setCheckable(True)
         self.action_show_tab_2.triggered.connect(self.OnShowTabWidget_2)
         
-        self.action_show_tab_3 = QtGui.QAction(define.DEF_TEXT_MAIN_TAB_NAME_3, self)
+        self.action_show_tab_3 = QtWidgets.QAction(define.DEF_TEXT_MAIN_TAB_NAME_3, self)
         self.action_show_tab_3.setCheckable(True)
         self.action_show_tab_3.triggered.connect(self.OnShowTabWidget_3)
         
-        self.action_show_skin_norm = QtGui.QAction("系统默认", self)
+        self.action_show_skin_norm = QtWidgets.QAction("系统默认", self)
         self.action_show_skin_norm.setCheckable(True)
         self.action_show_skin_norm.triggered.connect(self.OnShowSkinWidget_Norm)
         
-        self.action_show_skin_dark = QtGui.QAction("黑色炫酷", self)
+        self.action_show_skin_dark = QtWidgets.QAction("黑色炫酷", self)
         self.action_show_skin_dark.setCheckable(True)
         self.action_show_skin_dark.triggered.connect(self.OnShowSkinWidget_Dark)
         
-        self.action_save_layout = QtGui.QAction("保存布局", self)
+        self.action_save_layout = QtWidgets.QAction("保存布局", self)
         self.action_save_layout.setCheckable(True)
         self.action_save_layout.triggered.connect(self.OnActionSaveLayout)
 
@@ -215,7 +215,7 @@ class MainWindow(QtGui.QMainWindow):
         self.menu_help.addAction(self.action_about)
 
     def CreateToolBar(self):
-        self.tool_bar_system = QtGui.QToolBar(self)
+        self.tool_bar_system = QtWidgets.QToolBar(self)
         self.tool_bar_system.setWindowTitle("系统工具栏")
         self.tool_bar_system.setObjectName("ToolBar_System") #
         self.tool_bar_system.setToolTip("系统工具栏")
@@ -224,7 +224,7 @@ class MainWindow(QtGui.QMainWindow):
         self.addToolBar(QtCore.Qt.TopToolBarArea, self.tool_bar_system)
         self.menu_view_tooler.addAction(self.tool_bar_system.toggleViewAction())
         
-        self.tool_bar_quote = QuoteCenterBar.QuoteCenterBar(self)
+        self.tool_bar_quote = quote_center_bar.QuoteCenterBar(self)
         self.tool_bar_quote.setWindowTitle("行情工具栏")
         self.tool_bar_quote.setObjectName("ToolBar_Quote")
         self.tool_bar_quote.setToolTip("行情工具栏")
@@ -235,7 +235,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.addToolBarBreak(QtCore.Qt.BottomToolBarArea)
         
-        self.tool_bar_trade = TradeCenterBar.TradeCenterBar(self)
+        self.tool_bar_trade = trade_center_bar.TradeCenterBar(self)
         self.tool_bar_trade.setWindowTitle("交易工具栏")
         self.tool_bar_trade.setObjectName("ToolBar_Trade")
         self.tool_bar_trade.setToolTip("交易工具栏")
@@ -245,22 +245,22 @@ class MainWindow(QtGui.QMainWindow):
         self.menu_view_tooler.addAction(self.tool_bar_trade.toggleViewAction())
 
     def CreateStatusBar(self):
-        self.status_label_a_1 = QtGui.QLabel()
-        self.status_label_a_1.setText(straDefine.APP_TITLE_EN)
+        self.status_label_a_1 = QtWidgets.QLabel()
+        self.status_label_a_1.setText(define.APP_TITLE_EN)
         self.status_label_a_1.setFont(QtGui.QFont("SimSun", 10, QtGui.QFont.Bold))
         paLogoText = QtGui.QPalette()
         paLogoText.setColor(QtGui.QPalette.WindowText, QtGui.QColor(128, 0, 0))
         self.status_label_a_1.setPalette(paLogoText)
         
-        self.status_label_a_2 = QtGui.QLabel()
+        self.status_label_a_2 = QtWidgets.QLabel()
         self.status_label_a_2.setText("就绪")
-        self.status_label_z_1 = QtGui.QLabel()
+        self.status_label_z_1 = QtWidgets.QLabel()
         self.status_label_z_1.setText("    NULL    ")
-        self.status_label_z_2 = QtGui.QLabel()
+        self.status_label_z_2 = QtWidgets.QLabel()
         self.status_label_z_2.setText("    NULL    ")
-        self.status_label_z_3 = QtGui.QLabel()
+        self.status_label_z_3 = QtWidgets.QLabel()
         self.status_label_z_3.setText("    NULL    ")
-        self.status_label_z_4 = QtGui.QLabel()
+        self.status_label_z_4 = QtWidgets.QLabel()
         self.status_label_z_4.setText("    NULL    ")
         self.status_bar = self.statusBar()
         self.status_bar.addWidget(self.status_label_a_1)
@@ -279,21 +279,21 @@ class MainWindow(QtGui.QMainWindow):
         pub.subscribe(self.OnStatusBarInfo_3, "statusbar.info.show_3")
 
     def CreateTrayIcon(self):
-        if not QtGui.QSystemTrayIcon.isSystemTrayAvailable():
+        if not QtWidgets.QSystemTrayIcon.isSystemTrayAvailable():
             self.log_text = "本系统不支持托盘图标！"
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
             return
         
-        QtGui.QApplication.setQuitOnLastWindowClosed(False) # 点击主界面关闭按钮将不会结束程序，需要从托盘菜单退出
+        QtWidgets.QApplication.setQuitOnLastWindowClosed(False) # 点击主界面关闭按钮将不会结束程序，需要从托盘菜单退出
         
-        self.tray_icon_menu = QtGui.QMenu()
+        self.tray_icon_menu = QtWidgets.QMenu()
         self.tray_icon_menu.addAction(self.action_show)
         self.tray_icon_menu.addAction(self.action_hide)
         self.tray_icon_menu.addSeparator()
         self.tray_icon_menu.addAction(self.action_about)
         self.tray_icon_menu.addAction(self.action_exit)
         
-        self.tray_icon = QtGui.QSystemTrayIcon()
+        self.tray_icon = QtWidgets.QSystemTrayIcon()
         self.tray_icon.setContextMenu(self.tray_icon_menu)
         
         self.tray_icon.setToolTip(define.TRAY_POP_START_TITLE)
@@ -310,44 +310,44 @@ class MainWindow(QtGui.QMainWindow):
         self.is_tray_icon_loaded = True
 
     def CreateLogsDock(self):
-        self.dock_logs_s = QtGui.QDockWidget("系统日志", self)
+        self.dock_logs_s = QtWidgets.QDockWidget("系统日志", self)
         self.dock_logs_s.setObjectName("DockLogs_S") #
         self.dock_logs_s.setFont(QtGui.QFont("SimSun", 9))
         self.dock_logs_s.setAllowedAreas(QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea | QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-        self.log_info_panel_s = LogInfoPanel.LogInfoPanel(self)
+        self.log_info_panel_s = log_info_panel.LogInfoPanel(self)
         self.dock_logs_s.setWidget(self.log_info_panel_s)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dock_logs_s)
         self.menu_view_docker.addAction(self.dock_logs_s.toggleViewAction())
         
-        self.dock_logs_t = QtGui.QDockWidget("交易日志", self)
+        self.dock_logs_t = QtWidgets.QDockWidget("交易日志", self)
         self.dock_logs_t.setObjectName("DockLogs_T") #
         self.dock_logs_t.setFont(QtGui.QFont("SimSun", 9))
         self.dock_logs_t.setAllowedAreas(QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea | QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-        self.log_info_panel_t = LogInfoPanel.LogInfoPanel(self)
-        self.dock_logs_t.setWidget(self.log_info_panel_s)
+        self.log_info_panel_t = log_info_panel.LogInfoPanel(self)
+        self.dock_logs_t.setWidget(self.log_info_panel_t)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dock_logs_t)
         self.menu_view_docker.addAction(self.dock_logs_t.toggleViewAction())
         
-        self.dock_logs_m = QtGui.QDockWidget("监控日志", self)
+        self.dock_logs_m = QtWidgets.QDockWidget("监控日志", self)
         self.dock_logs_m.setObjectName("DockLogs_M") #
         self.dock_logs_m.setFont(QtGui.QFont("SimSun", 9))
         self.dock_logs_m.setAllowedAreas(QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea | QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-        self.log_info_panel_m = LogInfoPanel.LogInfoPanel(self)
+        self.log_info_panel_m = log_info_panel.LogInfoPanel(self)
         self.dock_logs_m.setWidget(self.log_info_panel_m)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dock_logs_m)
         self.menu_view_docker.addAction(self.dock_logs_m.toggleViewAction())
         
-        self.dock_logs_a = QtGui.QDockWidget("回测日志", self)
+        self.dock_logs_a = QtWidgets.QDockWidget("回测日志", self)
         self.dock_logs_a.setObjectName("DockLogs_A") #
         self.dock_logs_a.setFont(QtGui.QFont("SimSun", 9))
         self.dock_logs_a.setAllowedAreas(QtCore.Qt.TopDockWidgetArea | QtCore.Qt.BottomDockWidgetArea | QtCore.Qt.LeftDockWidgetArea | QtCore.Qt.RightDockWidgetArea)
-        self.log_info_panel_a = LogInfoPanel.LogInfoPanel(self)
+        self.log_info_panel_a = log_info_panel.LogInfoPanel(self)
         self.dock_logs_a.setWidget(self.log_info_panel_a)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.dock_logs_a)
         self.menu_view_docker.addAction(self.dock_logs_a.toggleViewAction())
         
         self.logger.SetLogInfoPanel_S(self.log_info_panel_s) # 必须
-        self.logger.SetLogInfoPanel_T(self.log_info_panel_s) # 必须
+        self.logger.SetLogInfoPanel_T(self.log_info_panel_t) # 必须
         self.logger.SetLogInfoPanel_M(self.log_info_panel_m) # 必须
         self.logger.SetLogInfoPanel_A(self.log_info_panel_a) # 必须
 
@@ -356,28 +356,28 @@ class MainWindow(QtGui.QMainWindow):
         settings = QtCore.QSettings("X-Lab-QuantX", define.APP_TITLE_EN) # 位于：HKEY_CURRENT_USER -> Software -> X-Lab-QuantX
         #settings = QtCore.QSettings("./X-Lab-QuantX.ini", QtCore.QSettings.IniFormat)
         
-        self.is_not_first_run = settings.value("NotFirstRunFlag", QtCore.QVariant(False)).toBool()
+        self.is_not_first_run = settings.value("NotFirstRunFlag", QtCore.QVariant(False))#.toBool()
         if self.is_not_first_run == False: # 首次运行，无保存值，为否，且菜单项“保存布局”为是
             self.WriteSettings() # 此时保存的是窗口初始化时的布局
         else: # 读取上次退出时保存的布局
             settings.beginGroup("MainWindow")
-            self.restoreState(settings.value("MainWindowLayout").toByteArray())
-            self.restoreGeometry(settings.value("MainWindowGeometry").toByteArray())
-            self.main_widget.restoreGeometry(settings.value("MainWidgetGeometry").toByteArray())
-            self.main_tab_widget.restoreGeometry(settings.value("MainTabWidgetGeometry").toByteArray()) # 貌似无法还原 Tab 页顺序
-            self.current_main_tab_index = settings.value("MainTabWidgetCurrentTab", QtCore.QVariant(0)).toInt()[0]
-            self.action_show_tab_1.setChecked(settings.value("ActionShowTab_1", QtCore.QVariant(True)).toBool())
-            self.action_show_tab_2.setChecked(settings.value("ActionShowTab_2", QtCore.QVariant(True)).toBool())
-            self.action_show_tab_3.setChecked(settings.value("ActionShowTab_3", QtCore.QVariant(True)).toBool())
-            self.action_show_skin_norm.setChecked(settings.value("ActionShowSkin_Norm", QtCore.QVariant(True)).toBool()) # True
-            self.OnShowSkinWidget_Norm(settings.value("ActionShowSkin_Norm", QtCore.QVariant(True)).toBool()) # True
-            self.action_show_skin_dark.setChecked(settings.value("ActionShowSkin_Dark", QtCore.QVariant(False)).toBool()) # False
-            self.OnShowSkinWidget_Dark(settings.value("ActionShowSkin_Dark", QtCore.QVariant(False)).toBool()) # False
-            self.action_save_layout.setChecked(settings.value("ActionSaveLayout", QtCore.QVariant(False)).toBool())
+            self.restoreState(settings.value("MainWindowLayout", QtCore.QVariant(QtCore.QByteArray())))#.toByteArray())
+            self.restoreGeometry(settings.value("MainWindowGeometry", QtCore.QVariant(QtCore.QByteArray())))#.toByteArray())
+            self.main_widget.restoreGeometry(settings.value("MainWidgetGeometry", QtCore.QVariant(QtCore.QByteArray())))#.toByteArray())
+            self.main_tab_widget.restoreGeometry(settings.value("MainTabWidgetGeometry", QtCore.QVariant(QtCore.QByteArray())))#.toByteArray()) # 貌似无法还原 Tab 页顺序
+            self.current_main_tab_index = settings.value("MainTabWidgetCurrentTab", QtCore.QVariant(0))#.toInt()[0]
+            self.action_show_tab_1.setChecked(settings.value("ActionShowTab_1", QtCore.QVariant(True)))#.toBool())
+            self.action_show_tab_2.setChecked(settings.value("ActionShowTab_2", QtCore.QVariant(True)))#.toBool())
+            self.action_show_tab_3.setChecked(settings.value("ActionShowTab_3", QtCore.QVariant(True)))#.toBool())
+            self.action_show_skin_norm.setChecked(settings.value("ActionShowSkin_Norm", QtCore.QVariant(True)))#.toBool()) # True
+            self.OnShowSkinWidget_Norm(settings.value("ActionShowSkin_Norm", QtCore.QVariant(True)))#.toBool()) # True
+            self.action_show_skin_dark.setChecked(settings.value("ActionShowSkin_Dark", QtCore.QVariant(False)))#.toBool()) # False
+            self.OnShowSkinWidget_Dark(settings.value("ActionShowSkin_Dark", QtCore.QVariant(False)))#.toBool()) # False
+            self.action_save_layout.setChecked(settings.value("ActionSaveLayout", QtCore.QVariant(False)))#.toBool())
             # 目前不能还原退出时的标签页显示顺序，只能还原标签页是否显示
-            self.OnShowTabWidget_1(settings.value("ActionShowTab_1", QtCore.QVariant(True)).toBool())
-            self.OnShowTabWidget_2(settings.value("ActionShowTab_2", QtCore.QVariant(True)).toBool())
-            self.OnShowTabWidget_3(settings.value("ActionShowTab_3", QtCore.QVariant(True)).toBool())
+            self.OnShowTabWidget_1(settings.value("ActionShowTab_1", QtCore.QVariant(True)))#.toBool())
+            self.OnShowTabWidget_2(settings.value("ActionShowTab_2", QtCore.QVariant(True)))#.toBool())
+            self.OnShowTabWidget_3(settings.value("ActionShowTab_3", QtCore.QVariant(True)))#.toBool())
             # 放在 ShowTabWidget_1、ShowTabWidget_2、ShowTabWidget_3 之后，防止篡改当前标签页
             self.main_tab_widget.setCurrentIndex(self.current_main_tab_index) # 在变换了 Tab 页位置后将无意义
             self.main_tab_widget.setTabIcon(self.current_main_tab_index, QtGui.QIcon(define.DEF_ICON_MAIN_TAB_SHOW))
@@ -412,16 +412,16 @@ class MainWindow(QtGui.QMainWindow):
         else:
             settings.setValue("NotFirstRunFlag", QtCore.QVariant(True)) # 始终为真
             settings.beginGroup("MainWindow")
-            settings.setValue("MainWindowLayout", settings.value("MainWindowLayout").toByteArray())
-            settings.setValue("MainWindowGeometry", settings.value("MainWindowGeometry").toByteArray())
-            settings.setValue("MainWidgetGeometry", settings.value("MainWidgetGeometry").toByteArray())
-            settings.setValue("MainTabWidgetGeometry", settings.value("MainTabWidgetGeometry").toByteArray())
-            settings.setValue("MainTabWidgetCurrentTab", settings.value("MainTabWidgetCurrentTab").toInt()[0])
-            settings.setValue("ActionShowTab_1", settings.value("ActionShowTab_1").toBool())
-            settings.setValue("ActionShowTab_2", settings.value("ActionShowTab_2").toBool())
-            settings.setValue("ActionShowTab_3", settings.value("ActionShowTab_3").toBool())
-            settings.setValue("ActionShowSkin_Norm", settings.value("ActionShowSkin_Norm").toBool())
-            settings.setValue("ActionShowSkin_Dark", settings.value("ActionShowSkin_Dark").toBool())
+            settings.setValue("MainWindowLayout", settings.value("MainWindowLayout", QtCore.QVariant(QtCore.QByteArray())))#.toByteArray())
+            settings.setValue("MainWindowGeometry", settings.value("MainWindowGeometry", QtCore.QVariant(QtCore.QByteArray())))#.toByteArray())
+            settings.setValue("MainWidgetGeometry", settings.value("MainWidgetGeometry", QtCore.QVariant(QtCore.QByteArray())))#.toByteArray())
+            settings.setValue("MainTabWidgetGeometry", settings.value("MainTabWidgetGeometry", QtCore.QVariant(QtCore.QByteArray())))#.toByteArray())
+            settings.setValue("MainTabWidgetCurrentTab", settings.value("MainTabWidgetCurrentTab", QtCore.QVariant(0)))#.toInt()[0])
+            settings.setValue("ActionShowTab_1", settings.value("ActionShowTab_1", QtCore.QVariant(True)))#.toBool())
+            settings.setValue("ActionShowTab_2", settings.value("ActionShowTab_2", QtCore.QVariant(True)))#.toBool())
+            settings.setValue("ActionShowTab_3", settings.value("ActionShowTab_3", QtCore.QVariant(True)))#.toBool())
+            settings.setValue("ActionShowSkin_Norm", settings.value("ActionShowSkin_Norm", QtCore.QVariant(True)))#.toBool())
+            settings.setValue("ActionShowSkin_Dark", settings.value("ActionShowSkin_Dark", QtCore.QVariant(False)))#.toBool())
             settings.setValue("ActionSaveLayout", self.action_save_layout.isChecked()) # 只有这个保存现值，其他均保存原值
             settings.endGroup()
         
@@ -512,18 +512,18 @@ class MainWindow(QtGui.QMainWindow):
 
     def OnActionAbout(self):
         if self.about_dialog == None:
-            self.about_dialog = AboutDialog.AboutDialog(self)
+            self.about_dialog = about_dialog.AboutDialog(self)
         self.about_dialog.show()
 
     def OnTrayIconClicked(self, reason):
-        if reason == QtGui.QSystemTrayIcon.Trigger:
+        if reason == QtWidgets.QSystemTrayIcon.Trigger:
             pass
-        elif reason == QtGui.QSystemTrayIcon.DoubleClick:
+        elif reason == QtWidgets.QSystemTrayIcon.DoubleClick:
             if self.is_main_window_visible == True:
                 self.OnHideMainWindow()
             else:
                 self.OnShowMainWindow()
-        elif reason == QtGui.QSystemTrayIcon.MiddleClick:
+        elif reason == QtWidgets.QSystemTrayIcon.MiddleClick:
             self.OnTrayIconMsgClicked()
 
     def OnShowMainWindow(self):
@@ -539,16 +539,16 @@ class MainWindow(QtGui.QMainWindow):
         self.action_hide.setEnabled(False)
 
     def OnTrayIconMsgClicked(self):
-        QtGui.QMessageBox.information(self, "提示", "小兔子乖乖，把门儿开开。", QtGui.QMessageBox.Ok)
+        QtWidgets.QMessageBox.information(self, "提示", "小兔子乖乖，把门儿开开。", QtWidgets.QMessageBox.Ok)
 
     def OnShowTrayIconMsg(self, msg, type = "info", time = 5000):
         if self.is_tray_icon_loaded == True:
             if type == "info":
-                self.tray_icon.showMessage(define.TRAY_POP_TITLE_INFO, msg, QtGui.QSystemTrayIcon.Information, time)
+                self.tray_icon.showMessage(define.TRAY_POP_TITLE_INFO, msg, QtWidgets.QSystemTrayIcon.Information, time)
             elif type == "warn":
-                self.tray_icon.showMessage(define.TRAY_POP_TITLE_WARN, msg, QtGui.QSystemTrayIcon.Warning, time)
+                self.tray_icon.showMessage(define.TRAY_POP_TITLE_WARN, msg, QtWidgets.QSystemTrayIcon.Warning, time)
             elif type == "error":
-                self.tray_icon.showMessage(define.TRAY_POP_TITLE_ERROR, msg, QtGui.QSystemTrayIcon.Critical, time)
+                self.tray_icon.showMessage(define.TRAY_POP_TITLE_ERROR, msg, QtWidgets.QSystemTrayIcon.Critical, time)
 
     def OnShowSkinWidget_Norm(self, show):
         if show == True:

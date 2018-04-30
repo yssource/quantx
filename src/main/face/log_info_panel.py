@@ -23,11 +23,11 @@
 
 import csv
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import define
 
-class LogInfoPanel(QtGui.QWidget):
+class LogInfoPanel(QtWidgets.QWidget):
     def __init__(self, parent):
         super(LogInfoPanel, self).__init__(parent)
         self.main_window = None
@@ -45,21 +45,21 @@ class LogInfoPanel(QtGui.QWidget):
         self.setMinimumWidth(300)
         self.setMinimumHeight(150)
         
-        self.table_view = QtGui.QTableView(self)
+        self.table_view = QtWidgets.QTableView()
         self.table_view.setFont(QtGui.QFont("SimSun", 9))
         self.table_view.setShowGrid(False)
         #self.table_view.setSortingEnabled(True) # 设置表头排序
-        self.table_view.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers) # 禁止编辑
-        self.table_view.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows) # 选中整行
-        self.table_view.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection) # 选择方式
+        self.table_view.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers) # 禁止编辑
+        self.table_view.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows) # 选中整行
+        self.table_view.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection) # 选择方式
         #self.table_view.setAlternatingRowColors(True) # 隔行变色
         self.table_view.setContextMenuPolicy(QtCore.Qt.CustomContextMenu) # 右键菜单
         self.table_view.customContextMenuRequested.connect(self.OnContextMenu) # 菜单触发
         self.vertical_header = self.table_view.verticalHeader() # 垂直表头
         self.vertical_header.setVisible(False)
         self.vertical_header.setDefaultSectionSize(17)
-        self.vertical_header.setResizeMode(QtGui.QHeaderView.Fixed) # 固定行高
-        self.horizontal_header = self.table_view.horizontal_header() # 水平表头
+        self.vertical_header.setSectionResizeMode(QtWidgets.QHeaderView.Fixed) # 固定行高
+        self.horizontal_header = self.table_view.horizontalHeader() # 水平表头
         self.horizontal_header.setDefaultAlignment(QtCore.Qt.AlignCenter) # 显示居中
         self.info_list_model = QtGui.QStandardItemModel()
         self.info_list_model.setColumnCount(len(self.head_name_list))
@@ -67,7 +67,7 @@ class LogInfoPanel(QtGui.QWidget):
             self.info_list_model.setHeaderData(i, QtCore.Qt.Horizontal, self.head_name_list[i])
         self.table_view.setModel(self.info_list_model)
         
-        self.v_box = QtGui.QVBoxLayout()
+        self.v_box = QtWidgets.QVBoxLayout()
         self.v_box.setContentsMargins(5, 5, 5, 5)
         self.v_box.addWidget(self.table_view)
         
@@ -81,7 +81,7 @@ class LogInfoPanel(QtGui.QWidget):
     def event(self, event):
         if event.type() == define.DEF_EVENT_LOG_INFO_PRINT:
             self.OnLogInfoPrint()
-        return QtGui.QWidget.event(self, event)
+        return QtWidgets.QWidget.event(self, event)
 
     def AddLogInfo(self, item):
         self.log_info_list.append(item)
@@ -103,11 +103,11 @@ class LogInfoPanel(QtGui.QWidget):
         else: return QtGui.QColor(0, 0, 0)
 
     def OnContextMenu(self):
-        self.action_clear = QtGui.QAction(QtGui.QIcon(define.DEF_ICON_LOG_INFO_MENU_CLEAR), "清除日志", self)
+        self.action_clear = QtWidgets.QAction(QtGui.QIcon(define.DEF_ICON_LOG_INFO_MENU_CLEAR), "清除日志", self)
         self.action_clear.setStatusTip("清除日志信息显示")
         self.action_clear.triggered.connect(self.OnActionClear)
         
-        self.action_export = QtGui.QAction(QtGui.QIcon(define.DEF_ICON_LOG_INFO_MENU_EXPORT), "导出数据", self)
+        self.action_export = QtWidgets.QAction(QtGui.QIcon(define.DEF_ICON_LOG_INFO_MENU_EXPORT), "导出数据", self)
         self.action_export.setStatusTip("导出日志信息数据")
         self.action_export.triggered.connect(self.OnActionExport)
         

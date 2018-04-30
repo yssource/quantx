@@ -63,12 +63,12 @@ def QuantX():
     #if CheckMacAddress("90:61:ae:cd:ae:0f") == False:
     #    return
     
-    #main_window = window.MainWindow()
-    #main_window.isSystemInitialization = True
-    #main_window.ReadSettings() # 读取界面属性
-    #main_window.show()
-    #main_window.SystemStart() # 初始化各模块
-    #main_window.isSystemInitialization = False
+    main_window = window.MainWindow()
+    main_window.is_system_initialization = True
+    main_window.ReadSettings() # 读取界面属性
+    main_window.show()
+    main_window.SystemStart() # 初始化各模块
+    main_window.is_system_initialization = False
     
     sys.exit(app.exec_())
 

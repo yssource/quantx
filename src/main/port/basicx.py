@@ -129,8 +129,19 @@ class Singleton(object): # 与 common.py 中的相同
         
         return init_wrap
 
-class StraBasicX(Singleton):
+class BasicX(Singleton):
     def __init__(self):
+        self.log_text = ""
+        self.log_cate = "BasicX"
+        self.logger = None
+        self.ignore_user_tips = False
+        self.ignore_local_file_loss = False
+        self.ignore_exrights_data_loss = False
+        self.ignore_local_data_imperfect = False
+        try: self.logger = logger.Logger()
+        except: pass
+
+    def InitBasicData(self, **kwargs):
         pass
 
 if __name__ == "__main__":
