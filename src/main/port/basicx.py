@@ -146,9 +146,9 @@ class BasicX(Singleton):
 
 if __name__ == "__main__":
     import sys
-    from PyQt5 import QtWidgets
+    from PyQt5.QtWidgets import QApplication
     
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     
     folder = "../data" # 缓存文件夹
     basicX = BasicX()

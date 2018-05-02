@@ -30,7 +30,8 @@ import sqlite3
 import datetime
 import threading
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import QEvent, QTimer
+from PyQt5.QtWidgets import QApplication
 from logging.handlers import TimedRotatingFileHandler
 
 import define
@@ -101,7 +102,7 @@ class Logger(common.Singleton):
         
         self.InitDataBase()
         
-        self.timer = QtCore.QTimer()
+        self.timer = QTimer()
         self.timer.timeout.connect(self.TrySaveSendData)
         self.timer.start(5000)
 
@@ -156,19 +157,19 @@ class Logger(common.Singleton):
         self.AddTbData_Logger(log_item)
         if log_show == define.DEF_LOG_SHOW_TYPE_S and self.log_info_panel_s != None:
             self.log_info_panel_s.AddLogInfo(log_item)
-            QtWidgets.QApplication.postEvent(self.log_info_panel_s, QtCore.QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
+            QApplication.postEvent(self.log_info_panel_s, QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
         elif log_show == define.DEF_LOG_SHOW_TYPE_T and self.log_info_panel_t != None:
             self.log_info_panel_t.AddLogInfo(log_item)
-            QtWidgets.QApplication.postEvent(self.log_info_panel_t, QtCore.QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
+            QApplication.postEvent(self.log_info_panel_t, QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
         elif log_show == define.DEF_LOG_SHOW_TYPE_M and self.log_info_panel_m != None:
             self.log_info_panel_m.AddLogInfo(log_item)
-            QtWidgets.QApplication.postEvent(self.log_info_panel_m, QtCore.QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
+            QApplication.postEvent(self.log_info_panel_m, QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
         elif log_show == define.DEF_LOG_SHOW_TYPE_A and self.log_info_panel_a != None:
             self.log_info_panel_a.AddLogInfo(log_item)
-            QtWidgets.QApplication.postEvent(self.log_info_panel_a, QtCore.QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
+            QApplication.postEvent(self.log_info_panel_a, QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
         elif log_show == define.DEF_LOG_SHOW_TYPE_SPBSA and self.log_info_panel_spbsa != None:
             self.log_info_panel_spbsa.AddLogInfo(log_item)
-            QtWidgets.QApplication.postEvent(self.log_info_panel_spbsa, QtCore.QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
+            QApplication.postEvent(self.log_info_panel_spbsa, QEvent(define.DEF_EVENT_LOG_INFO_PRINT))
 
 ####################################################################################################
 
@@ -401,7 +402,7 @@ def TestFunc_02(locker, flag):
         #locker.release()
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     
     # 测试显示，在开启系统时间优化为 0.5 毫秒以后，Logger 输出时间精度在 1 到 2 毫秒，一毫秒平均输出日志 15 条，即每秒约 1.5 万条
     #logger = Logger()

@@ -219,8 +219,8 @@ DEF_TEXT_MAIN_TAB_NAME_1 = "策略管理"
 DEF_TEXT_MAIN_TAB_NAME_2 = "模型回测"
 DEF_TEXT_MAIN_TAB_NAME_3 = "页面三"
 
-#from PyQt5 import QtCore
-#DEF_EVENT = QtCore.QEvent.registerEventType(QtCore.QEvent.User + 1) # QtCore.QEvent.User 为 1000，QtCore.QEvent::MaxUser 为 65535
+#from PyQt5.QtCore import QEvent
+#DEF_EVENT = QEvent.registerEventType(QEvent.User + 1) # QEvent.User 为 1000，QEvent::MaxUser 为 65535
 DEF_EVENT_LOG_INFO_PRINT = 1001
 DEF_EVENT_SET_ANALYSIS_PROGRESS = 1002
 DEF_EVENT_SET_ANALYSIS_PROGRESS_ERROR = 1003

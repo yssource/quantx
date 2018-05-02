@@ -28,7 +28,7 @@ import threading
 import traceback
 
 from pubsub import pub
-from PyQt5 import QtGui
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 import config
 import define
@@ -155,7 +155,7 @@ class Strate(common.Singleton, threading.Thread):
         stra_folder = self.config.cfg_main.stra_folder
         sys.path.insert(0, stra_folder) # 添加策略模块查找路径
 
-        dlg_file = QtGui.QFileDialog.getOpenFileName(None, caption = "选择策略文件...", directory = stra_folder, filter = "Python Files(*.py*)")
+        dlg_file = QFileDialog.getOpenFileName(None, caption = "选择策略文件...", directory = stra_folder, filter = "Python Files(*.py*)")
         if dlg_file != "":
             file_path = dlg_file.__str__()
             file_name = os.path.basename(file_path)
@@ -183,9 +183,9 @@ class Strate(common.Singleton, threading.Thread):
                             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                             self.OnUnloadStrategy(stra_info) #
                     else:
-                        QtGui.QMessageBox.information(None, "提示", "选择的策略模块 %s 系统已经加载！" % file_name[:-3], QtGui.QMessageBox.Ok)
+                        QMessageBox.information(None, "提示", "选择的策略模块 %s 系统已经加载！" % file_name[:-3], QMessageBox.Ok)
                 else:
-                    QtGui.QMessageBox.information(None, "提示", "选择的策略文件 %s 不是用户定义！" % file_name, QtGui.QMessageBox.Ok)
+                    QMessageBox.information(None, "提示", "选择的策略文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
             elif file_name[-4:] == ".pyd":
                 if file_name != "strategy_base.pyd":
                     if not (file_name[:-4] in sys.modules.keys()):
@@ -210,11 +210,11 @@ class Strate(common.Singleton, threading.Thread):
                             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                             self.OnUnloadStrategy(stra_info) #
                     else:
-                        QtGui.QMessageBox.information(None, "提示", "选择的策略模块 %s 系统已经加载！" % file_name[:-4], QtGui.QMessageBox.Ok)
+                        QMessageBox.information(None, "提示", "选择的策略模块 %s 系统已经加载！" % file_name[:-4], QMessageBox.Ok)
                 else:
-                    QtGui.QMessageBox.information(None, "提示", "选择的策略文件 %s 不是用户定义！" % file_name, QtGui.QMessageBox.Ok)
+                    QMessageBox.information(None, "提示", "选择的策略文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
             else:
-                QtGui.QMessageBox.information(None, "提示", "选择的策略文件 %s 后缀名称异常！" % file_name, QtGui.QMessageBox.Ok)
+                QMessageBox.information(None, "提示", "选择的策略文件 %s 后缀名称异常！" % file_name, QMessageBox.Ok)
 
     def OnUnloadStrategy(self, strategy_info):
         if strategy_info.instance != None:

@@ -21,7 +21,8 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
-from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QCheckBox, QLabel, QToolBar
 
 import config
 import logger
@@ -37,14 +38,14 @@ class TradeBarItem(object):
         self.logger = logger.Logger()
         self.trader = trader.Trader()
         
-        self.check_box = QtWidgets.QCheckBox()
+        self.check_box = QCheckBox()
         self.check_box.setCheckable(True)
         self.check_box.setChecked(False)
-        self.check_box.setFont(QtGui.QFont("SimSun", 8, QtGui.QFont.Bold))
+        self.check_box.setFont(QFont("SimSun", 8, QFont.Bold))
         self.check_box.setText(show)
         self.check_box.setToolTip(tips)
-        self.state_label = QtWidgets.QLabel()
-        self.state_label.setFont(QtGui.QFont("SimSun", 8, QtGui.QFont.Bold))
+        self.state_label = QLabel()
+        self.state_label.setFont(QFont("SimSun", 8, QFont.Bold))
         self.state_label.setMinimumWidth(40)
         self.state_label.setMinimumHeight(17)
         self.state_label.setText("OFF")
@@ -67,7 +68,7 @@ class TradeBarItem(object):
                 self.log_text = "交易服务 %s %s 尚未载入！" % (self.flag, self.show)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
-class TradeCenterBar(QtWidgets.QToolBar):
+class TradeCenterBar(QToolBar):
     def __init__(self, parent):
         super(TradeCenterBar, self).__init__(parent)
         self.parent = parent
