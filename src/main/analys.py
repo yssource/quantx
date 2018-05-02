@@ -25,7 +25,7 @@ import os
 import sys
 import traceback
 
-from PyQt5 import QtGui
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 
 import config
 import define
@@ -101,7 +101,7 @@ class Analys(common.Singleton):
         anal_folder = self.config.cfg_main.anal_folder
         sys.path.insert(0, anal_folder) # 添加回测模块查找路径
 
-        dlg_file = QtGui.QFileDialog.getOpenFileName(None, caption = "选择回测文件...", directory = anal_folder, filter = "Python Files(*.py*)")
+        dlg_file = QFileDialog.getOpenFileName(None, caption = "选择回测文件...", directory = anal_folder, filter = "Python Files(*.py*)")
         if dlg_file != "":
             file_path = dlg_file.__str__()
             file_name = os.path.basename(file_path)
@@ -129,9 +129,9 @@ class Analys(common.Singleton):
                             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                             self.OnUnloadAnalysis(analy_info) #
                     else:
-                        QtGui.QMessageBox.information(None, "提示", "选择的回测模块 %s 系统已经加载！" % file_name[:-3], QtGui.QMessageBox.Ok)
+                        QMessageBox.information(None, "提示", "选择的回测模块 %s 系统已经加载！" % file_name[:-3], QMessageBox.Ok)
                 else:
-                    QtGui.QMessageBox.information(None, "提示", "选择的回测文件 %s 不是用户定义！" % file_name, QtGui.QMessageBox.Ok)
+                    QMessageBox.information(None, "提示", "选择的回测文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
             elif file_name[-4:] == ".pyd":
                 if file_name != "analysis_base.pyd":
                     if not (file_name[:-4] in sys.modules.keys()):
@@ -156,11 +156,11 @@ class Analys(common.Singleton):
                             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                             self.OnUnloadAnalysis(analy_info) #
                     else:
-                        QtGui.QMessageBox.information(None, "提示", "选择的回测模块 %s 系统已经加载！" % file_name[:-4], QtGui.QMessageBox.Ok)
+                        QMessageBox.information(None, "提示", "选择的回测模块 %s 系统已经加载！" % file_name[:-4], QMessageBox.Ok)
                 else:
-                    QtGui.QMessageBox.information(None, "提示", "选择的回测文件 %s 不是用户定义！" % file_name, QtGui.QMessageBox.Ok)
+                    QMessageBox.information(None, "提示", "选择的回测文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
             else:
-                QtGui.QMessageBox.information(None, "提示", "选择的回测文件 %s 后缀名称异常！" % file_name, QtGui.QMessageBox.Ok)
+                QMessageBox.information(None, "提示", "选择的回测文件 %s 后缀名称异常！" % file_name, QMessageBox.Ok)
 
     def OnUnloadAnalysis(self, analysis_info):
         if analysis_info.instance != None:

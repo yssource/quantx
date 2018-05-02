@@ -25,7 +25,8 @@ import time
 import threading
 import traceback
 
-from PyQt5 import QtGui, QtCore
+from PyQt5.QtCore import QEvent
+from PyQt5.QtWidgets import QApplication
 
 import define
 import logger
@@ -141,7 +142,7 @@ class AnalysisBase(threading.Thread):
             self.OnBackTest(self.analys.symbol_list, self.analys.trading_day_list)
         except Exception as e:
             traceback.print_exc() #
-            QtGui.QApplication.postEvent(self.analysis_panel, QtCore.QEvent(define.DEF_EVENT_SET_ANALYSIS_PROGRESS_ERROR))
+            QApplication.postEvent(self.analysis_panel, QEvent(define.DEF_EVENT_SET_ANALYSIS_PROGRESS_ERROR))
             self.log_text = "回测 %s %s 计算发生异常！%s" % (self.analysis, self.analysis_name, e)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
@@ -156,4 +157,4 @@ class AnalysisBase(threading.Thread):
             progress = round(float(finish) / float(total) * 100.0)
             if self.analysis_panel.analysis_progress != progress: # 减少进度刷新
                 self.analysis_panel.analysis_progress = progress
-                QtGui.QApplication.postEvent(self.analysis_panel, QtCore.QEvent(define.DEF_EVENT_SET_ANALYSIS_PROGRESS))
+                QApplication.postEvent(self.analysis_panel, QEvent(define.DEF_EVENT_SET_ANALYSIS_PROGRESS))

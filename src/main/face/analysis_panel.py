@@ -26,7 +26,7 @@ import datetime
 import operator
 import threading
 
-from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5.QtWidgets import QDialog
 
 import config
 import define
@@ -35,7 +35,7 @@ import logger
 import analys
 import basicx
 
-class AnalysisPanel(QtWidgets.QDialog):
+class AnalysisPanel(QDialog):
     def __init__(self, parent):
         super(AnalysisPanel, self).__init__(parent)
         self.parent = parent
