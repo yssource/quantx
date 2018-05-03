@@ -103,7 +103,7 @@ class Analys(common.Singleton):
 
         dlg_file = QFileDialog.getOpenFileName(None, caption = "选择回测文件...", directory = anal_folder, filter = "Python Files(*.py*)")
         if dlg_file != "":
-            file_path = dlg_file.__str__()
+            file_path = dlg_file[0].__str__()
             file_name = os.path.basename(file_path)
             if file_name[-3:] == ".py":
                 if file_name != "__init__.py" and file_name != "analysis_base.py":

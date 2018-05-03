@@ -157,7 +157,7 @@ class Strate(common.Singleton, threading.Thread):
 
         dlg_file = QFileDialog.getOpenFileName(None, caption = "选择策略文件...", directory = stra_folder, filter = "Python Files(*.py*)")
         if dlg_file != "":
-            file_path = dlg_file.__str__()
+            file_path = dlg_file[0].__str__()
             file_name = os.path.basename(file_path)
             if file_name[-3:] == ".py":
                 if file_name != "__init__.py" and file_name != "strategy_base.py":
@@ -236,7 +236,7 @@ class Strate(common.Singleton, threading.Thread):
             for stra_info in self.center.data.strategies.values():
                 if stra_info.state == define.USER_CTRL_EXEC and stra_info.instance.IsTradeError() == True: # 这里 IsTradeError 用 == 判断，因为可能返回 None 的
                     stra_info.state = define.USER_CTRL_FAIL
-                    pub.sendMessage("strategy.info.status", stra_info)
+                    pub.sendMessage("strategy.info.status", msg = stra_info)
             self.center.data.strategies_locker.release()
             time.sleep(3)
         self.log_text = "策略监控线程退出！"

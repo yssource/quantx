@@ -126,19 +126,18 @@ class LogInfoPanel(QWidget):
     def OnActionExport(self):
         dlg_file = QFileDialog.getSaveFileName(None, caption = "文件保存为...", filter = "CSV(逗号分隔)(*.csv)")
         if dlg_file != "":
-            file_path = dlg_file.__str__()
+            file_path = dlg_file[0].__str__()
             if file_path.endswith(".csv") == False:
                 file_path += ".csv"
             try:
-                writer = csv.writer(open(file_path, "wb"))
-                writer.writerow([data.encode("gbk") for data in self.head_name_list[1:]]) # 排除第一列
+                writer = csv.writer(open(file_path, "w"))
+                writer.writerow([data for data in self.head_name_list[1:]]) # 排除第一列
                 for i in range(self.log_info_index):
                     log_item = self.log_info_list[i]
-                    writer.writerow([log_item.time_stamp.strftime("%H:%M:%S.%f"), log_item.log_kind.encode("gbk"), 
-                                     log_item.log_cate.encode("gbk"), log_item.log_info.encode("gbk")])
+                    writer.writerow([log_item.time_stamp.strftime("%H:%M:%S.%f"), log_item.log_kind, log_item.log_cate, log_item.log_info])
                 QMessageBox.information(None, "提示", "日志信息数据导出成功。", QMessageBox.Ok)
-            except:
-                QMessageBox.information(None, "提示", "日志信息数据导出失败！", QMessageBox.Ok)
+            except Exception as e:
+                QMessageBox.information(None, "提示", "日志信息数据导出失败！%s" % e, QMessageBox.Ok)
 
     def OnLogInfoPrint(self):
         log_info_count = len(self.log_info_list)

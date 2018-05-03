@@ -114,19 +114,17 @@ class StraLister(QTableView):
     def OnActionExport(self):
         dlg_file = QFileDialog.getSaveFileName(None, caption = "文件保存为...", filter = "CSV(逗号分隔)(*.csv)")
         if dlg_file != "":
-            file_path = dlg_file.__str__()
+            file_path = dlg_file[0].__str__()
             if file_path.endswith(".csv") == False:
                 file_path += ".csv"
             try:
-                writer = csv.writer(open(file_path, "wb"))
-                writer.writerow([data.encode("gbk") for data in self.head_name_list[1:]]) # 排除第一列
+                writer = csv.writer(open(file_path, "w"))
+                writer.writerow([data for data in self.head_name_list[1:]]) # 排除第一列
                 for stra_info in self.stra_info_map.values():
-                    writer.writerow([stra_info.strategy.encode("gbk"), stra_info.name.encode("gbk"), 
-                                     common.TransStrategyState(stra_info.state).encode("gbk"), 
-                                     stra_info.introduction.encode("gbk"), stra_info.file_path.encode("gbk")])
+                    writer.writerow([stra_info.strategy, stra_info.name, common.TransStrategyState(stra_info.state), stra_info.introduction, stra_info.file_path])
                 QMessageBox.information(None, "提示", "策略列表数据导出成功。", QMessageBox.Ok)
-            except:
-                QMessageBox.information(None, "提示", "策略列表数据导出失败！", QMessageBox.Ok)
+            except Exception as e:
+                QMessageBox.information(None, "提示", "策略列表数据导出失败！%s" % e, QMessageBox.Ok)
 
     def OnReloadStrategy(self):
         for stra_info in self.center.data.strategies.values():
@@ -153,7 +151,7 @@ class StraLister(QTableView):
                 break
 
     def OnStrategyInfoStatus(self, msg):
-        self.OnChangeStrategyState(msg.data) # msg.data 为 StrategyInfo
+        self.OnChangeStrategyState(msg) # msg 为 StrategyInfo
 
     def OnChangeStrategyState(self, stra_info):
         row_count = self.stra_list_model.rowCount()
@@ -288,8 +286,8 @@ class StrategyPanel(QDialog):
         self.HandleStrategyUserControl("卸载")
 
     def HandleStrategyUserControl(self, str_type):
-        self.center = center.StraCenter()
-        self.strate = strate.StraStrate()
+        self.center = center.Center()
+        self.strate = strate.Strate()
         if str_type == "加载":
             self.strate.OnReloadStrategy() # 先添加内部数据
             self.stra_lister.OnReloadStrategy() # 再更新界面显示

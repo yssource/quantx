@@ -26,7 +26,7 @@ import strategy_base
 
 class StrategyTest_02(strategy_base.StrategyBase):
     def __init__(self):
-        strategy_base.StrategyBase.__init__(self, "StrategyTest_02", "Test_01", "测试_01")
+        strategy_base.StrategyBase.__init__(self, "StrategyTest_02", "Test_02", "测试_02")
         self.beat_calc = BeatCalc(self)
 
 class BeatCalc():

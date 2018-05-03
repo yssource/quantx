@@ -500,13 +500,13 @@ class MainWindow(QMainWindow):
         self.status_label_z_4.setText(str_date_time)
 
     def OnStatusBarInfo_1(self, msg):
-        self.status_label_z_1.setText(msg.data)
+        self.status_label_z_1.setText(msg)
 
     def OnStatusBarInfo_2(self, msg):
-        self.status_label_z_2.setText(msg.data)
+        self.status_label_z_2.setText(msg)
 
     def OnStatusBarInfo_3(self, msg):
-        self.status_label_z_3.setText(msg.data)
+        self.status_label_z_3.setText(msg)
 
     def OnActionExit(self):
         reply = QMessageBox.question(self, "询问", "确认退出当前系统？", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
