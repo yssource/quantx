@@ -32,7 +32,7 @@ import define
 class LogInfoPanel(QWidget):
     def __init__(self, parent):
         super(LogInfoPanel, self).__init__(parent)
-        self.main_window = None
+        self.main_window = parent
         self.log_info_list = []
         self.log_info_index = 0
         self.head_name_list = ["", "时间", "级别", "分类", "信息"]
@@ -92,7 +92,7 @@ class LogInfoPanel(QWidget):
         if log_class == 0: return QColor(128, 128, 128)
         elif log_class == 1:
             if self.main_window != None:
-                if self.main_window.action_show_skin__norm.isChecked():
+                if self.main_window.action_show_skin_norm.isChecked():
                     return QColor(0, 0, 0)
                 elif self.main_window.action_show_skin_dark.isChecked():
                     return QColor(255, 255, 255)

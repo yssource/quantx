@@ -357,5 +357,11 @@ class StrategyPanel(QDialog):
         self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "M")
         self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "M")
         self.logger.SendMessage("F", 5, self.log_cate, self.log_text, "M")
+        self.logger.SendMessage("D", 0, self.log_cate, self.log_text, "A")
+        self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "A")
+        self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "A")
+        self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+        self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+        self.logger.SendMessage("F", 5, self.log_cate, self.log_text, "A")
         
-        pub.sendMessage("tip.info.message", self.log_text)
+        pub.sendMessage("tip.info.message", msg = self.log_text)

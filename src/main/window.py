@@ -354,33 +354,42 @@ class MainWindow(QMainWindow):
         self.logger.SetLogInfoPanel_M(self.log_info_panel_m) # 必须
         self.logger.SetLogInfoPanel_A(self.log_info_panel_a) # 必须
 
+    def TransStrToBool(self, value, default):
+        value = value.lower()
+        if value == "true":
+            return True
+        elif value == "false":
+            return False
+        else:
+            return default
+
     # QDockWidget 和 QToolBar 都需设置对象名，这样才能 saveState() 和 restoreState() 状态、位置、大小等
     def ReadSettings(self):
         settings = QSettings("X-Lab-QuantX", define.APP_TITLE_EN) # 位于：HKEY_CURRENT_USER -> Software -> X-Lab-QuantX
         #settings = QSettings("./X-Lab-QuantX.ini", QSettings.IniFormat)
         
-        self.is_not_first_run = settings.value("NotFirstRunFlag", QVariant(False))#.toBool()
+        self.is_not_first_run = self.TransStrToBool(settings.value("NotFirstRunFlag", ""), False)
         if self.is_not_first_run == False: # 首次运行，无保存值，为否，且菜单项“保存布局”为是
             self.WriteSettings() # 此时保存的是窗口初始化时的布局
         else: # 读取上次退出时保存的布局
             settings.beginGroup("MainWindow")
-            self.restoreState(settings.value("MainWindowLayout", QVariant(QByteArray())))#.toByteArray())
-            self.restoreGeometry(settings.value("MainWindowGeometry", QVariant(QByteArray())))#.toByteArray())
-            self.main_widget.restoreGeometry(settings.value("MainWidgetGeometry", QVariant(QByteArray())))#.toByteArray())
-            self.main_tab_widget.restoreGeometry(settings.value("MainTabWidgetGeometry", QVariant(QByteArray())))#.toByteArray()) # 貌似无法还原 Tab 页顺序
-            self.current_main_tab_index = settings.value("MainTabWidgetCurrentTab", QVariant(0))#.toInt()[0]
-            self.action_show_tab_1.setChecked(settings.value("ActionShowTab_1", QVariant(True)))#.toBool())
-            self.action_show_tab_2.setChecked(settings.value("ActionShowTab_2", QVariant(True)))#.toBool())
-            self.action_show_tab_3.setChecked(settings.value("ActionShowTab_3", QVariant(True)))#.toBool())
-            self.action_show_skin_norm.setChecked(settings.value("ActionShowSkin_Norm", QVariant(True)))#.toBool()) # True
-            self.OnShowSkinWidget_Norm(settings.value("ActionShowSkin_Norm", QVariant(True)))#.toBool()) # True
-            self.action_show_skin_dark.setChecked(settings.value("ActionShowSkin_Dark", QVariant(False)))#.toBool()) # False
-            self.OnShowSkinWidget_Dark(settings.value("ActionShowSkin_Dark", QVariant(False)))#.toBool()) # False
-            self.action_save_layout.setChecked(settings.value("ActionSaveLayout", QVariant(False)))#.toBool())
+            self.restoreState(settings.value("MainWindowLayout", QVariant(QByteArray())))
+            self.restoreGeometry(settings.value("MainWindowGeometry", QVariant(QByteArray())))
+            self.main_widget.restoreGeometry(settings.value("MainWidgetGeometry", QVariant(QByteArray())))
+            self.main_tab_widget.restoreGeometry(settings.value("MainTabWidgetGeometry", QVariant(QByteArray()))) # 貌似无法还原 Tab 页顺序
+            self.current_main_tab_index = settings.value("MainTabWidgetCurrentTab", 0)
+            self.action_show_tab_1.setChecked(self.TransStrToBool(settings.value("ActionShowTab_1", ""), True))
+            self.action_show_tab_2.setChecked(self.TransStrToBool(settings.value("ActionShowTab_2", ""), True))
+            self.action_show_tab_3.setChecked(self.TransStrToBool(settings.value("ActionShowTab_3", ""), True))
+            self.action_show_skin_norm.setChecked(self.TransStrToBool(settings.value("ActionShowSkin_Norm", ""), True)) # True
+            self.OnShowSkinWidget_Norm(self.TransStrToBool(settings.value("ActionShowSkin_Norm", ""), True)) # True
+            self.action_show_skin_dark.setChecked(self.TransStrToBool(settings.value("ActionShowSkin_Dark", ""), False)) # False
+            self.OnShowSkinWidget_Dark(self.TransStrToBool(settings.value("ActionShowSkin_Dark", ""), False)) # False
+            self.action_save_layout.setChecked(self.TransStrToBool(settings.value("ActionSaveLayout", ""), False))
             # 目前不能还原退出时的标签页显示顺序，只能还原标签页是否显示
-            self.OnShowTabWidget_1(settings.value("ActionShowTab_1", QVariant(True)))#.toBool())
-            self.OnShowTabWidget_2(settings.value("ActionShowTab_2", QVariant(True)))#.toBool())
-            self.OnShowTabWidget_3(settings.value("ActionShowTab_3", QVariant(True)))#.toBool())
+            self.OnShowTabWidget_1(self.TransStrToBool(settings.value("ActionShowTab_1", ""), True))
+            self.OnShowTabWidget_2(self.TransStrToBool(settings.value("ActionShowTab_2", ""), True))
+            self.OnShowTabWidget_3(self.TransStrToBool(settings.value("ActionShowTab_3", ""), True))
             # 放在 ShowTabWidget_1、ShowTabWidget_2、ShowTabWidget_3 之后，防止篡改当前标签页
             self.main_tab_widget.setCurrentIndex(self.current_main_tab_index) # 在变换了 Tab 页位置后将无意义
             self.main_tab_widget.setTabIcon(self.current_main_tab_index, QIcon(define.DEF_ICON_MAIN_TAB_SHOW))
@@ -398,7 +407,7 @@ class MainWindow(QMainWindow):
         #settings = QSettings("./X-Lab-QuantX.ini", QSettings.IniFormat)
         
         if self.action_save_layout.isChecked() == True:
-            settings.setValue("NotFirstRunFlag", QVariant(True)) # 始终为真
+            settings.setValue("NotFirstRunFlag", True) # 始终为真
             settings.beginGroup("MainWindow")
             settings.setValue("MainWindowLayout", self.saveState())
             settings.setValue("MainWindowGeometry", self.saveGeometry())
@@ -413,18 +422,18 @@ class MainWindow(QMainWindow):
             settings.setValue("ActionSaveLayout", self.action_save_layout.isChecked())
             settings.endGroup()
         else:
-            settings.setValue("NotFirstRunFlag", QVariant(True)) # 始终为真
+            settings.setValue("NotFirstRunFlag", True) # 始终为真
             settings.beginGroup("MainWindow")
-            settings.setValue("MainWindowLayout", settings.value("MainWindowLayout", QVariant(QByteArray())))#.toByteArray())
-            settings.setValue("MainWindowGeometry", settings.value("MainWindowGeometry", QVariant(QByteArray())))#.toByteArray())
-            settings.setValue("MainWidgetGeometry", settings.value("MainWidgetGeometry", QVariant(QByteArray())))#.toByteArray())
-            settings.setValue("MainTabWidgetGeometry", settings.value("MainTabWidgetGeometry", QVariant(QByteArray())))#.toByteArray())
-            settings.setValue("MainTabWidgetCurrentTab", settings.value("MainTabWidgetCurrentTab", QVariant(0)))#.toInt()[0])
-            settings.setValue("ActionShowTab_1", settings.value("ActionShowTab_1", QVariant(True)))#.toBool())
-            settings.setValue("ActionShowTab_2", settings.value("ActionShowTab_2", QVariant(True)))#.toBool())
-            settings.setValue("ActionShowTab_3", settings.value("ActionShowTab_3", QVariant(True)))#.toBool())
-            settings.setValue("ActionShowSkin_Norm", settings.value("ActionShowSkin_Norm", QVariant(True)))#.toBool())
-            settings.setValue("ActionShowSkin_Dark", settings.value("ActionShowSkin_Dark", QVariant(False)))#.toBool())
+            settings.setValue("MainWindowLayout", QByteArray())
+            settings.setValue("MainWindowGeometry", QByteArray())
+            settings.setValue("MainWidgetGeometry", QByteArray())
+            settings.setValue("MainTabWidgetGeometry", QByteArray())
+            settings.setValue("MainTabWidgetCurrentTab", 0)
+            settings.setValue("ActionShowTab_1", True)
+            settings.setValue("ActionShowTab_2", True)
+            settings.setValue("ActionShowTab_3", True)
+            settings.setValue("ActionShowSkin_Norm", True)
+            settings.setValue("ActionShowSkin_Dark", False)
             settings.setValue("ActionSaveLayout", self.action_save_layout.isChecked()) # 只有这个保存现值，其他均保存原值
             settings.endGroup()
         
@@ -593,7 +602,7 @@ class MainWindow(QMainWindow):
                     self.main_tab_widget.setTabIcon(i, QIcon(define.DEF_ICON_MAIN_TAB_HIDE))
         else:
             for i in range(self.main_tab_widget.count()):
-                if straDefine.DEF_TEXT_MAIN_TAB_NAME_1 == self.main_tab_widget.tabText(i).__str__(): # .__str__()
+                if define.DEF_TEXT_MAIN_TAB_NAME_1 == self.main_tab_widget.tabText(i).__str__(): # .__str__()
                     self.main_tab_widget.removeTab(i)
                     break
             index = self.main_tab_widget.currentIndex()
@@ -609,7 +618,7 @@ class MainWindow(QMainWindow):
                     self.main_tab_widget.setTabIcon(i, QIcon(define.DEF_ICON_MAIN_TAB_HIDE))
         else:
             for i in range(self.main_tab_widget.count()):
-                if straDefine.DEF_TEXT_MAIN_TAB_NAME_2 == self.main_tab_widget.tabText(i).__str__(): # .__str__()
+                if define.DEF_TEXT_MAIN_TAB_NAME_2 == self.main_tab_widget.tabText(i).__str__(): # .__str__()
                     self.main_tab_widget.removeTab(i)
                     break
             index = self.main_tab_widget.currentIndex()
@@ -625,7 +634,7 @@ class MainWindow(QMainWindow):
                     self.main_tab_widget.setTabIcon(i, QIcon(define.DEF_ICON_MAIN_TAB_HIDE))
         else:
             for i in range(self.main_tab_widget.count()):
-                if straDefine.DEF_TEXT_MAIN_TAB_NAME_3 == self.main_tab_widget.tabText(i).__str__(): # .__str__()
+                if define.DEF_TEXT_MAIN_TAB_NAME_3 == self.main_tab_widget.tabText(i).__str__(): # .__str__()
                     self.main_tab_widget.removeTab(i)
                     break
             index = self.main_tab_widget.currentIndex()

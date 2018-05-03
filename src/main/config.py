@@ -212,8 +212,8 @@ class CfgAnal(object):
         self.date_analysis_test_s = 20180101
         self.date_analysis_test_e = 0
 
-    def LoadConfig(self, filePath):
-        config = configobj.ConfigObj(filePath)
+    def LoadConfig(self, file_path):
+        config = configobj.ConfigObj(file_path)
         
         self.filter_security_check_all = int(config["filter"]["filter_security_check_all"])
         self.filter_security_category_a = int(config["filter"]["filter_security_category_a"])
@@ -247,8 +247,8 @@ class CfgAnal(object):
         self.date_analysis_test_s = config["analysis"]["date_analysis_test_s"]
         self.date_analysis_test_e = config["analysis"]["date_analysis_test_e"]
 
-    def SaveConfig(self, cfgAnal, filePath):
-        config = configobj.ConfigObj(filePath)
+    def SaveConfig(self, cfg_anal, file_path):
+        config = configobj.ConfigObj(file_path)
         
         config["filter"]["filter_security_check_all"] = int(self.filter_security_check_all)
         config["filter"]["filter_security_category_a"] = int(self.filter_security_category_a)

@@ -77,7 +77,7 @@ class TipInfoDialog(QDialog):
         pub.subscribe(self.OnTipInfoMessage, "tip.info.message")
 
     def OnTipInfoMessage(self, msg):
-        self.ShowMessage(msg.data)
+        self.ShowMessage(msg)
 
     def ShowMessage(self, msg):
         if self.is_show == True:
