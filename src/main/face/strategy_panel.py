@@ -318,7 +318,7 @@ class StrategyPanel(QDialog):
                         dlg = QMessageBox.information(self, "提示", "%s：请先停止策略运行，再进行卸载。" % strategy, QMessageBox.Ok)
                 if dlg != None:
                     return
-                reply = QMessageBox.question(self, "询问", u"确定 %s 策略 %s ？" % (str_type, strategy), QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                reply = QMessageBox.question(self, "询问", "确定 %s 策略 %s ？" % (str_type, strategy), QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                 if reply == QMessageBox.Yes:
                     if str_type == "卸载":
                        self.stra_lister.OnUnloadStrategy(strategy_info) # 先删除界面显示

@@ -217,7 +217,7 @@ DEF_ICON_STRATEGY_MENU_EXPORT = ":/pics/quantx_logo.ico"
 
 DEF_TEXT_MAIN_TAB_NAME_1 = "策略管理"
 DEF_TEXT_MAIN_TAB_NAME_2 = "模型回测"
-DEF_TEXT_MAIN_TAB_NAME_3 = "页面三"
+DEF_TEXT_MAIN_TAB_NAME_3 = "本地风控"
 
 #from PyQt5.QtCore import QEvent
 #DEF_EVENT = QEvent.registerEventType(QEvent.User + 1) # QEvent.User 为 1000，QEvent::MaxUser 为 65535

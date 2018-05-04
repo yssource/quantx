@@ -27,7 +27,7 @@ import time
 import qdarkstyle
 from pubsub import pub
 from PyQt5.QtGui import QColor, QFont, QIcon, QPalette
-from PyQt5.QtCore import QByteArray, QCoreApplication, QSettings, QSize, Qt, QTimer, QVariant
+from PyQt5.QtCore import QByteArray, QSettings, QSize, Qt, QTimer, QVariant
 from PyQt5.QtWidgets import QAction, QApplication, QDesktopWidget, QDockWidget, QLabel, QMainWindow, QMenu
 from PyQt5.QtWidgets import QMessageBox, QSystemTrayIcon, QTabWidget, QTextEdit, QToolBar, QWidget, QVBoxLayout
 
@@ -565,8 +565,7 @@ class MainWindow(QMainWindow):
     def OnShowSkinWidget_Norm(self, show):
         if show == True:
             self.action_show_skin_dark.setChecked(False)
-            app = QCoreApplication.instance()
-            app.setStyleSheet("")
+            QApplication.instance().setStyleSheet("")
             self.logger.ChangeInfoMsgColor() #
         else:
             if self.is_system_initialization == False: # 避免初始化过程中 action_show_skin_norm 被触发
@@ -576,8 +575,7 @@ class MainWindow(QMainWindow):
     def OnShowSkinWidget_Dark(self, show):
         if show == True:
             self.action_show_skin_norm.setChecked(False)
-            app = QCoreApplication.instance()
-            app.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))
+            QApplication.instance().setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
             self.logger.ChangeInfoMsgColor() #
         else:
             if self.is_system_initialization == False: # 避免初始化过程中 action_show_skin_norm 被触发

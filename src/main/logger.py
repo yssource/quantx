@@ -88,7 +88,7 @@ class Logger(common.Singleton):
         self.db_init_time = 600
         self.db_init_flag = False # 目前 23:00 还原
         
-        self.main_mindow = None
+        self.main_window = None
         self.log_info_panel_s = None
         self.log_info_panel_t = None
         self.log_info_panel_m = None
@@ -114,27 +114,27 @@ class Logger(common.Singleton):
         self.StopServer()
 
     def SetMainWindow(self, window):
-        self.main_mindow = window
+        self.main_window = window
 
     def SetLogInfoPanel_S(self, panel):
         self.log_info_panel_s = panel
-        self.log_info_panel_s.main_mindow = self.main_mindow
+        self.log_info_panel_s.main_window = self.main_window
 
     def SetLogInfoPanel_T(self, panel):
         self.log_info_panel_t = panel
-        self.log_info_panel_t.main_mindow = self.main_mindow
+        self.log_info_panel_t.main_window = self.main_window
 
     def SetLogInfoPanel_M(self, panel):
         self.log_info_panel_m = panel
-        self.log_info_panel_m.main_mindow = self.main_mindow
+        self.log_info_panel_m.main_window = self.main_window
 
     def SetLogInfoPanel_A(self, panel):
         self.log_info_panel_a = panel
-        self.log_info_panel_a.main_mindow = self.main_mindow
+        self.log_info_panel_a.main_window = self.main_window
 
     def SetLogInfoPanel_SPBSA(self, panel):
         self.log_info_panel_spbsa = panel
-        self.log_info_panel_spbsa.main_mindow = self.main_mindow
+        self.log_info_panel_spbsa.main_window = self.main_window
 
     def ChangeInfoMsgColor(self):
         if self.log_info_panel_s != None:

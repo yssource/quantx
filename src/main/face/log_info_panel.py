@@ -32,7 +32,7 @@ import define
 class LogInfoPanel(QWidget):
     def __init__(self, parent):
         super(LogInfoPanel, self).__init__(parent)
-        self.main_window = parent
+        self.main_window = None # 在 Logger 中赋值
         self.log_info_list = []
         self.log_info_index = 0
         self.head_name_list = ["", "时间", "级别", "分类", "信息"]

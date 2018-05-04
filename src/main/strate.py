@@ -159,62 +159,63 @@ class Strate(common.Singleton, threading.Thread):
         if dlg_file != "":
             file_path = dlg_file[0].__str__()
             file_name = os.path.basename(file_path)
-            if file_name[-3:] == ".py":
-                if file_name != "__init__.py" and file_name != "strategy_base.py":
-                    if not (file_name[:-3] in sys.modules.keys()):
-                        file_path = stra_folder + "/" + file_name
-                        stra_info = center.StrategyInfo()
-                        stra_info.strategy = file_name[:-3]
-                        try:
-                            __import__(stra_info.strategy)
-                            stra_info.module = sys.modules[stra_info.strategy]
-                            stra_info.classer = getattr(stra_info.module, stra_info.strategy)
-                            stra_info.file_path = file_path
-                            stra_info.state = define.USER_CTRL_LOAD
-                            self.center.data.strategies[stra_info.strategy] = stra_info # 先放进去，策略类初始化时要用
-                            stra_info.instance = stra_info.classer() # 策略类初始化
-                            stra_info.name = stra_info.instance.strategy_name
-                            stra_info.introduction = stra_info.instance.strategy_introduction
-                            stra_info.instance.Reload() # 可以执行一些初始化工作
-                            self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
-                            self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-                        except Exception as e:
-                            self.log_text = "策略 %s.py 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
-                            self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
-                            self.OnUnloadStrategy(stra_info) #
+            if file_name != "":
+                if file_name[-3:] == ".py":
+                    if file_name != "__init__.py" and file_name != "strategy_base.py":
+                        if not (file_name[:-3] in sys.modules.keys()):
+                            file_path = stra_folder + "/" + file_name
+                            stra_info = center.StrategyInfo()
+                            stra_info.strategy = file_name[:-3]
+                            try:
+                                __import__(stra_info.strategy)
+                                stra_info.module = sys.modules[stra_info.strategy]
+                                stra_info.classer = getattr(stra_info.module, stra_info.strategy)
+                                stra_info.file_path = file_path
+                                stra_info.state = define.USER_CTRL_LOAD
+                                self.center.data.strategies[stra_info.strategy] = stra_info # 先放进去，策略类初始化时要用
+                                stra_info.instance = stra_info.classer() # 策略类初始化
+                                stra_info.name = stra_info.instance.strategy_name
+                                stra_info.introduction = stra_info.instance.strategy_introduction
+                                stra_info.instance.Reload() # 可以执行一些初始化工作
+                                self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
+                                self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+                            except Exception as e:
+                                self.log_text = "策略 %s.py 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
+                                self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+                                self.OnUnloadStrategy(stra_info) #
+                        else:
+                            QMessageBox.information(None, "提示", "选择的策略模块 %s 系统已经加载！" % file_name[:-3], QMessageBox.Ok)
                     else:
-                        QMessageBox.information(None, "提示", "选择的策略模块 %s 系统已经加载！" % file_name[:-3], QMessageBox.Ok)
-                else:
-                    QMessageBox.information(None, "提示", "选择的策略文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
-            elif file_name[-4:] == ".pyd":
-                if file_name != "strategy_base.pyd":
-                    if not (file_name[:-4] in sys.modules.keys()):
-                        file_path = stra_folder + "/" + file_name
-                        stra_info = center.StrategyInfo()
-                        stra_info.strategy = file_name[:-4]
-                        try:
-                            __import__(stra_info.strategy)
-                            stra_info.module = sys.modules[stra_info.strategy]
-                            stra_info.classer = getattr(stra_info.module, stra_info.strategy)
-                            stra_info.file_path = file_path
-                            stra_info.state = define.USER_CTRL_LOAD
-                            self.center.data.strategies[stra_info.strategy] = stra_info # 先放进去，策略类初始化时要用
-                            stra_info.instance = stra_info.classer() # 策略类初始化
-                            stra_info.name = stra_info.instance.strategy_name
-                            stra_info.introduction = stra_info.instance.strategy_introduction
-                            stra_info.instance.Reload() # 可以执行一些初始化工作
-                            self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
-                            self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-                        except Exception as e:
-                            self.log_text = "策略 %s.pyd 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
-                            self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
-                            self.OnUnloadStrategy(stra_info) #
+                        QMessageBox.information(None, "提示", "选择的策略文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
+                elif file_name[-4:] == ".pyd":
+                    if file_name != "strategy_base.pyd":
+                        if not (file_name[:-4] in sys.modules.keys()):
+                            file_path = stra_folder + "/" + file_name
+                            stra_info = center.StrategyInfo()
+                            stra_info.strategy = file_name[:-4]
+                            try:
+                                __import__(stra_info.strategy)
+                                stra_info.module = sys.modules[stra_info.strategy]
+                                stra_info.classer = getattr(stra_info.module, stra_info.strategy)
+                                stra_info.file_path = file_path
+                                stra_info.state = define.USER_CTRL_LOAD
+                                self.center.data.strategies[stra_info.strategy] = stra_info # 先放进去，策略类初始化时要用
+                                stra_info.instance = stra_info.classer() # 策略类初始化
+                                stra_info.name = stra_info.instance.strategy_name
+                                stra_info.introduction = stra_info.instance.strategy_introduction
+                                stra_info.instance.Reload() # 可以执行一些初始化工作
+                                self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
+                                self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+                            except Exception as e:
+                                self.log_text = "策略 %s.pyd 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
+                                self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+                                self.OnUnloadStrategy(stra_info) #
+                        else:
+                            QMessageBox.information(None, "提示", "选择的策略模块 %s 系统已经加载！" % file_name[:-4], QMessageBox.Ok)
                     else:
-                        QMessageBox.information(None, "提示", "选择的策略模块 %s 系统已经加载！" % file_name[:-4], QMessageBox.Ok)
+                        QMessageBox.information(None, "提示", "选择的策略文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
                 else:
-                    QMessageBox.information(None, "提示", "选择的策略文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
-            else:
-                QMessageBox.information(None, "提示", "选择的策略文件 %s 后缀名称异常！" % file_name, QMessageBox.Ok)
+                    QMessageBox.information(None, "提示", "选择的策略文件 %s 后缀名称异常！" % file_name, QMessageBox.Ok)
 
     def OnUnloadStrategy(self, strategy_info):
         if strategy_info.instance != None:
