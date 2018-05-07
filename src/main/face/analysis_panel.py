@@ -26,7 +26,10 @@ import datetime
 import operator
 import threading
 
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtGui import QFont
+from PyQt5.QtCore import QAbstractTableModel, QDateTime, QEvent, Qt, SIGNAL
+from PyQt5.QtWidgets import QAbstractItemView, QApplication, QCheckBox, QComboBox, QDateTimeEdit, QDialog, QLabel, QLineEdit, QHeaderView
+from PyQt5.QtWidgets import QMessageBox, QProgressBar, QPushButton, QRadioButton, QTableView, QTextEdit, QHBoxLayout, QVBoxLayout
 
 import config
 import define

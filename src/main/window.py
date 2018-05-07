@@ -52,8 +52,8 @@ import strategy_base # 只是为了打包时能被编译到
 import analysis_base # 只是为了打包时能被编译到
 #import StraPanel_Basket_Stk_Ape # 只是为了打包时能被编译到
 #import StraPanel_Spread_Fue_Ctp # 只是为了打包时能被编译到
-#import StraPanel_Trader_FUE_CTP # 只是为了打包时能被编译到
-#import StraPanel_Trader_STK_APE # 只是为了打包时能被编译到
+import panel_trader_fue_ctp # 只是为了打包时能被编译到
+import panel_trader_stk_ape # 只是为了打包时能被编译到
 
 class MainWindow(QMainWindow):
     def __init__(self):
