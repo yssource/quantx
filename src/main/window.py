@@ -29,12 +29,13 @@ from pubsub import pub
 from PyQt5.QtGui import QColor, QFont, QIcon, QPalette
 from PyQt5.QtCore import QByteArray, QSettings, QSize, Qt, QTimer, QVariant
 from PyQt5.QtWidgets import QAction, QApplication, QDesktopWidget, QDockWidget, QLabel, QMainWindow, QMenu
-from PyQt5.QtWidgets import QMessageBox, QSystemTrayIcon, QTabWidget, QTextEdit, QToolBar, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QMessageBox, QSystemTrayIcon, QTabWidget, QToolBar, QWidget, QVBoxLayout
 
 import about_dialog
 import log_info_panel
-import analysis_panel
 import strategy_panel
+import analysis_panel
+import riskctrl_panel
 import tip_info_dialog
 import quote_center_bar
 import trade_center_bar
@@ -122,7 +123,7 @@ class MainWindow(QMainWindow):
         
         self.main_tab_panel_1 = strategy_panel.StrategyPanel(self)
         self.main_tab_panel_2 = analysis_panel.AnalysisPanel(self)
-        self.main_tab_panel_3 = QTextEdit(self)
+        self.main_tab_panel_3 = riskctrl_panel.RiskctrlPanel(self)
         self.main_tab_widget = QTabWidget()
         self.main_tab_widget.setTabPosition(QTabWidget.North)
         self.main_tab_widget.addTab(self.main_tab_panel_1, define.DEF_TEXT_MAIN_TAB_NAME_1)

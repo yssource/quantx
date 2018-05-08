@@ -21,38 +21,19 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
-import time
-import datetime
-import operator
-import threading
-
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import QAbstractTableModel, QDateTime, QEvent, Qt, pyqtSignal
-from PyQt5.QtWidgets import QAbstractItemView, QApplication, QCheckBox, QComboBox, QDateTimeEdit, QDialog, QLabel, QLineEdit, QHeaderView
-from PyQt5.QtWidgets import QMessageBox, QProgressBar, QPushButton, QRadioButton, QTableView, QTextEdit, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QDialog
 
 import config
-import define
-import common
 import logger
-import analys
-import basicx
 
-class AnalysisPanel(QDialog):
+class RiskctrlPanel(QDialog):
     def __init__(self, parent):
-        super(AnalysisPanel, self).__init__(parent)
+        super(RiskctrlPanel, self).__init__(parent)
         self.parent = parent
         self.log_text = ""
-        self.log_cate = "AnalysisPanel"
+        self.log_cate = "RiskctrlPanel"
         self.config = config.Config()
         self.logger = logger.Logger()
-        self.basicx = basicx.BasicX()
-        self.analysis_progress = 0
-        self.get_quote_data_progress = 0
-        self.getting = False
-        self.suspend = False
-        self.analysis_trading_day_list = [] # 存储交易日期date
-        self.analysis_trading_day_dict = {} # 用于交易日数计算
         
         self.InitUserInterface()
 
