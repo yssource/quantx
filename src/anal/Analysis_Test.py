@@ -22,20 +22,27 @@
 # Be sure to retain the above copyright notice and conditions.
 
 import logger
-import strategy_base
+import basicx
+import analysis_base
 
-class StrategyTest_01(strategy_base.StrategyBase):
+class Analysis_Test(analysis_base.AnalysisBase):
     def __init__(self):
-        strategy_base.StrategyBase.__init__(self, "StrategyTest_01", "Test_01", "测试_01")
-        self.beat_calc = BeatCalc(self)
-
-class BeatCalc():
-    def __init__(self, parent):
-        self.parent = parent
-        self.calc_wait = 3
+        analysis_base.AnalysisBase.__init__(self, "Analysis_Test", "Test", "测试")
+        self.log_text = ""
+        self.log_cate = "Analysis_Test"
         self.logger = logger.Logger()
+        self.basicx = basicx.BasicX()
 
-    def MakeCalc(self):
-        self.log_cate = "StrategyTest_01"
-        self.log_text = "StrategyTest_01"
-        self.logger.SendMessage("D", 0, self.log_cate, self.log_text, "M")
+    def OnWorking(self): # 供具体回测继承调用，在 运行 前执行一些操作
+        result = self.basicx.GetStockDaily("sz", "000001", 20100101, 20171231)
+        if not result.empty:
+            print(result)
+
+    def OnSuspend(self): # 供具体回测继承调用，在 暂停 前执行一些操作
+        pass
+
+    def OnContinue(self): # 供具体回测继承调用，在 继续 前执行一些操作
+        pass
+
+    def OnTerminal(self): # 供具体回测继承调用，在 停止 前执行一些操作
+        pass

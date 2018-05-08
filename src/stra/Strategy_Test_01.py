@@ -24,9 +24,9 @@
 import logger
 import strategy_base
 
-class StrategyTest_02(strategy_base.StrategyBase):
+class Strategy_Test_01(strategy_base.StrategyBase):
     def __init__(self):
-        strategy_base.StrategyBase.__init__(self, "StrategyTest_02", "Test_02", "测试_02")
+        strategy_base.StrategyBase.__init__(self, "Strategy_Test_01", "Test_01", "测试_01")
         self.beat_calc = BeatCalc(self)
 
 class BeatCalc():
@@ -36,6 +36,6 @@ class BeatCalc():
         self.logger = logger.Logger()
 
     def MakeCalc(self):
-        self.log_cate = "StrategyTest_02"
-        self.log_text = "StrategyTest_02"
+        self.log_cate = "Strategy_Test_01"
+        self.log_text = "Strategy_Test_01"
         self.logger.SendMessage("D", 0, self.log_cate, self.log_text, "M")

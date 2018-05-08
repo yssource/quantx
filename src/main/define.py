@@ -25,7 +25,7 @@ import numpy
 
 APP_TITLE_EN = "QuantX" # 英文名称
 APP_TITLE_CN = "量 化 交 易 客 户 端" # 中文名称
-APP_VERSION = "V0.1.0-Beta Build 20180503" # 版本信息
+APP_VERSION = "V0.1.0-Beta Build 20180508" # 版本信息
 APP_DEVELOPER = "Developed by the X-Lab." # 开发者声明
 APP_COMPANY = "X-Lab (Shanghai) Co., Ltd." # 公司声明
 APP_COPYRIGHT = "Copyright 2018-2018 X-Lab All Rights Reserved." # 版权声明
