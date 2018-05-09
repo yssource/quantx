@@ -67,7 +67,7 @@ class DBM_MySQL():
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
         except pymysql.Error as e:
             self.connect = None
-            self.log_text = "连接错误：%d:%s" % (e.args[0], e.args[1])
+            self.log_text = "连接错误：%s" % str(e)
             self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
         return False
 
@@ -114,7 +114,7 @@ class DBM_MySQL():
                 self.log_text = "执行(单)警告：%s" % str(w)
                 self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
             except pymysql.Error as e:
-                self.log_text = "执行(单)错误：%d:%s" % (e.args[0], e.args[1])
+                self.log_text = "执行(单)错误：%s" % str(e)
                 self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
             return False
 
@@ -135,7 +135,7 @@ class DBM_MySQL():
                 self.log_text = "执行(多)警告：%s" % str(w)
                 self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
             except pymysql.Error as e:
-                self.log_text = "执行(多)错误：%d:%s" % (e.args[0], e.args[1])
+                self.log_text = "执行(多)错误：%s" % str(e)
                 self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
             return False
 
@@ -156,6 +156,6 @@ class DBM_MySQL():
                 self.log_text = "查询(全)警告：%s" % str(w)
                 self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
             except pymysql.Error as e:
-                self.log_text = "查询(全)错误：%d:%s" % (e.args[0], e.args[1])
+                self.log_text = "查询(全)错误：%s" % str(e)
                 self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
             return None
