@@ -25,6 +25,7 @@ import time
 import datetime
 import operator
 import threading
+from datetime import datetime
 
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QAbstractTableModel, QDateTime, QEvent, Qt, pyqtSignal

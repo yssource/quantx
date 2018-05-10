@@ -25,8 +25,8 @@ import os
 import re
 import time
 import math
-import datetime
 import threading
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -103,28 +103,28 @@ class Singleton(object): # 与 common.py 中的相同
 
     def __new__(cls, *args, **kv):
         if cls in cls.objs:
-            return cls.objs[cls]['obj']
+            return cls.objs[cls]["obj"]
         
         cls.objs_locker.acquire()
         try:
             if cls in cls.objs:  # double check locking
-                return cls.objs[cls]['obj']
+                return cls.objs[cls]["obj"]
             obj = object.__new__(cls)
-            cls.objs[cls] = {'obj': obj, 'init': False}
-            setattr(cls, '__init__', cls.decorate_init(cls.__init__))
+            cls.objs[cls] = {"obj": obj, "init": False}
+            setattr(cls, "__init__", cls.decorate_init(cls.__init__))
         finally:
             cls.objs_locker.release()
         
-        return cls.objs[cls]['obj']
+        return cls.objs[cls]["obj"]
 
     @classmethod
     def decorate_init(cls, fn):
         def init_wrap(*args):
         #def init_wrap(*args, **kv): # 子类可以使用 __init__(self, **kwargs) 形式传参
-            if not cls.objs[cls]['init']:
+            if not cls.objs[cls]["init"]:
                 fn(*args)
                 #fn(*args, **kv) # 子类可以使用 __init__(self, **kwargs) 形式传参
-                cls.objs[cls]['init'] = True
+                cls.objs[cls]["init"] = True
             return
         
         return init_wrap

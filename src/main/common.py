@@ -21,8 +21,8 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
-import datetime
 import threading
+from datetime import datetime
 
 import define
 
@@ -32,37 +32,37 @@ class Singleton(object):
 
     def __new__(cls, *args, **kv):
         if cls in cls.objs:
-            return cls.objs[cls]['obj']
+            return cls.objs[cls]["obj"]
         
         cls.objs_locker.acquire()
         try:
             if cls in cls.objs:  # double check locking
-                return cls.objs[cls]['obj']
+                return cls.objs[cls]["obj"]
             obj = object.__new__(cls)
-            cls.objs[cls] = {'obj': obj, 'init': False}
-            setattr(cls, '__init__', cls.decorate_init(cls.__init__))
+            cls.objs[cls] = {"obj": obj, "init": False}
+            setattr(cls, "__init__", cls.decorate_init(cls.__init__))
         finally:
             cls.objs_locker.release()
         
-        return cls.objs[cls]['obj']
+        return cls.objs[cls]["obj"]
 
     @classmethod
     def decorate_init(cls, fn):
         def init_wrap(*args):
         #def init_wrap(*args, **kv): # 子类可以使用 __init__(self, **kwargs) 形式传参
-            if not cls.objs[cls]['init']:
+            if not cls.objs[cls]["init"]:
                 fn(*args)
                 #fn(*args, **kv) # 子类可以使用 __init__(self, **kwargs) 形式传参
-                cls.objs[cls]['init'] = True
+                cls.objs[cls]["init"] = True
             return
         
         return init_wrap
 
 def GetDateShort():
-    return datetime.datetime.now().strftime("%Y-%m-%d")
+    return datetime.now().strftime("%Y-%m-%d")
 
 def GetTimeShort():
-    return datetime.datetime.now().strftime("%H:%M:%S")
+    return datetime.now().strftime("%H:%M:%S")
 
 def PreTransStockTdfMarket(tmp_data): # TDF个股快照预处理
     try:
@@ -104,7 +104,7 @@ def PreTransStockTdfMarket(tmp_data): # TDF个股快照预处理
         src_data[27] = round(src_data[27] * 0.0001, 5) # PeRate_2 int32 市盈率 2 /10000
         return src_data
     except Exception as e:
-        print("PreTransStockTdfMarket error:", Exception, e)
+        print("PreTransStockTdfMarket error:", e)
 
 def PreTransIndexTdfMarket(tmp_data): # TDF指数快照预处理
     try:
@@ -118,7 +118,7 @@ def PreTransIndexTdfMarket(tmp_data): # TDF指数快照预处理
         src_data[12] = round(src_data[12] * 0.0001, 5) # Turnover int64 成交额 /10000
         return src_data
     except Exception as e:
-        print("PreTransIndexTdfMarket error:", Exception, e)
+        print("PreTransIndexTdfMarket error:", e)
 
 def PreTransTransTdfMarket(tmp_data): # TDF逐笔成交预处理
     try:
@@ -127,7 +127,7 @@ def PreTransTransTdfMarket(tmp_data): # TDF逐笔成交预处理
         src_data[7] = round(src_data[7] * 0.0001, 5) # Turnover int64 成交额 /10000
         return src_data
     except Exception as e:
-        print("PreTransTransTdfMarket error:", Exception, e)
+        print("PreTransTransTdfMarket error:", e)
 
 def PreTransStockLtbMarket(tmp_data): # LTB个股快照预处理
     try:
@@ -170,7 +170,7 @@ def PreTransStockLtbMarket(tmp_data): # LTB个股快照预处理
         src_data[31] = round(src_data[31] * 0.0001, 5) # AltWeightedAvgOfferPrice uint32 债券申卖加权均价 /10000
         return src_data
     except Exception as e:
-        print("PreTransStockLtbMarket error:", Exception, e)
+        print("PreTransStockLtbMarket error:", e)
 
 def PreTransIndexLtbMarket(tmp_data): # LTB指数快照预处理
     try:
@@ -184,7 +184,7 @@ def PreTransIndexLtbMarket(tmp_data): # LTB指数快照预处理
         src_data[12] = round(src_data[12] * 0.0001, 5) # Turnover int64 成交额 /10000
         return src_data
     except Exception as e:
-        print("PreTransIndexLtbMarket error:", Exception, e)
+        print("PreTransIndexLtbMarket error:", e)
 
 def PreTransTransLtbMarket(tmp_data): # LTB逐笔成交预处理
     try:
@@ -193,7 +193,7 @@ def PreTransTransLtbMarket(tmp_data): # LTB逐笔成交预处理
         src_data[7] = round(src_data[7] * 0.0001, 5) # Turnover int64 成交额 /10000
         return src_data
     except Exception as e:
-        print("PreTransTransLtbMarket error:", Exception, e)
+        print("PreTransTransLtbMarket error:", e)
 
 def PreTransStockLtpMarket(tmp_data): # LTP个股快照预处理 //与 preTransStockTdfMarket 相同
     try:
@@ -235,7 +235,7 @@ def PreTransStockLtpMarket(tmp_data): # LTP个股快照预处理 //与 preTransS
         src_data[27] = round(src_data[27] * 0.0001, 5) # PeRate_2 int32 市盈率 2 /10000
         return src_data
     except Exception as e:
-        print("PreTransStockLtpMarket error:", Exception, e)
+        print("PreTransStockLtpMarket error:", e)
 
 def PreTransIndexLtpMarket(tmp_data): # LTP指数快照预处理 //与 preTransIndexTdfMarket 相同
     try:
@@ -249,7 +249,7 @@ def PreTransIndexLtpMarket(tmp_data): # LTP指数快照预处理 //与 preTransI
         src_data[12] = round(src_data[12] * 0.0001, 5) # Turnover int64 成交额 /10000
         return src_data
     except Exception as e:
-        print("PreTransIndexLtpMarket error:", Exception, e)
+        print("PreTransIndexLtpMarket error:", e)
 
 def PreTransTransLtpMarket(tmp_data): # LTP逐笔成交预处理 //与 preTransTransTdfMarket 相同
     try:
@@ -258,7 +258,7 @@ def PreTransTransLtpMarket(tmp_data): # LTP逐笔成交预处理 //与 preTransT
         src_data[7] = round(src_data[7] * 0.0001, 5) # Turnover int64 成交额 /10000
         return src_data
     except Exception as e:
-        print("PreTransTransLtpMarket error:", Exception, e)
+        print("PreTransTransLtpMarket error:", e)
 
 def PreTransFutureMarket(tmp_data): # 期货内盘快照预处理
     try:
@@ -292,7 +292,7 @@ def PreTransFutureMarket(tmp_data): # 期货内盘快照预处理
         src_data[28] = round(src_data[28] * 0.0001, 5) # PreDelta int32 昨日虚实度 /10000
         return src_data
     except Exception as e:
-        print("PreTransFutureMarket error:", Exception, e)
+        print("PreTransFutureMarket error:", e)
 
 def TransStrategyState(straState): # 策略状态
     if straState == 0:

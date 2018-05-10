@@ -126,7 +126,7 @@ class Analys(common.Singleton):
                                 self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                             except Exception as e:
-                                self.log_text = "回测 %s.py 加载发生错误！%s %s" % (analy_info.analysis, Exception, e)
+                                self.log_text = "回测 %s.py 加载发生错误！%s" % (analy_info.analysis, e)
                                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                                 self.OnUnloadAnalysis(analy_info) #
                         else:
@@ -153,7 +153,7 @@ class Analys(common.Singleton):
                                 self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                             except Exception as e:
-                                self.log_text = "回测 %s.pyd 加载发生错误！%s %s" % (analy_info.analysis, Exception, e)
+                                self.log_text = "回测 %s.pyd 加载发生错误！%s" % (analy_info.analysis, e)
                                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                                 self.OnUnloadAnalysis(analy_info) #
                         else:

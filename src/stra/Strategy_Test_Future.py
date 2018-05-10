@@ -57,11 +57,11 @@ class Strategy_Test_Future(strategy_base.StrategyBase):
 
     def OnQuoteFuture(self, msg): # 行情触发
         try:
-            str_code = str(msg[0])
+            str_code = msg.data[0].decode()
             if str_code == self.symbol_f:
-                price_m_s1 = round(msg["AskPrice"][0], self.price_round_f) # 卖一价
-                price_m_b1 = round(msg["BidPrice"][0], self.price_round_f) # 买一价
-                quote_time = int(floor(msg["QuoteTime"] / 1000.0)) # 行情时间，HHMMSS
+                price_m_s1 = round(msg.data["AskPrice"][0], self.price_round_f) # 卖一价
+                price_m_b1 = round(msg.data["BidPrice"][0], self.price_round_f) # 买一价
+                quote_time = int(floor(msg.data["QuoteTime"] / 1000.0)) # 行情时间，HHMMSS
                 self.log_text = "%s：%s：%f, %f, %d" % (self.strategy, str_code, price_m_s1, price_m_b1, quote_time)
                 self.logger.SendMessage("D", 0, self.log_cate, self.log_text, "T")
         except Exception as e:

@@ -80,7 +80,7 @@ class Strate(common.Singleton, threading.Thread):
                                 self.log_text = "加载策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                             except Exception as e:
-                                self.log_text = "策略 %s.py 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
+                                self.log_text = "策略 %s.py 加载发生错误！%s" % (stra_info.strategy, e)
                                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                                 self.OnUnloadStrategy(stra_info) #
                 elif file_name[-4:] == ".pyd":
@@ -103,7 +103,7 @@ class Strate(common.Singleton, threading.Thread):
                                 self.log_text = "加载策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                             except Exception as e:
-                                self.log_text = "策略 %s.pyd 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
+                                self.log_text = "策略 %s.pyd 加载发生错误！%s" % (stra_info.strategy, e)
                                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                                 self.OnUnloadStrategy(stra_info) #
         else:
@@ -180,7 +180,7 @@ class Strate(common.Singleton, threading.Thread):
                                 self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                             except Exception as e:
-                                self.log_text = "策略 %s.py 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
+                                self.log_text = "策略 %s.py 加载发生错误！%s" % (stra_info.strategy, e)
                                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                                 self.OnUnloadStrategy(stra_info) #
                         else:
@@ -207,7 +207,7 @@ class Strate(common.Singleton, threading.Thread):
                                 self.log_text = "用户 加载 策略：%s, %s, %s, %d, %s" % (stra_info.strategy, stra_info.name, stra_info.introduction, stra_info.state, stra_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                             except Exception as e:
-                                self.log_text = "策略 %s.pyd 加载发生错误！%s %s" % (stra_info.strategy, Exception, e)
+                                self.log_text = "策略 %s.pyd 加载发生错误！%s" % (stra_info.strategy, e)
                                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
                                 self.OnUnloadStrategy(stra_info) #
                         else:

@@ -25,7 +25,7 @@ import numpy
 
 APP_TITLE_EN = "QuantX" # 英文名称
 APP_TITLE_CN = "量 化 交 易 客 户 端" # 中文名称
-APP_VERSION = "V0.1.0-Beta Build 20180508" # 版本信息
+APP_VERSION = "V0.1.0-Beta Build 20180510" # 版本信息
 APP_DEVELOPER = "Developed by the X-Lab." # 开发者声明
 APP_COMPANY = "X-Lab (Shanghai) Co., Ltd." # 公司声明
 APP_COPYRIGHT = "Copyright 2018-2018 X-Lab All Rights Reserved." # 版权声明
@@ -230,291 +230,293 @@ DEF_EVENT_TRADER_FUE_CTP_UPDATE_QUOTE = 1006
 DEF_EVENT_TRADER_STK_APE_UPDATE_QUOTE = 1007
 DEF_EVENT_SPREAD_FUE_CTP_UPDATE_QUOTE = 1008
 
+# 目前服务端还没有使用 Unicode，标注 gbk 的字段使用时需要 .decode()，标注 gbk 中文 的字段使用时需要 .decode("gbk")
+
 # 股票类：宏汇个股快照 # 字节：314
 stock_tdf_market_s_size = 314
 stock_tdf_market_s_type = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 证券代码
-                      ('Name', (numpy.str_, 24)), # 证券名称
-                      ('Type', (numpy.str_, 6)), # 证券类型
-                      ('Market', (numpy.str_, 6)), # 证券市场
-                      ('Status', (numpy.str_, 2)), # 证券状态
-                      ('Last', numpy.uint32), # 最新价 //10000
-                      ('Open', numpy.uint32), # 开盘价 //10000
-                      ('High', numpy.uint32), # 最高价 //10000
-                      ('Low', numpy.uint32), # 最低价 //10000
-                      ('Close', numpy.uint32), # 收盘价 //10000
-                      ('PreClose', numpy.uint32), # 昨收价 //10000
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.int64), # 成交额 //10000
-                      ('AskPrice', numpy.uint32, (10,)), # 申卖价 //10000
-                      ('AskVolume', numpy.int32, (10,)), # 申卖量
-                      ('BidPrice', numpy.uint32, (10,)), # 申买价 //10000
-                      ('BidVolume', numpy.int32, (10,)), # 申买量
-                      ('HighLimit', numpy.uint32), # 涨停价 //10000
-                      ('LowLimit', numpy.uint32), # 跌停价 //10000
-                      ('TotalBidVol', numpy.int64), # 总买量
-                      ('TotalAskVol', numpy.int64), # 总卖量
-                      ('WeightedAvgBidPrice', numpy.uint32), # 加权平均委买价格 //10000
-                      ('WeightedAvgAskPrice', numpy.uint32), # 加权平均委卖价格 //10000
-                      ('TradeCount', numpy.int32), # 成交笔数
-                      ('IOPV', numpy.int32), # IOPV净值估值 //10000
-                      ('YieldRate', numpy.int32), # 到期收益率 //10000
-                      ('PeRate_1', numpy.int32), # 市盈率 1 //10000
-                      ('PeRate_2', numpy.int32), # 市盈率 2 //10000
-                      ('Units', numpy.int32), # 计价单位
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S8"), # 证券代码 # gbk
+                      ("Name", "S24"), # 证券名称 # gbk 中文
+                      ("Type", "S6"), # 证券类型 # gbk
+                      ("Market", "S6"), # 证券市场 # gbk
+                      ("Status", "S2"), # 证券状态 # gbk
+                      ("Last", numpy.uint32), # 最新价 //10000
+                      ("Open", numpy.uint32), # 开盘价 //10000
+                      ("High", numpy.uint32), # 最高价 //10000
+                      ("Low", numpy.uint32), # 最低价 //10000
+                      ("Close", numpy.uint32), # 收盘价 //10000
+                      ("PreClose", numpy.uint32), # 昨收价 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("AskPrice", numpy.uint32, (10,)), # 申卖价 //10000
+                      ("AskVolume", numpy.int32, (10,)), # 申卖量
+                      ("BidPrice", numpy.uint32, (10,)), # 申买价 //10000
+                      ("BidVolume", numpy.int32, (10,)), # 申买量
+                      ("HighLimit", numpy.uint32), # 涨停价 //10000
+                      ("LowLimit", numpy.uint32), # 跌停价 //10000
+                      ("TotalBidVol", numpy.int64), # 总买量
+                      ("TotalAskVol", numpy.int64), # 总卖量
+                      ("WeightedAvgBidPrice", numpy.uint32), # 加权平均委买价格 //10000
+                      ("WeightedAvgAskPrice", numpy.uint32), # 加权平均委卖价格 //10000
+                      ("TradeCount", numpy.int32), # 成交笔数
+                      ("IOPV", numpy.int32), # IOPV净值估值 //10000
+                      ("YieldRate", numpy.int32), # 到期收益率 //10000
+                      ("PeRate_1", numpy.int32), # 市盈率 1 //10000
+                      ("PeRate_2", numpy.int32), # 市盈率 2 //10000
+                      ("Units", numpy.int32), # 计价单位
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 stock_tdf_market_s_type_src = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 证券代码
-                      ('Name', (numpy.str_, 24)), # 证券名称
-                      ('Type', (numpy.str_, 6)), # 证券类型
-                      ('Market', (numpy.str_, 6)), # 证券市场
-                      ('Status', (numpy.str_, 2)), # 证券状态
-                      ('Last', numpy.float64), # 最新价 //10000
-                      ('Open', numpy.float64), # 开盘价 //10000
-                      ('High', numpy.float64), # 最高价 //10000
-                      ('Low', numpy.float64), # 最低价 //10000
-                      ('Close', numpy.float64), # 收盘价 //10000
-                      ('PreClose', numpy.float64), # 昨收价 //10000
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.float64), # 成交额 //10000
-                      ('AskPrice', numpy.float64, (10,)), # 申卖价 //10000
-                      ('AskVolume', numpy.int32, (10,)), # 申卖量
-                      ('BidPrice', numpy.float64, (10,)), # 申买价 //10000
-                      ('BidVolume', numpy.int32, (10,)), # 申买量
-                      ('HighLimit', numpy.float64), # 涨停价 //10000
-                      ('LowLimit', numpy.float64), # 跌停价 //10000
-                      ('TotalBidVol', numpy.int64), # 总买量
-                      ('TotalAskVol', numpy.int64), # 总卖量
-                      ('WeightedAvgBidPrice', numpy.float64), # 加权平均委买价格 //10000
-                      ('WeightedAvgAskPrice', numpy.float64), # 加权平均委卖价格 //10000
-                      ('TradeCount', numpy.int32), # 成交笔数
-                      ('IOPV', numpy.float64), # IOPV净值估值 //10000
-                      ('YieldRate', numpy.float64), # 到期收益率 //10000
-                      ('PeRate_1', numpy.float64), # 市盈率 1 //10000
-                      ('PeRate_2', numpy.float64), # 市盈率 2 //10000
-                      ('Units', numpy.int32), # 计价单位
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S8"), # 证券代码 # gbk
+                      ("Name", "S24"), # 证券名称 # gbk 中文
+                      ("Type", "S6"), # 证券类型 # gbk
+                      ("Market", "S6"), # 证券市场 # gbk
+                      ("Status", "S2"), # 证券状态 # gbk
+                      ("Last", numpy.float64), # 最新价 //10000
+                      ("Open", numpy.float64), # 开盘价 //10000
+                      ("High", numpy.float64), # 最高价 //10000
+                      ("Low", numpy.float64), # 最低价 //10000
+                      ("Close", numpy.float64), # 收盘价 //10000
+                      ("PreClose", numpy.float64), # 昨收价 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.float64), # 成交额 //10000
+                      ("AskPrice", numpy.float64, (10,)), # 申卖价 //10000
+                      ("AskVolume", numpy.int32, (10,)), # 申卖量
+                      ("BidPrice", numpy.float64, (10,)), # 申买价 //10000
+                      ("BidVolume", numpy.int32, (10,)), # 申买量
+                      ("HighLimit", numpy.float64), # 涨停价 //10000
+                      ("LowLimit", numpy.float64), # 跌停价 //10000
+                      ("TotalBidVol", numpy.int64), # 总买量
+                      ("TotalAskVol", numpy.int64), # 总卖量
+                      ("WeightedAvgBidPrice", numpy.float64), # 加权平均委买价格 //10000
+                      ("WeightedAvgAskPrice", numpy.float64), # 加权平均委卖价格 //10000
+                      ("TradeCount", numpy.int32), # 成交笔数
+                      ("IOPV", numpy.float64), # IOPV净值估值 //10000
+                      ("YieldRate", numpy.float64), # 到期收益率 //10000
+                      ("PeRate_1", numpy.float64), # 市盈率 1 //10000
+                      ("PeRate_2", numpy.float64), # 市盈率 2 //10000
+                      ("Units", numpy.int32), # 计价单位
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 
 # 股票类：宏汇指数快照 # 字节：98
 stock_tdf_market_i_size = 98
 stock_tdf_market_i_type = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 指数代码
-                      ('Name', (numpy.str_, 24)), # 指数名称
-                      ('Type', (numpy.str_, 6)), # 指数类型
-                      ('Market', (numpy.str_, 6)), # 指数市场
-                      ('Status', (numpy.str_, 2)), # 指数状态
-                      ('Last', numpy.int32), # 最新指数 //10000
-                      ('Open', numpy.int32), # 开盘指数 //10000
-                      ('High', numpy.int32), # 最高指数 //10000
-                      ('Low', numpy.int32), # 最低指数 //10000
-                      ('Close', numpy.int32), # 收盘指数 //10000
-                      ('PreClose', numpy.int32), # 昨收指数 //10000
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.int64), # 成交额 //10000
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S8"), # 指数代码 # gbk
+                      ("Name", "S24"), # 指数名称 # gbk 中文
+                      ("Type", "S6"), # 指数类型 # gbk
+                      ("Market", "S6"), # 指数市场 # gbk
+                      ("Status", "S2"), # 指数状态 # gbk
+                      ("Last", numpy.int32), # 最新指数 //10000
+                      ("Open", numpy.int32), # 开盘指数 //10000
+                      ("High", numpy.int32), # 最高指数 //10000
+                      ("Low", numpy.int32), # 最低指数 //10000
+                      ("Close", numpy.int32), # 收盘指数 //10000
+                      ("PreClose", numpy.int32), # 昨收指数 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 stock_tdf_market_i_type_src = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 指数代码
-                      ('Name', (numpy.str_, 24)), # 指数名称
-                      ('Type', (numpy.str_, 6)), # 指数类型
-                      ('Market', (numpy.str_, 6)), # 指数市场
-                      ('Status', (numpy.str_, 2)), # 指数状态
-                      ('Last', numpy.float64), # 最新指数 //10000
-                      ('Open', numpy.float64), # 开盘指数 //10000
-                      ('High', numpy.float64), # 最高指数 //10000
-                      ('Low', numpy.float64), # 最低指数 //10000
-                      ('Close', numpy.float64), # 收盘指数 //10000
-                      ('PreClose', numpy.float64), # 昨收指数 //10000
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.float64), # 成交额 //10000
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S8"), # 指数代码 # gbk
+                      ("Name", "S24"), # 指数名称 # gbk 中文
+                      ("Type", "S6"), # 指数类型 # gbk
+                      ("Market", "S6"), # 指数市场 # gbk
+                      ("Status", "S2"), # 指数状态 # gbk
+                      ("Last", numpy.float64), # 最新指数 //10000
+                      ("Open", numpy.float64), # 开盘指数 //10000
+                      ("High", numpy.float64), # 最高指数 //10000
+                      ("Low", numpy.float64), # 最低指数 //10000
+                      ("Close", numpy.float64), # 收盘指数 //10000
+                      ("PreClose", numpy.float64), # 昨收指数 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.float64), # 成交额 //10000
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 
 # 股票类：宏汇逐笔成交 # 字节：76
 stock_tdf_market_t_size = 76
 stock_tdf_market_t_type = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 证券代码
-                      ('Name', (numpy.str_, 24)), # 证券名称
-                      ('Type', (numpy.str_, 6)), # 证券类型
-                      ('Market', (numpy.str_, 6)), # 证券市场
-                      ('Index', numpy.int32), # 成交编号
-                      ('Price', numpy.uint32), # 成交价 //10000
-                      ('Volume', numpy.int32), # 成交量
-                      ('Turnover', numpy.int64), # 成交额 //10000
-                      ('TransTime', numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S8"), # 证券代码 # gbk
+                      ("Name", "S24"), # 证券名称 # gbk 中文
+                      ("Type", "S6"), # 证券类型 # gbk
+                      ("Market", "S6"), # 证券市场 # gbk
+                      ("Index", numpy.int32), # 成交编号
+                      ("Price", numpy.uint32), # 成交价 //10000
+                      ("Volume", numpy.int32), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("TransTime", numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 stock_tdf_market_t_type_src = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 证券代码
-                      ('Name', (numpy.str_, 24)), # 证券名称
-                      ('Type', (numpy.str_, 6)), # 证券类型
-                      ('Market', (numpy.str_, 6)), # 证券市场
-                      ('Index', numpy.int32), # 成交编号
-                      ('Price', numpy.float64), # 成交价 //10000
-                      ('Volume', numpy.int32), # 成交量
-                      ('Turnover', numpy.float64), # 成交额 //10000
-                      ('TransTime', numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S8"), # 证券代码 # gbk
+                      ("Name", "S24"), # 证券名称 # gbk 中文
+                      ("Type", "S6"), # 证券类型 # gbk
+                      ("Market", "S6"), # 证券市场 # gbk
+                      ("Index", numpy.int32), # 成交编号
+                      ("Price", numpy.float64), # 成交价 //10000
+                      ("Volume", numpy.int32), # 成交量
+                      ("Turnover", numpy.float64), # 成交额 //10000
+                      ("TransTime", numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 
 # 股票类：广播个股快照 # 字节：327
 stock_ltb_market_s_size = 327
 stock_ltb_market_s_type = numpy.dtype([
-                      ('Code', (numpy.str_, 9)), # 证券代码
-                      ('Name', (numpy.str_, 24)), # 证券名称 //无
-                      ('Type', (numpy.str_, 6)), # 证券类型 //配置指定，否则就为空
-                      ('Market', (numpy.str_, 6)), # 证券市场 //SSE，SZE
-                      ('Status', (numpy.str_, 2)), # 证券状态 //'N'
-                      ('Last', numpy.uint32), # 最新价 //10000
-                      ('Open', numpy.uint32), # 开盘价 //10000
-                      ('High', numpy.uint32), # 最高价 //10000
-                      ('Low', numpy.uint32), # 最低价 //10000
-                      ('Close', numpy.uint32), # 收盘价 //10000
-                      ('PreClose', numpy.uint32), # 昨收价 //10000 //无
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.int64), # 成交额 //10000
-                      ('AskPrice', numpy.uint32, (10,)), # 申卖价 //10000
-                      ('AskVolume', numpy.int32, (10,)), # 申卖量
-                      ('BidPrice', numpy.uint32, (10,)), # 申买价 //10000
-                      ('BidVolume', numpy.int32, (10,)), # 申买量
-                      ('HighLimit', numpy.uint32), # 涨停价 //10000 //无
-                      ('LowLimit', numpy.uint32), # 跌停价 //10000 //无
-                      ('OpenInterest', numpy.int64), # 持仓量
-                      ('IOPV', numpy.int32), # 基金净值 //10000
-                      ('TradeCount', numpy.int32), # 成交笔数
-                      ('YieldToMaturity', numpy.uint32), # 到期收益率 //10000
-                      ('AuctionPrice', numpy.uint32), # 动态参考价格 //10000
-                      ('BidPriceLevel', numpy.int32), # 买价深度
-                      ('OfferPriceLevel', numpy.int32), # 卖价深度
-                      ('TotalBidVolume', numpy.int32), # 申买总量
-                      ('TotalOfferVolume', numpy.int32), # 申卖总量
-                      ('WeightedAvgBidPrice', numpy.uint32), # 申买加权均价 //10000
-                      ('WeightedAvgOfferPrice', numpy.uint32), # 申卖加权均价 //10000
-                      ('AltWeightedAvgBidPrice', numpy.uint32), # 债券申买加权均价 //10000
-                      ('AltWeightedAvgOfferPrice', numpy.uint32), # 债券申卖加权均价 //10000
-                      ('TradingPhase', (numpy.str_, 2)), # 交易阶段
-                      ('OpenRestriction', (numpy.str_, 2)), # 开仓限制
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S9"), # 证券代码 # gbk
+                      ("Name", "S24"), # 证券名称 # gbk 中文 //无
+                      ("Type", "S6"), # 证券类型 # gbk //配置指定，否则就为空
+                      ("Market", "S6"), # 证券市场 # gbk //SSE，SZE
+                      ("Status", "S2"), # 证券状态 # gbk //"N"
+                      ("Last", numpy.uint32), # 最新价 //10000
+                      ("Open", numpy.uint32), # 开盘价 //10000
+                      ("High", numpy.uint32), # 最高价 //10000
+                      ("Low", numpy.uint32), # 最低价 //10000
+                      ("Close", numpy.uint32), # 收盘价 //10000
+                      ("PreClose", numpy.uint32), # 昨收价 //10000 //无
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("AskPrice", numpy.uint32, (10,)), # 申卖价 //10000
+                      ("AskVolume", numpy.int32, (10,)), # 申卖量
+                      ("BidPrice", numpy.uint32, (10,)), # 申买价 //10000
+                      ("BidVolume", numpy.int32, (10,)), # 申买量
+                      ("HighLimit", numpy.uint32), # 涨停价 //10000 //无
+                      ("LowLimit", numpy.uint32), # 跌停价 //10000 //无
+                      ("OpenInterest", numpy.int64), # 持仓量
+                      ("IOPV", numpy.int32), # 基金净值 //10000
+                      ("TradeCount", numpy.int32), # 成交笔数
+                      ("YieldToMaturity", numpy.uint32), # 到期收益率 //10000
+                      ("AuctionPrice", numpy.uint32), # 动态参考价格 //10000
+                      ("BidPriceLevel", numpy.int32), # 买价深度
+                      ("OfferPriceLevel", numpy.int32), # 卖价深度
+                      ("TotalBidVolume", numpy.int32), # 申买总量
+                      ("TotalOfferVolume", numpy.int32), # 申卖总量
+                      ("WeightedAvgBidPrice", numpy.uint32), # 申买加权均价 //10000
+                      ("WeightedAvgOfferPrice", numpy.uint32), # 申卖加权均价 //10000
+                      ("AltWeightedAvgBidPrice", numpy.uint32), # 债券申买加权均价 //10000
+                      ("AltWeightedAvgOfferPrice", numpy.uint32), # 债券申卖加权均价 //10000
+                      ("TradingPhase", (numpy.str_, 2)), # 交易阶段
+                      ("OpenRestriction", (numpy.str_, 2)), # 开仓限制
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 stock_ltb_market_s_type_src = numpy.dtype([
-                      ('Code', (numpy.str_, 9)), # 证券代码
-                      ('Name', (numpy.str_, 24)), # 证券名称 //无
-                      ('Type', (numpy.str_, 6)), # 证券类型 //配置指定，否则就为空
-                      ('Market', (numpy.str_, 6)), # 证券市场 //SSE，SZE
-                      ('Status', (numpy.str_, 2)), # 证券状态 //'N'
-                      ('Last', numpy.float64), # 最新价 //10000
-                      ('Open', numpy.float64), # 开盘价 //10000
-                      ('High', numpy.float64), # 最高价 //10000
-                      ('Low', numpy.float64), # 最低价 //10000
-                      ('Close', numpy.float64), # 收盘价 //10000
-                      ('PreClose', numpy.float64), # 昨收价 //10000 //无
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.float64), # 成交额 //10000
-                      ('AskPrice', numpy.float64, (10,)), # 申卖价 //10000
-                      ('AskVolume', numpy.int32, (10,)), # 申卖量
-                      ('BidPrice', numpy.float64, (10,)), # 申买价 //10000
-                      ('BidVolume', numpy.int32, (10,)), # 申买量
-                      ('HighLimit', numpy.float64), # 涨停价 //10000 //无
-                      ('LowLimit', numpy.float64), # 跌停价 //10000 //无
-                      ('OpenInterest', numpy.int64), # 持仓量
-                      ('IOPV', numpy.float64), # 基金净值 //10000
-                      ('TradeCount', numpy.int32), # 成交笔数
-                      ('YieldToMaturity', numpy.float64), # 到期收益率 //10000
-                      ('AuctionPrice', numpy.float64), # 动态参考价格 //10000
-                      ('BidPriceLevel', numpy.int32), # 买价深度
-                      ('OfferPriceLevel', numpy.int32), # 卖价深度
-                      ('TotalBidVolume', numpy.int32), # 申买总量
-                      ('TotalOfferVolume', numpy.int32), # 申卖总量
-                      ('WeightedAvgBidPrice', numpy.float64), # 申买加权均价 //10000
-                      ('WeightedAvgOfferPrice', numpy.float64), # 申卖加权均价 //10000
-                      ('AltWeightedAvgBidPrice', numpy.float64), # 债券申买加权均价 //10000
-                      ('AltWeightedAvgOfferPrice', numpy.float64), # 债券申卖加权均价 //10000
-                      ('TradingPhase', (numpy.str_, 2)), # 交易阶段
-                      ('OpenRestriction', (numpy.str_, 2)), # 开仓限制
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S9"), # 证券代码 # gbk
+                      ("Name", "S24"), # 证券名称 # gbk 中文 //无
+                      ("Type", "S6"), # 证券类型 # gbk //配置指定，否则就为空
+                      ("Market", "S6"), # 证券市场 # gbk //SSE，SZE
+                      ("Status", "S2"), # 证券状态 # gbk //"N"
+                      ("Last", numpy.float64), # 最新价 //10000
+                      ("Open", numpy.float64), # 开盘价 //10000
+                      ("High", numpy.float64), # 最高价 //10000
+                      ("Low", numpy.float64), # 最低价 //10000
+                      ("Close", numpy.float64), # 收盘价 //10000
+                      ("PreClose", numpy.float64), # 昨收价 //10000 //无
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.float64), # 成交额 //10000
+                      ("AskPrice", numpy.float64, (10,)), # 申卖价 //10000
+                      ("AskVolume", numpy.int32, (10,)), # 申卖量
+                      ("BidPrice", numpy.float64, (10,)), # 申买价 //10000
+                      ("BidVolume", numpy.int32, (10,)), # 申买量
+                      ("HighLimit", numpy.float64), # 涨停价 //10000 //无
+                      ("LowLimit", numpy.float64), # 跌停价 //10000 //无
+                      ("OpenInterest", numpy.int64), # 持仓量
+                      ("IOPV", numpy.float64), # 基金净值 //10000
+                      ("TradeCount", numpy.int32), # 成交笔数
+                      ("YieldToMaturity", numpy.float64), # 到期收益率 //10000
+                      ("AuctionPrice", numpy.float64), # 动态参考价格 //10000
+                      ("BidPriceLevel", numpy.int32), # 买价深度
+                      ("OfferPriceLevel", numpy.int32), # 卖价深度
+                      ("TotalBidVolume", numpy.int32), # 申买总量
+                      ("TotalOfferVolume", numpy.int32), # 申卖总量
+                      ("WeightedAvgBidPrice", numpy.float64), # 申买加权均价 //10000
+                      ("WeightedAvgOfferPrice", numpy.float64), # 申卖加权均价 //10000
+                      ("AltWeightedAvgBidPrice", numpy.float64), # 债券申买加权均价 //10000
+                      ("AltWeightedAvgOfferPrice", numpy.float64), # 债券申卖加权均价 //10000
+                      ("TradingPhase", (numpy.str_, 2)), # 交易阶段
+                      ("OpenRestriction", (numpy.str_, 2)), # 开仓限制
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 
 # 股票类：广播指数快照 # 字节：99
 stock_ltb_market_i_size = 99
 stock_ltb_market_i_type = numpy.dtype([
-                      ('Code', (numpy.str_, 9)), # 指数代码
-                      ('Name', (numpy.str_, 24)), # 指数名称 //无
-                      ('Type', (numpy.str_, 6)), # 指数类型 //配置指定，否则就为空
-                      ('Market', (numpy.str_, 6)), # 指数市场 //SSE，SZE
-                      ('Status', (numpy.str_, 2)), # 指数状态 //'N'
-                      ('Last', numpy.int32), # 最新指数 //10000
-                      ('Open', numpy.int32), # 开盘指数 //10000
-                      ('High', numpy.int32), # 最高指数 //10000
-                      ('Low', numpy.int32), # 最低指数 //10000
-                      ('Close', numpy.int32), # 收盘指数 //10000
-                      ('PreClose', numpy.int32), # 昨收指数 //10000
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.int64), # 成交额 //10000
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S9"), # 指数代码 # gbk
+                      ("Name", "S24"), # 指数名称 # gbk 中文 //无
+                      ("Type", "S6"), # 指数类型 # gbk //配置指定，否则就为空
+                      ("Market", "S6"), # 指数市场 # gbk //SSE，SZE
+                      ("Status", "S2"), # 指数状态 # gbk //"N"
+                      ("Last", numpy.int32), # 最新指数 //10000
+                      ("Open", numpy.int32), # 开盘指数 //10000
+                      ("High", numpy.int32), # 最高指数 //10000
+                      ("Low", numpy.int32), # 最低指数 //10000
+                      ("Close", numpy.int32), # 收盘指数 //10000
+                      ("PreClose", numpy.int32), # 昨收指数 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 stock_ltb_market_i_type_src = numpy.dtype([
-                      ('Code', (numpy.str_, 9)), # 指数代码
-                      ('Name', (numpy.str_, 24)), # 指数名称 //无
-                      ('Type', (numpy.str_, 6)), # 指数类型 //配置指定，否则就为空
-                      ('Market', (numpy.str_, 6)), # 指数市场 //SSE，SZE
-                      ('Status', (numpy.str_, 2)), # 指数状态 //'N'
-                      ('Last', numpy.float64), # 最新指数 //10000
-                      ('Open', numpy.float64), # 开盘指数 //10000
-                      ('High', numpy.float64), # 最高指数 //10000
-                      ('Low', numpy.float64), # 最低指数 //10000
-                      ('Close', numpy.float64), # 收盘指数 //10000
-                      ('PreClose', numpy.float64), # 昨收指数 //10000
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.int64), # 成交额 //10000
-                      ('QuoteTime', numpy.float64), # 行情时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.float64), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S9"), # 指数代码 # gbk
+                      ("Name", "S24"), # 指数名称 # gbk 中文 //无
+                      ("Type", "S6"), # 指数类型 # gbk //配置指定，否则就为空
+                      ("Market", "S6"), # 指数市场 # gbk //SSE，SZE
+                      ("Status", "S2"), # 指数状态 # gbk //"N"
+                      ("Last", numpy.float64), # 最新指数 //10000
+                      ("Open", numpy.float64), # 开盘指数 //10000
+                      ("High", numpy.float64), # 最高指数 //10000
+                      ("Low", numpy.float64), # 最低指数 //10000
+                      ("Close", numpy.float64), # 收盘指数 //10000
+                      ("PreClose", numpy.float64), # 昨收指数 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("QuoteTime", numpy.float64), # 行情时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.float64), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 
 # 股票类：广播逐笔成交 # 字节：
 stock_ltb_market_t_size = 93
 stock_ltb_market_t_type = numpy.dtype([
-                      ('Code', (numpy.str_, 9)), # 证券代码
-                      ('Name', (numpy.str_, 24)), # 证券名称
-                      ('Type', (numpy.str_, 6)), # 证券类型
-                      ('Market', (numpy.str_, 6)), # 证券市场
-                      ('Index', numpy.int32), # 成交编号
-                      ('Price', numpy.uint32), # 成交价 //10000
-                      ('Volume', numpy.int32), # 成交量
-                      ('Turnover', numpy.int64), # 成交额 //10000
-                      ('TradeGroupID', numpy.int32), # 成交组
-                      ('BuyIndex', numpy.int32), # 买方委托序号
-                      ('SellIndex', numpy.int32), # 卖方委托序号
-                      ('OrderKind', (numpy.str_, 2)), # 报单类型
-                      ('FunctionCode', (numpy.str_, 2)), # 功能码
-                      ('TransTime', numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S9"), # 证券代码 # gbk
+                      ("Name", "S24"), # 证券名称 # gbk 中文
+                      ("Type", "S6"), # 证券类型 # gbk
+                      ("Market", "S6"), # 证券市场 # gbk
+                      ("Index", numpy.int32), # 成交编号
+                      ("Price", numpy.uint32), # 成交价 //10000
+                      ("Volume", numpy.int32), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("TradeGroupID", numpy.int32), # 成交组
+                      ("BuyIndex", numpy.int32), # 买方委托序号
+                      ("SellIndex", numpy.int32), # 卖方委托序号
+                      ("OrderKind", (numpy.str_, 2)), # 报单类型
+                      ("FunctionCode", (numpy.str_, 2)), # 功能码
+                      ("TransTime", numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 stock_ltb_market_t_type_src = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 证券代码
-                      ('Name', (numpy.str_, 24)), # 证券名称
-                      ('Type', (numpy.str_, 6)), # 证券类型
-                      ('Market', (numpy.str_, 6)), # 证券市场
-                      ('Index', numpy.int32), # 成交编号
-                      ('Price', numpy.float64), # 成交价 //10000
-                      ('Volume', numpy.int32), # 成交量
-                      ('Turnover', numpy.float64), # 成交额 //10000
-                      ('TradeGroupID', numpy.int32), # 成交组
-                      ('BuyIndex', numpy.int32), # 买方委托序号
-                      ('SellIndex', numpy.int32), # 卖方委托序号
-                      ('OrderKind', (numpy.str_, 2)), # 报单类型
-                      ('FunctionCode', (numpy.str_, 2)), # 功能码
-                      ('TransTime', numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S9"), # 证券代码 # gbk
+                      ("Name", "S24"), # 证券名称 # gbk 中文
+                      ("Type", "S6"), # 证券类型 # gbk
+                      ("Market", "S6"), # 证券市场 # gbk
+                      ("Index", numpy.int32), # 成交编号
+                      ("Price", numpy.float64), # 成交价 //10000
+                      ("Volume", numpy.int32), # 成交量
+                      ("Turnover", numpy.float64), # 成交额 //10000
+                      ("TradeGroupID", numpy.int32), # 成交组
+                      ("BuyIndex", numpy.int32), # 买方委托序号
+                      ("SellIndex", numpy.int32), # 卖方委托序号
+                      ("OrderKind", (numpy.str_, 2)), # 报单类型
+                      ("FunctionCode", (numpy.str_, 2)), # 功能码
+                      ("TransTime", numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 
 # 股票类：主推个股快照 # 字节：314
 stock_ltp_market_s_size = stock_tdf_market_s_size # 相同
@@ -534,72 +536,72 @@ stock_ltp_market_t_type_src = stock_tdf_market_t_type_src # 相同
 # 期货类：内盘市场快照 # 字节：208
 future_np_market_size = 208
 future_np_market_type = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 合约代码
-                      ('Name', (numpy.str_, 2)), # 合约名称 //无
-                      ('Type', (numpy.str_, 2)), # 合约类型
-                      ('Market', (numpy.str_, 6)), # 合约市场
-                      ('Status', (numpy.str_, 2)), # 合约状态
-                      ('Last', numpy.uint32), # 最新价 //10000
-                      ('Open', numpy.uint32), # 开盘价 //10000
-                      ('High', numpy.uint32), # 最高价 //10000
-                      ('Low', numpy.uint32), # 最低价 //10000
-                      ('Close', numpy.uint32), # 收盘价 //10000
-                      ('PreClose', numpy.uint32), # 昨收价 //10000
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.int64), # 成交额 //10000
-                      ('AskPrice', numpy.uint32, (5,)), # 申卖价 //10000
-                      ('AskVolume', numpy.int32, (5,)), # 申卖量
-                      ('BidPrice', numpy.uint32, (5,)), # 申买价 //10000
-                      ('BidVolume', numpy.int32, (5,)), # 申买量
-                      ('HighLimit', numpy.uint32), # 涨停价 //10000
-                      ('LowLimit', numpy.uint32), # 跌停价 //10000
-                      ('Settle', numpy.uint32), # 今日结算价 //10000
-                      ('PreSettle', numpy.uint32), # 昨日结算价 //10000
-                      ('Position', numpy.int32), # 今日持仓量
-                      ('PrePosition', numpy.int32), # 昨日持仓量
-                      ('Average', numpy.uint32), # 均价 //10000
-                      ('UpDown', numpy.int32), # 涨跌 //10000 //无
-                      ('UpDownRate', numpy.int32), # 涨跌幅度 //10000 //无
-                      ('Swing', numpy.int32), # 振幅 //10000 //无
-                      ('Delta', numpy.int32), # 今日虚实度 //10000
-                      ('PreDelta', numpy.int32), # 昨日虚实度 //10000
-                      ('QuoteDate', numpy.int32), # 行情日期 # YYYYMMDD
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：0.5秒
-                      ('LocalDate', numpy.int32), # 本地日期 # YYYYMMDD
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S8"), # 合约代码 # gbk
+                      ("Name", "S2"), # 合约名称 # gbk 中文 //无
+                      ("Type", "S2"), # 合约类型 # gbk
+                      ("Market", "S6"), # 合约市场 # gbk
+                      ("Status", "S2"), # 合约状态 # gbk
+                      ("Last", numpy.uint32), # 最新价 //10000
+                      ("Open", numpy.uint32), # 开盘价 //10000
+                      ("High", numpy.uint32), # 最高价 //10000
+                      ("Low", numpy.uint32), # 最低价 //10000
+                      ("Close", numpy.uint32), # 收盘价 //10000
+                      ("PreClose", numpy.uint32), # 昨收价 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("AskPrice", numpy.uint32, (5,)), # 申卖价 //10000
+                      ("AskVolume", numpy.int32, (5,)), # 申卖量
+                      ("BidPrice", numpy.uint32, (5,)), # 申买价 //10000
+                      ("BidVolume", numpy.int32, (5,)), # 申买量
+                      ("HighLimit", numpy.uint32), # 涨停价 //10000
+                      ("LowLimit", numpy.uint32), # 跌停价 //10000
+                      ("Settle", numpy.uint32), # 今日结算价 //10000
+                      ("PreSettle", numpy.uint32), # 昨日结算价 //10000
+                      ("Position", numpy.int32), # 今日持仓量
+                      ("PrePosition", numpy.int32), # 昨日持仓量
+                      ("Average", numpy.uint32), # 均价 //10000
+                      ("UpDown", numpy.int32), # 涨跌 //10000 //无
+                      ("UpDownRate", numpy.int32), # 涨跌幅度 //10000 //无
+                      ("Swing", numpy.int32), # 振幅 //10000 //无
+                      ("Delta", numpy.int32), # 今日虚实度 //10000
+                      ("PreDelta", numpy.int32), # 昨日虚实度 //10000
+                      ("QuoteDate", numpy.int32), # 行情日期 # YYYYMMDD
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：0.5秒
+                      ("LocalDate", numpy.int32), # 本地日期 # YYYYMMDD
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 future_np_market_type_src = numpy.dtype([
-                      ('Code', (numpy.str_, 8)), # 合约代码
-                      ('Name', (numpy.str_, 2)), # 合约名称 //无
-                      ('Type', (numpy.str_, 2)), # 合约类型
-                      ('Market', (numpy.str_, 6)), # 合约市场
-                      ('Status', (numpy.str_, 2)), # 合约状态
-                      ('Last', numpy.float64), # 最新价 //10000
-                      ('Open', numpy.float64), # 开盘价 //10000
-                      ('High', numpy.float64), # 最高价 //10000
-                      ('Low', numpy.float64), # 最低价 //10000
-                      ('Close', numpy.float64), # 收盘价 //10000
-                      ('PreClose', numpy.float64), # 昨收价 //10000
-                      ('Volume', numpy.int64), # 成交量
-                      ('Turnover', numpy.float64), # 成交额 //10000
-                      ('AskPrice', numpy.float64, (5,)), # 申卖价 //10000
-                      ('AskVolume', numpy.int32, (5,)), # 申卖量
-                      ('BidPrice', numpy.float64, (5,)), # 申买价 //10000
-                      ('BidVolume', numpy.int32, (5,)), # 申买量
-                      ('HighLimit', numpy.float64), # 涨停价 //10000
-                      ('LowLimit', numpy.float64), # 跌停价 //10000
-                      ('Settle', numpy.float64), # 今日结算价 //10000
-                      ('PreSettle', numpy.float64), # 昨日结算价 //10000
-                      ('Position', numpy.int32), # 今日持仓量
-                      ('PrePosition', numpy.int32), # 昨日持仓量
-                      ('Average', numpy.float64), # 均价 //10000
-                      ('UpDown', numpy.float64), # 涨跌 //10000 //无
-                      ('UpDownRate', numpy.float64), # 涨跌幅度 //10000 //无
-                      ('Swing', numpy.float64), # 振幅 //10000 //无
-                      ('Delta', numpy.float64), # 今日虚实度 //10000
-                      ('PreDelta', numpy.float64), # 昨日虚实度 //10000
-                      ('QuoteDate', numpy.int32), # 行情日期 # YYYYMMDD
-                      ('QuoteTime', numpy.int32), # 行情时间 # HHMMSSmmm 精度：0.5秒
-                      ('LocalDate', numpy.int32), # 本地日期 # YYYYMMDD
-                      ('LocalTime', numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
-                      ('LocalIndex', numpy.uint32)]) # 本地序号
+                      ("Code", "S8"), # 合约代码 # gbk
+                      ("Name", "S2"), # 合约名称 # gbk 中文 //无
+                      ("Type", "S2"), # 合约类型 # gbk
+                      ("Market", "S6"), # 合约市场 # gbk
+                      ("Status", "S2"), # 合约状态 # gbk
+                      ("Last", numpy.float64), # 最新价 //10000
+                      ("Open", numpy.float64), # 开盘价 //10000
+                      ("High", numpy.float64), # 最高价 //10000
+                      ("Low", numpy.float64), # 最低价 //10000
+                      ("Close", numpy.float64), # 收盘价 //10000
+                      ("PreClose", numpy.float64), # 昨收价 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.float64), # 成交额 //10000
+                      ("AskPrice", numpy.float64, (5,)), # 申卖价 //10000
+                      ("AskVolume", numpy.int32, (5,)), # 申卖量
+                      ("BidPrice", numpy.float64, (5,)), # 申买价 //10000
+                      ("BidVolume", numpy.int32, (5,)), # 申买量
+                      ("HighLimit", numpy.float64), # 涨停价 //10000
+                      ("LowLimit", numpy.float64), # 跌停价 //10000
+                      ("Settle", numpy.float64), # 今日结算价 //10000
+                      ("PreSettle", numpy.float64), # 昨日结算价 //10000
+                      ("Position", numpy.int32), # 今日持仓量
+                      ("PrePosition", numpy.int32), # 昨日持仓量
+                      ("Average", numpy.float64), # 均价 //10000
+                      ("UpDown", numpy.float64), # 涨跌 //10000 //无
+                      ("UpDownRate", numpy.float64), # 涨跌幅度 //10000 //无
+                      ("Swing", numpy.float64), # 振幅 //10000 //无
+                      ("Delta", numpy.float64), # 今日虚实度 //10000
+                      ("PreDelta", numpy.float64), # 昨日虚实度 //10000
+                      ("QuoteDate", numpy.int32), # 行情日期 # YYYYMMDD
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：0.5秒
+                      ("LocalDate", numpy.int32), # 本地日期 # YYYYMMDD
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号

@@ -27,8 +27,8 @@ import json
 import socket
 import logging
 import sqlite3
-import datetime
 import threading
+from datetime import datetime
 
 from PyQt5.QtCore import QEvent, QTimer
 from PyQt5.QtWidgets import QApplication
@@ -59,7 +59,7 @@ logger.addHandler(console)
 
 class LogInfo(object):
     def __init__(self, log_kind, log_class, log_cate, log_info, major_id = ""):
-        self.time_stamp = datetime.datetime.now()
+        self.time_stamp = datetime.now()
         self.log_kind = log_kind
         self.log_class = log_class
         self.log_cate = log_cate
@@ -239,7 +239,7 @@ class Logger(common.Singleton):
                     self.SendDataAll(log_data)
 
     def TrySaveSendData(self): # 定时保存
-        now_time = int(datetime.datetime.now().strftime("%H%M"))
+        now_time = int(datetime.now().strftime("%H%M"))
         if now_time == self.db_init_time and self.db_init_flag == False:
             self.db_init_flag = True
             self.InitDataBase()
@@ -391,14 +391,14 @@ class Logger(common.Singleton):
 def TestFunc_01(logger, locker, flag):
     for i in range(10000):
         #locker.acquire()
-        log_text = "%d 金属类行情 距上次数据更新时间已超过 %s 秒！" % (flag, datetime.datetime.now().strftime("%H:%M:%S.%f"))
+        log_text = "%d 金属类行情 距上次数据更新时间已超过 %s 秒！" % (flag, datetime.now().strftime("%H:%M:%S.%f"))
         logger.SendMessage("D", 0, "test", log_text, "")
         #locker.release()
 
 def TestFunc_02(locker, flag):
     for i in range(10000):
         #locker.acquire()
-        print("%d 金属类行情 距上次数据更新时间已超过 %s 秒！" % (flag, datetime.datetime.now().strftime("%H:%M:%S.%f")))
+        print("%d 金属类行情 距上次数据更新时间已超过 %s 秒！" % (flag, datetime.now().strftime("%H:%M:%S.%f")))
         #locker.release()
 
 if __name__ == "__main__":
@@ -407,14 +407,14 @@ if __name__ == "__main__":
     # 测试显示，在开启系统时间优化为 0.5 毫秒以后，Logger 输出时间精度在 1 到 2 毫秒，一毫秒平均输出日志 15 条，即每秒约 1.5 万条
     #logger = Logger()
     #for i in range(10000):
-    #    log_text = "金属类行情 距上次数据更新时间已超过 %s 秒！" % datetime.datetime.now().strftime("%H:%M:%S.%f")
+    #    log_text = "金属类行情 距上次数据更新时间已超过 %s 秒！" % datetime.now().strftime("%H:%M:%S.%f")
     #    logger.SendMessage("D", 0, "test", log_text, "")
 
     # 测试显示，平均每毫秒可打印 35 条左右，从打印内容所含时间看似乎可以 1 毫秒打印 90 到 110 条
-    #time1 = datetime.datetime.now()
+    #time1 = datetime.now()
     #for i in range(10000):
-    #    print("金属类行情 距上次数据更新时间已超过 %s 秒！" % datetime.datetime.now().strftime("%H:%M:%S.%f"))
-    #time2 = datetime.datetime.now()
+    #    print("金属类行情 距上次数据更新时间已超过 %s 秒！" % datetime.now().strftime("%H:%M:%S.%f"))
+    #time2 = datetime.now()
     #print(time2 - time1)
 
     # 测试显示，两个线程下，无锁时一毫秒平均输出日志 12.545 条，有锁时一毫秒平均输出日志 14.326 条，五线程无锁一毫秒平均输出日志 11.797 条，有锁时一毫秒平均输出日志 15.035 条

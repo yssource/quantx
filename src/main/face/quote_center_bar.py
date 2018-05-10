@@ -21,7 +21,7 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
-import datetime
+from datetime import datetime, timedelta
 
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QTimer
@@ -61,6 +61,7 @@ class QuoteBarItem(object):
     def HandleConnectEvent(self):
         if self.check_box.isChecked() == True:
             if self.flag in self.trader.quoter_dict.keys():
+                pass
                 self.trader.quoter_dict[self.flag].Start()
             else:
                 self.log_text = "行情服务 %s %s 尚未载入！" % (self.flag, self.show)
@@ -117,15 +118,15 @@ class QuoteCenterBar(QToolBar):
         self.timer_check_quote_data.start(3000)
 
     def OnCheckQuoteData(self):
-        timer = datetime.datetime.now()
-        now_week = datetime.datetime.now().isoweekday()
-        now_time = int(datetime.datetime.now().strftime("%H%M"))
+        timer = datetime.now()
+        now_week = datetime.now().isoweekday()
+        now_time = int(datetime.now().strftime("%H%M"))
         
         if self.config.cfg_main.quote_stock_ltb_need == 1:
             if self.bar_item_stock_ltb.check_box.isChecked() == True:
                 if not (now_week == 7 or now_week == 6):
                     if (now_time >= 930 and now_time < 1130) or (now_time >= 1300 and now_time < 1500): # 只盘中时间检测
-                        if (timer - self.center.update_timestamp_stock_ltb) > datetime.timedelta(seconds = 5):
+                        if (timer - self.center.update_timestamp_stock_ltb) > timedelta(seconds = 5):
                             time_span = timer - self.center.update_timestamp_stock_ltb
                             self.log_text = "股票类LTB行情 距上次数据更新时间已超过 %f 秒！" % time_span.total_seconds()
                             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "M")
@@ -134,7 +135,7 @@ class QuoteCenterBar(QToolBar):
             if self.bar_item_stock_ltp.check_box.isChecked() == True:
                 if not (now_week == 7 or now_week == 6):
                     if (now_time >= 930 and now_time < 1130) or (now_time >= 1300 and now_time < 1500): # 只盘中时间检测
-                        if (timer - self.center.update_timestamp_stock_ltp) > datetime.timedelta(seconds = 5):
+                        if (timer - self.center.update_timestamp_stock_ltp) > timedelta(seconds = 5):
                             time_span = timer - self.center.update_timestamp_stock_ltp
                             self.log_text = "股票类LTP行情 距上次数据更新时间已超过 %f 秒！" % time_span.total_seconds()
                             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "M")
@@ -143,7 +144,7 @@ class QuoteCenterBar(QToolBar):
             if self.bar_item_stock_tdf.check_box.isChecked() == True:
                 if not (now_week == 7 or now_week == 6):
                     if (now_time >= 930 and now_time < 1130) or (now_time >= 1300 and now_time < 1500): # 只盘中时间检测
-                        if (timer - self.center.update_timestamp_stock_tdf) > datetime.timedelta(seconds = 5):
+                        if (timer - self.center.update_timestamp_stock_tdf) > timedelta(seconds = 5):
                             time_span = timer - self.center.update_timestamp_stock_tdf
                             self.log_text = "股票类TDF行情 距上次数据更新时间已超过 %f 秒！" % time_span.total_seconds()
                             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "M")
@@ -152,7 +153,7 @@ class QuoteCenterBar(QToolBar):
             if self.bar_item_future_np.check_box.isChecked() == True:
                 if not (now_week == 7 or (now_week == 6 and now_time >= 230)):
                     if (now_time >= 900 and now_time < 1130) or (now_time >= 1300 and now_time < 1515) or (now_time >= 2100 and now_time <= 2359) or (now_time >= 0 and now_time < 230): # 只盘中时间检测
-                        if (timer - self.center.update_timestamp_future_np) > datetime.timedelta(seconds = 5):
+                        if (timer - self.center.update_timestamp_future_np) > timedelta(seconds = 5):
                             time_span = timer - self.center.update_timestamp_future_np
                             self.log_text = "期货类内盘行情 距上次数据更新时间已超过 %f 秒！" % time_span.total_seconds()
                             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "M")
