@@ -26,7 +26,7 @@ import define
 import common
 import logger
 
-import straQuoteX
+import quotex
 import straTradeX_Stk_Sy
 import straTradeX_Fue_As
 
@@ -51,7 +51,7 @@ class Trader(common.Singleton):
             quote_subs = {define.stock_ltb_market_s_func : (define.stock_ltb_market_s_func, define.stock_ltb_market_s_type, ""), 
                           define.stock_ltb_market_i_func : (define.stock_ltb_market_i_func, define.stock_ltb_market_i_type, ""),
                           define.stock_ltb_market_t_func : (define.stock_ltb_market_t_func, define.stock_ltb_market_t_type, "")}
-            quoter = straQuoteX.StraQuoteX(self, "股票类LTB行情", self.config.cfg_main.quote_stock_ltb_addr, self.config.cfg_main.quote_stock_ltb_port, quote_subs) # 股票类LTB快照
+            quoter = quotex.QuoteX(self, "股票类LTB行情", self.config.cfg_main.quote_stock_ltb_addr, self.config.cfg_main.quote_stock_ltb_port, quote_subs) # 股票类LTB快照
             self.quoter_dict[self.config.cfg_main.quote_stock_ltb_flag] = quoter
         
         if self.config.cfg_main.quote_stock_ltp_need == 1:
@@ -60,7 +60,7 @@ class Trader(common.Singleton):
             quote_subs = {define.stock_ltp_market_s_func : (define.stock_ltp_market_s_func, define.stock_ltp_market_s_type, ""), 
                           define.stock_ltp_market_i_func : (define.stock_ltp_market_i_func, define.stock_ltp_market_i_type, ""),
                           define.stock_ltp_market_t_func : (define.stock_ltp_market_t_func, define.stock_ltp_market_t_type, "")}
-            quoter = straQuoteX.StraQuoteX(self, "股票类LTP行情", self.config.cfg_main.quote_stock_ltp_addr, self.config.cfg_main.quote_stock_ltp_port, quote_subs) # 股票类LTP快照
+            quoter = quotex.QuoteX(self, "股票类LTP行情", self.config.cfg_main.quote_stock_ltp_addr, self.config.cfg_main.quote_stock_ltp_port, quote_subs) # 股票类LTP快照
             self.quoter_dict[self.config.cfg_main.quote_stock_ltp_flag] = quoter
         
         if self.config.cfg_main.quote_stock_tdf_need == 1:
@@ -69,14 +69,14 @@ class Trader(common.Singleton):
             quote_subs = {define.stock_tdf_market_s_func : (define.stock_tdf_market_s_func, define.stock_tdf_market_s_type, ""),
                           define.stock_tdf_market_i_func : (define.stock_tdf_market_i_func, define.stock_tdf_market_i_type, ""),
                           define.stock_tdf_market_t_func : (define.stock_tdf_market_t_func, define.stock_tdf_market_t_type, "")}
-            quoter = straQuoteX.StraQuoteX(self, "股票类TDF行情", self.config.cfg_main.quote_stock_tdf_addr, self.config.cfg_main.quote_stock_tdf_port, quote_subs) # 股票类TDF快照
+            quoter = quotex.QuoteX(self, "股票类TDF行情", self.config.cfg_main.quote_stock_tdf_addr, self.config.cfg_main.quote_stock_tdf_port, quote_subs) # 股票类TDF快照
             self.quoter_dict[self.config.cfg_main.quote_stock_tdf_flag] = quoter
         
         if self.config.cfg_main.quote_future_np_need == 1:
             self.log_text = "正在加载 期货类内盘行情数据 服务..."
             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
             quote_subs = {define.future_np_market_func : (define.future_np_market_func, define.future_np_market_type, "")}
-            quoter = straQuoteX.StraQuoteX(self, "期货类内盘行情", self.config.cfg_main.quote_future_np_addr, self.config.cfg_main.quote_future_np_port, quote_subs) # 期货类内盘快照
+            quoter = quotex.QuoteX(self, "期货类内盘行情", self.config.cfg_main.quote_future_np_addr, self.config.cfg_main.quote_future_np_port, quote_subs) # 期货类内盘快照
             self.quoter_dict[self.config.cfg_main.quote_future_np_flag] = quoter
         
         if self.config.cfg_main.trade_stock_ape_need == 1:
