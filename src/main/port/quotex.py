@@ -183,9 +183,9 @@ class QuoteX():
             msg_type = "8" # NW_MSG_TYPE_USER_DATA
             msg_code = "2" # NW_MSG_CODE_JSON
             msg_json = json.dumps(msg_data)
-            msg_size = "%6x" % len(msgJson)
+            msg_size = "%6x" % len(msg_json)
             msg_send = msg_type + msg_code + msg_size + msg_json
-            self.sock.sendall(bytes(msg_send, encoding = "gbk")) # 含中文
+            self.sock.sendall(bytes(msg_send, encoding = "gbk"))
             return True
         except socket.error as e:
             self.log_text = "%s：发送数据发生异常！%s %d %s" % (self.quote_name, self.address, self.port, e)

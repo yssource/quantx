@@ -83,8 +83,8 @@ class DBM_MySQL():
             try:
                 self.connect.ping()
                 not_connect = False # 说明连接正常
-            except:
-                self.log_text = "检测到数据库连接已断开！"
+            except Exception as e:
+                self.log_text = "检测到数据库连接已断开！%s" % e
                 self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
                 if self.Connect() == True: # 重连成功
                     not_connect = False # 连接已经正常
