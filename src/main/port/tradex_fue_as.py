@@ -207,11 +207,11 @@ class TradeX_Fue_As():
 ####################################################################################################
 
     class TradeInfo(object):
-        def __init__(self, dbName):
+        def __init__(self, db_name):
             self.log_text = ""
             self.log_cate = "TradeInfo"
             self.logger = logger.Logger()
-            self.id = dbName # 数据库名称
+            self.id = db_name # 数据库名称
             self.db = None # 数据库对象
             self.cu = None # 数据库游标
             self.tb_name_place = "tb_place"
@@ -388,11 +388,11 @@ class TradeX_Fue_As():
             self.tb_lock_trans.release()
 
         def TrySaveData(self): # 定时保存
-            nowTime = int(datetime.now().strftime("%H%M"))
-            if nowTime == self.db_init_time and self.db_init_flag == False:
+            now_time = int(datetime.now().strftime("%H%M"))
+            if now_time == self.db_init_time and self.db_init_flag == False:
                 self.db_init_flag = True
                 self.InitDataBase()
-            if nowTime == 2300:
+            if now_time == 2300:
                 self.db_init_flag = False
             
             if self.db != None and self.cu != None:
@@ -403,47 +403,47 @@ class TradeX_Fue_As():
         def PutTbData_Place(self): # 委托下单
             if len(self.tb_data_place) > 0:
                 self.tb_lock_place.acquire()
-                tbData = self.tb_data_place
+                tb_data = self.tb_data_place
                 self.tb_data_place = []
                 self.tb_lock_place.release()
-                self.cu.executemany("insert into %s values (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" % self.tb_name_place, tbData)
+                self.cu.executemany("insert into %s values (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" % self.tb_name_place, tb_data)
                 self.db.commit()
 
         def PutTbData_Order(self): # 报单回报
             if len(self.tb_data_order) > 0:
                 self.tb_lock_order.acquire()
-                tbData = self.tb_data_order
+                tb_data = self.tb_data_order
                 self.tb_data_order = []
                 self.tb_lock_order.release()
-                self.cu.executemany("insert into %s values (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" % self.tb_name_order, tbData)
+                self.cu.executemany("insert into %s values (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" % self.tb_name_order, tb_data)
                 self.db.commit()
 
         def PutTbData_Trans(self): # 成交回报
             if len(self.tb_data_trans) > 0:
                 self.tb_lock_trans.acquire()
-                tbData = self.tb_data_trans
+                tb_data = self.tb_data_trans
                 self.tb_data_trans = []
                 self.tb_lock_trans.release()
-                self.cu.executemany("insert into %s values (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" % self.tb_name_trans, tbData)
+                self.cu.executemany("insert into %s values (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)" % self.tb_name_trans, tb_data)
                 self.db.commit()
 
 ####################################################################################################
 
-    def __init__(self, parent, trade_name, tradeFlag, tradeSave, address, port, username, password, asset_account, loginTimeOut):
+    def __init__(self, parent, trade_name, trade_flag, trade_save, address, port, username, password, asset_account, login_time_out):
         self.log_text = ""
         self.log_cate = "TradeX_Fue_As"
         self.config = config.Config()
         self.logger = logger.Logger()
         self.parent = parent
         self.trade_name = trade_name
-        self.tradeFlag = tradeFlag
-        self.tradeSave = tradeSave
+        self.trade_flag = trade_flag
+        self.trade_save = trade_save
         self.address = address
         self.port = port
         self.username = username
         self.password = password
         self.asset_account = asset_account
-        self.loginTimeOut = loginTimeOut
+        self.login_time_out = login_time_out
         self.session = 0
         self.task_id = 0
         self.started = False
@@ -455,55 +455,55 @@ class TradeX_Fue_As():
         self.heart_check_span = timedelta(seconds = 10 * 3)
         self.RegReplyMsgHandleFunc()
         
-        self.taskDict = {}
-        self.taskIdLock = threading.Lock()
-        self.straDict = center.Center().data.strategies
+        self.task_dict = {}
+        self.task_id_lock = threading.Lock()
+        self.strategy_dict = center.Center().data.strategies
         
-        self.showDebugInfo = self.config.cfg_main.stra_debug_info # 为 1 或 0
+        self.show_debug_info = self.config.cfg_main.stra_debug_info # 为 1 或 0
         
         self.trade_info = None
-        if self.tradeSave == 1: # 需要将交易记录到本地数据库
-            self.trade_info = self.TradeInfo("%s_%s" % (self.log_cate, self.tradeFlag))
+        if self.trade_save == 1: # 需要将交易记录到本地数据库
+            self.trade_info = self.TradeInfo("%s_%s" % (self.log_cate, self.trade_flag))
 
     def __del__(self):
         self.started = False
 
     def NewTaskItem(self, strategy, function):
-        self.taskIdLock.acquire()
+        self.task_id_lock.acquire()
         self.task_id += 1
         task_id = copy.deepcopy(self.task_id) # copy
-        self.taskIdLock.release()
-        taskItem = self.TaskItem()
-        taskItem.task_id = task_id # 任务标识
-        taskItem.strategy = strategy # 策略标识
-        taskItem.function = function # 功能编号
-        taskItem.status = define.TASK_STATUS_EXEC # 任务状态
-        taskItem.messages.append("开始执行任务....") # 任务信息
-        #taskItem.order = None # 单个合约
-        #taskItem.orderReplies = [] # 单个合约委托回报
-        #taskItem.transReplies = [] # 单个合约成交回报
-        #taskItem.queryResults = [] # 查询结果数据
-        return taskItem
+        self.task_id_lock.release()
+        task_item = self.TaskItem()
+        task_item.task_id = task_id # 任务标识
+        task_item.strategy = strategy # 策略标识
+        task_item.function = function # 功能编号
+        task_item.status = define.TASK_STATUS_EXEC # 任务状态
+        task_item.messages.append("开始执行任务....") # 任务信息
+        #task_item.order = None # 单个合约
+        #task_item.order_replies = [] # 单个合约委托回报
+        #task_item.trans_replies = [] # 单个合约成交回报
+        #task_item.query_results = [] # 查询结果数据
+        return task_item
 
     def RegReplyMsgHandleFunc(self):
-        self.replyMsgHandleFunc_Sys = {}
-        self.replyMsgHandleFunc_Sys[define.trade_userlogin_f_func] = self.OnUserLogIn
-        self.replyMsgHandleFunc_Sys[define.trade_userlogout_f_func] = self.OnUserLogOut
-        self.replyMsgHandleFunc_Sys[define.trade_subscibe_f_func] = self.OnSubscibe
-        self.replyMsgHandleFunc_Sys[define.trade_unsubscibe_f_func] = self.OnUnsubscibe
-        self.replyMsgHandleFunc_Usr = {}
-        self.replyMsgHandleFunc_Usr[define.trade_placeorder_f_func] = self.OnPlaceOrder
-        self.replyMsgHandleFunc_Usr[define.trade_cancelorder_f_func] = self.OnCancelOrder
-        self.replyMsgHandleFunc_Usr[define.trade_placecombinorder_f_func] = self.OnPlaceCombinOrder
-        self.replyMsgHandleFunc_Usr[define.trade_querycapital_f_func] = self.OnQueryCapital
-        self.replyMsgHandleFunc_Usr[define.trade_queryposition_f_func] = self.OnQueryPosition
-        self.replyMsgHandleFunc_Usr[define.trade_queryorder_f_func] = self.OnQueryOrder
-        self.replyMsgHandleFunc_Usr[define.trade_querytrans_f_func] = self.OnQueryTrans
-        self.replyMsgHandleFunc_Usr[define.trade_queryinstrument_f_func] = self.OnQueryInstrument
-        self.replyMsgHandleFunc_Usr[define.trade_querypositiondetail_f_func] = self.OnQueryPositionDetail
-        self.replyMsgHandleFunc_Usr[define.trade_orderreply_f_func] = self.OnOrderReply
-        self.replyMsgHandleFunc_Usr[define.trade_transreply_f_func] = self.OnTransReply
-        self.replyMsgHandleFunc_Usr[define.trade_riskinform_f_func] = self.OnRiskInform
+        self.reply_msg_handle_func_sys = {}
+        self.reply_msg_handle_func_sys[define.trade_userlogin_f_func] = self.OnUserLogIn
+        self.reply_msg_handle_func_sys[define.trade_userlogout_f_func] = self.OnUserLogOut
+        self.reply_msg_handle_func_sys[define.trade_subscibe_f_func] = self.OnSubscibe
+        self.reply_msg_handle_func_sys[define.trade_unsubscibe_f_func] = self.OnUnsubscibe
+        self.reply_msg_handle_func_usr = {}
+        self.reply_msg_handle_func_usr[define.trade_placeorder_f_func] = self.OnPlaceOrder
+        self.reply_msg_handle_func_usr[define.trade_cancelorder_f_func] = self.OnCancelOrder
+        self.reply_msg_handle_func_usr[define.trade_placecombinorder_f_func] = self.OnPlaceCombinOrder
+        self.reply_msg_handle_func_usr[define.trade_querycapital_f_func] = self.OnQueryCapital
+        self.reply_msg_handle_func_usr[define.trade_queryposition_f_func] = self.OnQueryPosition
+        self.reply_msg_handle_func_usr[define.trade_queryorder_f_func] = self.OnQueryOrder
+        self.reply_msg_handle_func_usr[define.trade_querytrans_f_func] = self.OnQueryTrans
+        self.reply_msg_handle_func_usr[define.trade_queryinstrument_f_func] = self.OnQueryInstrument
+        self.reply_msg_handle_func_usr[define.trade_querypositiondetail_f_func] = self.OnQueryPositionDetail
+        self.reply_msg_handle_func_usr[define.trade_orderreply_f_func] = self.OnOrderReply
+        self.reply_msg_handle_func_usr[define.trade_transreply_f_func] = self.OnTransReply
+        self.reply_msg_handle_func_usr[define.trade_riskinform_f_func] = self.OnRiskInform
 
     def Start(self):
         self.log_text = "%s：用户 启动 交易服务..." % self.trade_name
@@ -512,11 +512,11 @@ class TradeX_Fue_As():
             if self.DoConnect(self.address, self.port):
                 self.started = True
                 self.userstop = False #
-                self.threadRecv = threading.Thread(target = self.Thread_Recv)
-                self.threadRecv.start()
+                self.thread_recv = threading.Thread(target = self.Thread_Recv)
+                self.thread_recv.start()
                 time.sleep(1)
-                self.threadTime = threading.Thread(target = self.Thread_Time)
-                self.threadTime.start()
+                self.thread_time = threading.Thread(target = self.Thread_Time)
+                self.thread_time.start()
             else:
                 self.log_text = "%s：启动时连接交易服务器失败！" % self.trade_name
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
@@ -556,19 +556,19 @@ class TradeX_Fue_As():
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             if self.connected == True and self.userlogin == False and self.userstop == False:
                 self.UserLogIn(self.username, self.password)
-                waitCount = 0
-                while self.userlogin == False and waitCount < self.loginTimeOut:
+                wait_count = 0
+                while self.userlogin == False and wait_count < self.login_time_out:
                     time.sleep(1)
-                    waitCount += 1
+                    wait_count += 1
                 if self.userlogin == False:
                     self.log_text = "%s：重连时登录交易柜台超时！" % self.trade_name
                     self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             if self.connected == True and self.userlogin == True and self.subscibed == False and self.userstop == False:
                 self.Subscibe(self.session, self.password)
-                waitCount = 0
-                while self.subscibed == False and waitCount < self.loginTimeOut:
+                wait_count = 0
+                while self.subscibed == False and wait_count < self.login_time_out:
                     time.sleep(1)
-                    waitCount += 1
+                    wait_count += 1
                 if self.subscibed == False:
                     self.log_text = "%s：重连时订阅交易柜台超时！" % self.trade_name
                     self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
@@ -615,37 +615,37 @@ class TradeX_Fue_As():
         if self.sock:
             self.sock.close()
 
-    def OnReplyMsg(self, retFunc, msgAns):
+    def OnReplyMsg(self, ret_func, msg_ans):
         try:
-            if retFunc in self.replyMsgHandleFunc_Sys.keys():
-                self.OnReplyMsg_Sys(retFunc, msgAns)
+            if ret_func in self.reply_msg_handle_func_sys.keys():
+                self.OnReplyMsg_Sys(ret_func, msg_ans)
             else:
-                self.OnReplyMsg_Usr(retFunc, msgAns)
+                self.OnReplyMsg_Usr(ret_func, msg_ans)
         except Exception as e:
             self.log_text = "%s：处理应答消息发生异常！%s" % (self.trade_name, e)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
-    def OnReplyMsg_Sys(self, retFunc, msgAns):
+    def OnReplyMsg_Sys(self, ret_func, msg_ans):
         try:
-            retInfo = msgAns["ret_info"]
-            retCode = int(msgAns["ret_code"])
-            if retFunc in self.replyMsgHandleFunc_Sys.keys():
-                self.replyMsgHandleFunc_Sys[retFunc](retCode, retInfo, msgAns)
+            ret_info = msg_ans["ret_info"]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_func in self.reply_msg_handle_func_sys.keys():
+                self.reply_msg_handle_func_sys[ret_func](ret_code, ret_info, msg_ans)
             else:
-                self.log_text = "%s：处理 系统 应答消息类型未知！%d" % (self.trade_name, retFunc)
+                self.log_text = "%s：处理 系统 应答消息类型未知！%d" % (self.trade_name, ret_func)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             if self.parent != None: # 发给上层更新用户界面信息
-                self.parent.OnTradeReplyMsg(self.trade_name, retFunc, retCode, retInfo)
+                self.parent.OnTradeReplyMsg(self.trade_name, ret_func, ret_code, ret_info)
         except Exception as e:
             self.log_text = "%s：处理 系统 应答消息发生异常！%s" % (self.trade_name, e)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
-    def OnReplyMsg_Usr(self, retFunc, msgAns):
+    def OnReplyMsg_Usr(self, ret_func, msg_ans):
         try:
-            if retFunc in self.replyMsgHandleFunc_Usr.keys():
-                self.replyMsgHandleFunc_Usr[retFunc](retFunc, msgAns)
+            if ret_func in self.reply_msg_handle_func_usr.keys():
+                self.reply_msg_handle_func_usr[ret_func](ret_func, msg_ans)
             else:
-                self.log_text = "%s：处理 用户 应答消息类型未知！%d" % (self.trade_name, retFunc)
+                self.log_text = "%s：处理 用户 应答消息类型未知！%d" % (self.trade_name, ret_func)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
         except Exception as e:
             self.log_text = "%s：处理 用户 应答消息发生异常！%s" % (self.trade_name, e)
@@ -701,573 +701,573 @@ class TradeX_Fue_As():
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             return False
 
-    def SendTraderEvent(self, retFunc, taskItem):
-        #print(retFunc, taskItem.ToString())
+    def SendTraderEvent(self, ret_func, task_item):
+        #print(ret_func, task_item.ToString())
         try:
             # 期货回报类
-            if retFunc == define.trade_orderreply_f_func: # 期货报单回报，接口 CTP、JQG 报单回报会有多个
-                orderReply = taskItem.order_replies[-1] # 取最新一个
-                if taskItem.order.order_id == "":
-                    taskItem.order.order_id = orderReply.order_id # 委托编号
-                if taskItem.order.order_sys_id == "":
-                    taskItem.order.order_sys_id = orderReply.order_sys_id # 报单编号
-                if taskItem.order.combin_flag == 0: # 单个合约委托
-                    if taskItem.order.fill_qty < orderReply.fill_qty:
-                        taskItem.order.fill_qty = orderReply.fill_qty # 成交数量
-                if taskItem.order.combin_flag == 1: # 组合合约委托
-                    if taskItem.order.fill_qty < orderReply.fill_qty * 2:
-                        taskItem.order.fill_qty = orderReply.fill_qty * 2 # 成交数量
-                taskItem.order.status = orderReply.status # 委托状态
+            if ret_func == define.trade_orderreply_f_func: # 期货报单回报，接口 CTP、JQG 报单回报会有多个
+                order_reply = task_item.order_replies[-1] # 取最新一个
+                if task_item.order.order_id == "":
+                    task_item.order.order_id = order_reply.order_id # 委托编号
+                if task_item.order.order_sys_id == "":
+                    task_item.order.order_sys_id = order_reply.order_sys_id # 报单编号
+                if task_item.order.combin_flag == 0: # 单个合约委托
+                    if task_item.order.fill_qty < order_reply.fill_qty:
+                        task_item.order.fill_qty = order_reply.fill_qty # 成交数量
+                if task_item.order.combin_flag == 1: # 组合合约委托
+                    if task_item.order.fill_qty < order_reply.fill_qty * 2:
+                        task_item.order.fill_qty = order_reply.fill_qty * 2 # 成交数量
+                task_item.order.status = order_reply.status # 委托状态
                 # 0：尚未申报，1：正在申报，2：非法委托，3：已报未成，4：部分成交，
                 # 5：全部成交，6：等待撤单，7：部成部撤，8：全部撤单，9：撤单未成，
                 # 10：等待修改，11：尚未触发，12：已经触发，13：自动挂起，14：未知状态
                 # 委托交易结束：非法委托、全部成交、部成部撤、全部撤单
-                if orderReply.status == 2 or orderReply.status == 5 or orderReply.status == 7 or orderReply.status == 8:
-                    if orderReply.status == 8 and taskItem.order.order_sys_id == "": # 单子没入交易队列就已被撤单说明报单异常，包括交易所限制开空单等
-                        taskItem.status = define.TASK_STATUS_FAIL
-                    taskItem.event_task_finish.set()
-                if taskItem.order.order_sys_id != "":
-                    taskItem.event_recv_answer.set() # 需要用 order_sys_id 才能说明可以从交易所撤单
-            if retFunc == define.trade_transreply_f_func: # 期货成交回报，接口 CTP、JQG 成交回报会有多个
-                transReply = taskItem.trans_replies[-1] # 取最新一个
-                if taskItem.order.order_id == "":
-                    taskItem.order.order_id = transReply.order_id # 委托编号
-                if taskItem.order.order_sys_id != "":
-                    taskItem.event_recv_answer.set() # 需要用 order_sys_id 才能说明可以从交易所撤单
+                if order_reply.status == 2 or order_reply.status == 5 or order_reply.status == 7 or order_reply.status == 8:
+                    if order_reply.status == 8 and task_item.order.order_sys_id == "": # 单子没入交易队列就已被撤单说明报单异常，包括交易所限制开空单等
+                        task_item.status = define.TASK_STATUS_FAIL
+                    task_item.event_task_finish.set()
+                if task_item.order.order_sys_id != "":
+                    task_item.event_recv_answer.set() # 需要用 order_sys_id 才能说明可以从交易所撤单
+            if ret_func == define.trade_transreply_f_func: # 期货成交回报，接口 CTP、JQG 成交回报会有多个
+                trans_reply = task_item.trans_replies[-1] # 取最新一个
+                if task_item.order.order_id == "":
+                    task_item.order.order_id = trans_reply.order_id # 委托编号
+                if task_item.order.order_sys_id != "":
+                    task_item.event_recv_answer.set() # 需要用 order_sys_id 才能说明可以从交易所撤单
                 # 接口 CTP、JQG 报单回报和成交回报均有多个，且成交一定数量时成交回报一般会在报单回报之后，故以下方式不适用，采用报单回报赋值
-                #taskItem.order.fill_qty += transReply.fill_qty # 本次成交数量
-                #if taskItem.order.combin_flag == 0: # 单个合约委托
-                #    if taskItem.order.fill_qty >= taskItem.order.amount: # 全部成交
-                #        taskItem.order.status = 5 # 全部成交
-                #        taskItem.event_task_finish.set()
-                #if taskItem.order.combin_flag == 1: # 组合合约委托
-                #    if taskItem.order.fill_qty >= taskItem.order.amount * 2: # 全部成交
-                #        taskItem.order.status = 5 # 全部成交
-                #        taskItem.event_task_finish.set()
+                #task_item.order.fill_qty += trans_reply.fill_qty # 本次成交数量
+                #if task_item.order.combin_flag == 0: # 单个合约委托
+                #    if task_item.order.fill_qty >= task_item.order.amount: # 全部成交
+                #        task_item.order.status = 5 # 全部成交
+                #        task_item.event_task_finish.set()
+                #if task_item.order.combin_flag == 1: # 组合合约委托
+                #    if task_item.order.fill_qty >= task_item.order.amount * 2: # 全部成交
+                #        task_item.order.status = 5 # 全部成交
+                #        task_item.event_task_finish.set()
             
             # 期货委托类
-            if retFunc == define.trade_placeorder_f_func: # 期货单个/组合合约委托下单 # 下单成功或失败都会收到
-                if taskItem.status == define.TASK_STATUS_FAIL: # 这里只关注失败的，成功的根据委托回报处理
-                    taskItem.event_task_finish.set()
-                    taskItem.event_recv_answer.set() # 因为需要 order_sys_id 所以这里只在下单失败时才设置，下单成功的需要继续等待交易所报单回报获得 order_sys_id 后才设置
-            if retFunc == define.trade_cancelorder_f_func: # 期货单个/组合合约委托撤单 #撤单成功或失败都会收到
-                if taskItem.status == define.TASK_STATUS_FAIL: # 这里只关注失败的，成功的根据委托回报处理
-                    taskItem.event_task_finish.set()
+            if ret_func == define.trade_placeorder_f_func: # 期货单个/组合合约委托下单 # 下单成功或失败都会收到
+                if task_item.status == define.TASK_STATUS_FAIL: # 这里只关注失败的，成功的根据委托回报处理
+                    task_item.event_task_finish.set()
+                    task_item.event_recv_answer.set() # 因为需要 order_sys_id 所以这里只在下单失败时才设置，下单成功的需要继续等待交易所报单回报获得 order_sys_id 后才设置
+            if ret_func == define.trade_cancelorder_f_func: # 期货单个/组合合约委托撤单 #撤单成功或失败都会收到
+                if task_item.status == define.TASK_STATUS_FAIL: # 这里只关注失败的，成功的根据委托回报处理
+                    task_item.event_task_finish.set()
             
             # 期货查询类
-            if retFunc == define.trade_querycapital_f_func: # 期货查询客户资金
-                taskItem.event_task_finish.set()
-            if retFunc == define.trade_queryposition_f_func: # 期货查询客户持仓
-                taskItem.event_task_finish.set()
-            if retFunc == define.trade_queryorder_f_func: # 期货查询客户当日委托
-                taskItem.event_task_finish.set()
-            if retFunc == define.trade_querytrans_f_func: # 期货查询客户当日成交
-                taskItem.event_task_finish.set()
+            if ret_func == define.trade_querycapital_f_func: # 期货查询客户资金
+                task_item.event_task_finish.set()
+            if ret_func == define.trade_queryposition_f_func: # 期货查询客户持仓
+                task_item.event_task_finish.set()
+            if ret_func == define.trade_queryorder_f_func: # 期货查询客户当日委托
+                task_item.event_task_finish.set()
+            if ret_func == define.trade_querytrans_f_func: # 期货查询客户当日成交
+                task_item.event_task_finish.set()
         except Exception as e:
-            self.log_text = "%s：处理事件消息 %d 发生异常！%s" % (self.trade_name, retFunc, e)
+            self.log_text = "%s：处理事件消息 %d 发生异常！%s" % (self.trade_name, ret_func, e)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
         
-        if taskItem.strategy in self.straDict.keys():
-            self.straDict[taskItem.strategy].instance.OnTraderEvent(self.trade_name, retFunc, taskItem)
+        if task_item.strategy in self.strategy_dict.keys():
+            self.strategy_dict[task_item.strategy].instance.OnTraderEvent(self.trade_name, ret_func, task_item)
 
 ####################################################################################################
 
     def UserLogIn(self, username, password):
-        msgReq = {"function":define.trade_userlogin_f_func, "task_id":0, "username":username, "password":password}
-        if self.SendData(msgReq) == False:
+        msg_req = {"function":define.trade_userlogin_f_func, "task_id":0, "username":username, "password":password}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
 
-    def OnUserLogIn(self, retCode, retInfo, msgAns):
-        if retCode == 0:
-            self.session = int(msgAns["ret_data"][0]["session"])
-            self.log_text = "%s：交易登录成功。%d %s" % (self.trade_name, self.session, retInfo)
+    def OnUserLogIn(self, ret_code, ret_info, msg_ans):
+        if ret_code == 0:
+            self.session = int(msg_ans["ret_data"][0]["session"])
+            self.log_text = "%s：交易登录成功。%d %s" % (self.trade_name, self.session, ret_info)
             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
             self.userlogin = True
         else:
-            self.log_text = "%s：交易登录失败！%d %s" % (self.trade_name, retCode, retInfo)
+            self.log_text = "%s：交易登录失败！%d %s" % (self.trade_name, ret_code, ret_info)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
     def UserLogOut(self, session):
-        msgReq = {"function":define.trade_userlogout_f_func, "session":session, "task_id":0}
-        if self.SendData(msgReq) == False:
+        msg_req = {"function":define.trade_userlogout_f_func, "session":session, "task_id":0}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
 
-    def OnUserLogOut(self, retCode, retInfo, msgAns):
-        if retCode == 0:
-            self.log_text = "%s：交易登出成功。%d %s" % (self.trade_name, self.session, retInfo)
+    def OnUserLogOut(self, ret_code, ret_info, msg_ans):
+        if ret_code == 0:
+            self.log_text = "%s：交易登出成功。%d %s" % (self.trade_name, self.session, ret_info)
             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
             self.userlogin = False
         else:
-            self.log_text = "%s：交易登出失败！%d %s" % (self.trade_name, retCode, retInfo)
+            self.log_text = "%s：交易登出失败！%d %s" % (self.trade_name, ret_code, ret_info)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
     def Subscibe(self, session, password):
-        msgReq = {"function":define.trade_subscibe_f_func, "session":session, "task_id":0, "password":password}
-        if self.SendData(msgReq) == False:
+        msg_req = {"function":define.trade_subscibe_f_func, "session":session, "task_id":0, "password":password}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
 
-    def OnSubscibe(self, retCode, retInfo, msgAns):
-        if retCode == 0:
-            self.log_text = "%s：消息订阅成功。%d %s" % (self.trade_name, self.session, retInfo)
+    def OnSubscibe(self, ret_code, ret_info, msg_ans):
+        if ret_code == 0:
+            self.log_text = "%s：消息订阅成功。%d %s" % (self.trade_name, self.session, ret_info)
             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
             self.subscibed = True
         else:
-            self.log_text = "%s：消息订阅失败！%d %s" % (self.trade_name, retCode, retInfo)
+            self.log_text = "%s：消息订阅失败！%d %s" % (self.trade_name, ret_code, ret_info)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
     def Unsubscibe(self, session):
-        msgReq = {"function":define.trade_unsubscibe_f_func, "session":session, "task_id":0}
-        if self.SendData(msgReq) == False:
+        msg_req = {"function":define.trade_unsubscibe_f_func, "session":session, "task_id":0}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
 
-    def OnUnsubscibe(self, retCode, retInfo, msgAns):
-        if retCode == 0:
-            self.log_text = "%s：消息退订成功。%d %s" % (self.trade_name, self.session, retInfo)
+    def OnUnsubscibe(self, ret_code, ret_info, msg_ans):
+        if ret_code == 0:
+            self.log_text = "%s：消息退订成功。%d %s" % (self.trade_name, self.session, ret_info)
             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
             self.subscibed = False
         else:
-            self.log_text = "%s：消息退订失败！%d %s" % (self.trade_name, retCode, retInfo)
+            self.log_text = "%s：消息退订失败！%d %s" % (self.trade_name, ret_code, ret_info)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
 ####################################################################################################
 
     def PlaceOrder(self, order, strategy):
-        taskItem = self.NewTaskItem(strategy, define.trade_placeorder_f_func)
-        taskItem.order = order # 在这里放入原始委托
+        task_item = self.NewTaskItem(strategy, define.trade_placeorder_f_func)
+        task_item.order = order # 在这里放入原始委托
         if self.trade_info != None:
-            self.trade_info.AddTbData_Place(taskItem.task_id, strategy, order) #
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_placeorder_f_func, "session":self.session, "task_id":taskItem.task_id, "asset_account":self.asset_account, 
+            self.trade_info.AddTbData_Place(task_item.task_id, strategy, order) #
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_placeorder_f_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, 
                   "instrument":order.instrument, "price":order.price, "amount":order.amount, 
                   "entr_type":order.entr_type, "exch_side":order.exch_side, "offset":order.offset, "hedge":order.hedge}
-        if self.SendData(msgReq) == False:
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnPlaceOrder(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0: # CTP下不会有委托成功的应答，UTP下也可以不理会
-                #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
-                taskItem.order.order_id = msgAns["ret_data"][0]["order_id"] # 委托编号
-                #taskItem.order.status = define.order_status_f_wait_trans # 委托状态
-                #print("下单应答：" + taskItem.order.ToString())
-                taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+    def OnPlaceOrder(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0: # CTP下不会有委托成功的应答，UTP下也可以不理会
+                #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
+                task_item.order.order_id = msg_ans["ret_data"][0]["order_id"] # 委托编号
+                #task_item.order.status = define.order_status_f_wait_trans # 委托状态
+                #print("下单应答：" + task_item.order.ToString())
+                task_item.status = define.TASK_STATUS_OVER # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
             else: # 执行失败
-                taskItem.order.status = define.order_status_f_error_place # 委托状态
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
-                #print("下单失败：" + taskItem.messages[-1])
+                task_item.order.status = define.order_status_f_error_place # 委托状态
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
+                #print("下单失败：" + task_item.messages[-1])
         else:
             self.log_text = "%s：单个下单应答：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def CancelOrder(self, order, strategy):
-        taskItem = self.NewTaskItem(strategy, define.trade_cancelorder_f_func)
+        task_item = self.NewTaskItem(strategy, define.trade_cancelorder_f_func)
         if self.trade_info != None:
-            self.trade_info.AddTbData_Place(taskItem.task_id, strategy, order) #
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_cancelorder_f_func, "session":self.session, "task_id":taskItem.task_id, "asset_account":self.asset_account, "order_id":order.order_id}
-        if self.SendData(msgReq) == False:
+            self.trade_info.AddTbData_Place(task_item.task_id, strategy, order) #
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_cancelorder_f_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, "order_id":order.order_id}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnCancelOrder(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0: # CTP下不会有撤单成功的应答，UTP下也可以不理会
-                #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
-                #order_id = msgAns["ret_data"][0]["order_id"] # 委托编号
+    def OnCancelOrder(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0: # CTP下不会有撤单成功的应答，UTP下也可以不理会
+                #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
+                #order_id = msg_ans["ret_data"][0]["order_id"] # 委托编号
                 #print("撤单应答：" + order_id)
-                taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+                task_item.status = define.TASK_STATUS_OVER # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
             else: # 执行失败
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
-                #print("撤单失败：" + taskItem.messages[-1])
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
+                #print("撤单失败：" + task_item.messages[-1])
         else:
             self.log_text = "%s：撤单应答：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def PlaceCombinOrder(self, order, strategy):
         order.combin_flag = 1 # 标记为组合委托
-        taskItem = self.NewTaskItem(strategy, define.trade_placecombinorder_f_func)
-        taskItem.order = order # 在这里放入原始委托
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_placecombinorder_f_func, "session":self.session, "task_id":taskItem.task_id, "asset_account":self.asset_account, 
+        task_item = self.NewTaskItem(strategy, define.trade_placecombinorder_f_func)
+        task_item.order = order # 在这里放入原始委托
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_placecombinorder_f_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, 
                   "instrument":order.instrument, "exchange":order.exchange, "price":order.price, "amount":order.amount, 
                   "entr_type":order.entr_type, "exch_side":order.exch_side, "offset":order.offset, "hedge":order.hedge}
-        if self.SendData(msgReq) == False:
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnPlaceCombinOrder(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0: # CTP下不会有委托成功的应答，UTP下也可以不理会
-                #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
-                taskItem.order.order_id = msgAns["ret_data"][0]["order_id"] # 委托编号
-                #taskItem.order.status = define.order_status_f_wait_trans # 委托状态
-                #print("下单应答：" + taskItem.order.ToString())
-                taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+    def OnPlaceCombinOrder(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0: # CTP下不会有委托成功的应答，UTP下也可以不理会
+                #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
+                task_item.order.order_id = msg_ans["ret_data"][0]["order_id"] # 委托编号
+                #task_item.order.status = define.order_status_f_wait_trans # 委托状态
+                #print("下单应答：" + task_item.order.ToString())
+                task_item.status = define.TASK_STATUS_OVER # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
             else: # 执行失败
-                taskItem.order.status = define.order_status_f_error_place # 委托状态
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+                task_item.order.status = define.order_status_f_error_place # 委托状态
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：组合下单应答：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def QueryCapital(self, strategy):
-        taskItem = self.NewTaskItem(strategy, define.trade_querycapital_f_func)
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_querycapital_f_func, "session":self.session, "task_id":taskItem.task_id}
-        if self.SendData(msgReq) == False:
+        task_item = self.NewTaskItem(strategy, define.trade_querycapital_f_func)
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_querycapital_f_func, "session":self.session, "task_id":task_item.task_id}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnQueryCapital(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0:
-                if msgAns["ret_last"] == False:
-                    #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
+    def OnQueryCapital(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0:
+                if msg_ans["ret_last"] == False:
+                    #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
                     capital = self.Capital()
-                    capital.account = msgAns["ret_data"][0]["account"] # 资金账号
-                    capital.currency = msgAns["ret_data"][0]["currency"] # 币种
-                    capital.available = float(msgAns["ret_data"][0]["available"]) # 可用资金
-                    capital.profit = float(msgAns["ret_data"][0]["profit"]) # 平仓盈亏
-                    capital.float_profit = float(msgAns["ret_data"][0]["float_profit"]) # 持仓盈亏
-                    capital.margin = float(msgAns["ret_data"][0]["margin"]) # 保证金总额
-                    capital.frozen_margin = float(msgAns["ret_data"][0]["frozen_margin"]) # 冻结保证金
-                    capital.fee = float(msgAns["ret_data"][0]["fee"]) # 手续费
-                    capital.frozen_fee = float(msgAns["ret_data"][0]["frozen_fee"]) # 冻结手续费
+                    capital.account = msg_ans["ret_data"][0]["account"] # 资金账号
+                    capital.currency = msg_ans["ret_data"][0]["currency"] # 币种
+                    capital.available = float(msg_ans["ret_data"][0]["available"]) # 可用资金
+                    capital.profit = float(msg_ans["ret_data"][0]["profit"]) # 平仓盈亏
+                    capital.float_profit = float(msg_ans["ret_data"][0]["float_profit"]) # 持仓盈亏
+                    capital.margin = float(msg_ans["ret_data"][0]["margin"]) # 保证金总额
+                    capital.frozen_margin = float(msg_ans["ret_data"][0]["frozen_margin"]) # 冻结保证金
+                    capital.fee = float(msg_ans["ret_data"][0]["fee"]) # 手续费
+                    capital.frozen_fee = float(msg_ans["ret_data"][0]["frozen_fee"]) # 冻结手续费
                     #print("客户资金：" + capital.ToString())
-                    taskItem.query_results.append(capital) # 查询结果数据
+                    task_item.query_results.append(capital) # 查询结果数据
                 else: # 结束通知
-                    taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                    taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                    self.SendTraderEvent(retFunc, taskItem)
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
             else: # 查询失败
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：客户资金：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def QueryPosition(self, instrument, strategy):
-        taskItem = self.NewTaskItem(strategy, define.trade_queryposition_f_func)
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_queryposition_f_func, "session":self.session, "task_id":taskItem.task_id, "instrument":instrument}
-        if self.SendData(msgReq) == False:
+        task_item = self.NewTaskItem(strategy, define.trade_queryposition_f_func)
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_queryposition_f_func, "session":self.session, "task_id":task_item.task_id, "instrument":instrument}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnQueryPosition(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0:
-                if msgAns["ret_last"] == False:
-                    #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
+    def OnQueryPosition(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0:
+                if msg_ans["ret_last"] == False:
+                    #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
                     position = self.Position()
-                    position.instrument = msgAns["ret_data"][0]["instrument"] # 合约代码
-                    position.exch_side = int(msgAns["ret_data"][0]["exch_side"]) # 交易类型
-                    position.position = int(msgAns["ret_data"][0]["position"]) # 总持仓
-                    position.tod_position = int(msgAns["ret_data"][0]["tod_position"]) # 今日持仓
-                    position.pre_position = int(msgAns["ret_data"][0]["pre_position"]) # 上日持仓
-                    position.open_volume = int(msgAns["ret_data"][0]["open_volume"]) # 开仓量
-                    position.close_volume = int(msgAns["ret_data"][0]["close_volume"]) # 平仓量
+                    position.instrument = msg_ans["ret_data"][0]["instrument"] # 合约代码
+                    position.exch_side = int(msg_ans["ret_data"][0]["exch_side"]) # 交易类型
+                    position.position = int(msg_ans["ret_data"][0]["position"]) # 总持仓
+                    position.tod_position = int(msg_ans["ret_data"][0]["tod_position"]) # 今日持仓
+                    position.pre_position = int(msg_ans["ret_data"][0]["pre_position"]) # 上日持仓
+                    position.open_volume = int(msg_ans["ret_data"][0]["open_volume"]) # 开仓量
+                    position.close_volume = int(msg_ans["ret_data"][0]["close_volume"]) # 平仓量
                     #print("客户持仓：" + position.ToString())
-                    taskItem.query_results.append(position) # 查询结果数据
+                    task_item.query_results.append(position) # 查询结果数据
                 else: # 结束通知
-                    taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                    taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                    self.SendTraderEvent(retFunc, taskItem)
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
             else: # 查询失败
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：客户持仓：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def QueryOrder(self, order_id, strategy):
-        taskItem = self.NewTaskItem(strategy, define.trade_queryorder_f_func)
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_queryorder_f_func, "session":self.session, "task_id":taskItem.task_id, "order_id":order_id}
-        if self.SendData(msgReq) == False:
+        task_item = self.NewTaskItem(strategy, define.trade_queryorder_f_func)
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_queryorder_f_func, "session":self.session, "task_id":task_item.task_id, "order_id":order_id}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnQueryOrder(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0:
-                if msgAns["ret_last"] == False:
-                    #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
+    def OnQueryOrder(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0:
+                if msg_ans["ret_last"] == False:
+                    #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
                     order = self.Order()
-                    order.order_id = msgAns["ret_data"][0]["order_id"] # 委托号
-                    order.order_sys_id = msgAns["ret_data"][0]["order_sys_id"] # 报单号
-                    order.instrument = msgAns["ret_data"][0]["instrument"] # 合约代码
-                    order.exchange = msgAns["ret_data"][0]["exchange"] # 交易所
-                    order.exch_side = int(msgAns["ret_data"][0]["exch_side"]) # 交易类型
-                    order.fill_qty = int(msgAns["ret_data"][0]["fill_qty"]) # 成交数量
-                    order.status = int(msgAns["ret_data"][0]["status"]) # 报单状态
-                    order.status_msg = msgAns["ret_data"][0]["status_msg"] # 状态信息
+                    order.order_id = msg_ans["ret_data"][0]["order_id"] # 委托号
+                    order.order_sys_id = msg_ans["ret_data"][0]["order_sys_id"] # 报单号
+                    order.instrument = msg_ans["ret_data"][0]["instrument"] # 合约代码
+                    order.exchange = msg_ans["ret_data"][0]["exchange"] # 交易所
+                    order.exch_side = int(msg_ans["ret_data"][0]["exch_side"]) # 交易类型
+                    order.fill_qty = int(msg_ans["ret_data"][0]["fill_qty"]) # 成交数量
+                    order.status = int(msg_ans["ret_data"][0]["status"]) # 报单状态
+                    order.status_msg = msg_ans["ret_data"][0]["status_msg"] # 状态信息
                     #print("当日委托：" + order.ToString())
-                    taskItem.query_results.append(order) # 查询结果数据
+                    task_item.query_results.append(order) # 查询结果数据
                 else: # 结束通知
-                    taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                    taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                    self.SendTraderEvent(retFunc, taskItem)
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
             else: # 查询失败
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：当日委托：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def QueryTrans(self, order_id, strategy):
-        taskItem = self.NewTaskItem(strategy, define.trade_querytrans_f_func)
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_querytrans_f_func, "session":self.session, "task_id":taskItem.task_id, "order_id":order_id}
-        if self.SendData(msgReq) == False:
+        task_item = self.NewTaskItem(strategy, define.trade_querytrans_f_func)
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_querytrans_f_func, "session":self.session, "task_id":task_item.task_id, "order_id":order_id}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnQueryTrans(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0:
-                if msgAns["ret_last"] == False:
-                    #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
+    def OnQueryTrans(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0:
+                if msg_ans["ret_last"] == False:
+                    #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
                     trans = self.Trans()
-                    trans.order_id = msgAns["ret_data"][0]["order_id"] # 委托编号
-                    trans.trans_id = msgAns["ret_data"][0]["trans_id"] # 成交编号
-                    trans.instrument = msgAns["ret_data"][0]["instrument"] # 合约代码
-                    trans.exchange = msgAns["ret_data"][0]["exchange"] # 交易所
-                    trans.exch_side = int(msgAns["ret_data"][0]["exch_side"]) # 交易类型，1：买入，2：卖出
-                    trans.fill_qty = int(msgAns["ret_data"][0]["fill_qty"]) # 成交数量
-                    trans.fill_price = float(msgAns["ret_data"][0]["fill_price"]) # 成交价格
-                    trans.fill_time = msgAns["ret_data"][0]["fill_time"] # 成交时间
+                    trans.order_id = msg_ans["ret_data"][0]["order_id"] # 委托编号
+                    trans.trans_id = msg_ans["ret_data"][0]["trans_id"] # 成交编号
+                    trans.instrument = msg_ans["ret_data"][0]["instrument"] # 合约代码
+                    trans.exchange = msg_ans["ret_data"][0]["exchange"] # 交易所
+                    trans.exch_side = int(msg_ans["ret_data"][0]["exch_side"]) # 交易类型，1：买入，2：卖出
+                    trans.fill_qty = int(msg_ans["ret_data"][0]["fill_qty"]) # 成交数量
+                    trans.fill_price = float(msg_ans["ret_data"][0]["fill_price"]) # 成交价格
+                    trans.fill_time = msg_ans["ret_data"][0]["fill_time"] # 成交时间
                     #print("当日成交：" + trans.ToString())
-                    taskItem.query_results.append(trans) # 查询结果数据
+                    task_item.query_results.append(trans) # 查询结果数据
                 else: # 结束通知
-                    taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                    taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                    self.SendTraderEvent(retFunc, taskItem)
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
             else: # 查询失败
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：当日成交：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def QueryInstrument(self, category, instrument, strategy):
-        taskItem = self.NewTaskItem(strategy, define.trade_queryinstrument_f_func)
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_queryinstrument_f_func, "session":self.session, "task_id":taskItem.task_id, 
+        task_item = self.NewTaskItem(strategy, define.trade_queryinstrument_f_func)
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_queryinstrument_f_func, "session":self.session, "task_id":task_item.task_id, 
                   "category":category, "instrument":instrument}
-        if self.SendData(msgReq) == False:
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnQueryInstrument(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0:
-                if msgAns["ret_last"] == False:
-                    #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
+    def OnQueryInstrument(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0:
+                if msg_ans["ret_last"] == False:
+                    #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
                     instrument = self.Instrument()
-                    instrument.instrument = msgAns["ret_data"][0]["instrument"] # 合约代码
-                    instrument.exchange = msgAns["ret_data"][0]["exchange"] # 交易所
-                    instrument.delivery_y = int(msgAns["ret_data"][0]["delivery_y"]) # 交割年份
-                    instrument.delivery_m = int(msgAns["ret_data"][0]["delivery_m"]) # 交割月份
-                    instrument.long_margin = float(msgAns["ret_data"][0]["long_margin"]) # 多头保证金率
-                    instrument.short_margin = float(msgAns["ret_data"][0]["short_margin"]) # 空头保证金率
+                    instrument.instrument = msg_ans["ret_data"][0]["instrument"] # 合约代码
+                    instrument.exchange = msg_ans["ret_data"][0]["exchange"] # 交易所
+                    instrument.delivery_y = int(msg_ans["ret_data"][0]["delivery_y"]) # 交割年份
+                    instrument.delivery_m = int(msg_ans["ret_data"][0]["delivery_m"]) # 交割月份
+                    instrument.long_margin = float(msg_ans["ret_data"][0]["long_margin"]) # 多头保证金率
+                    instrument.short_margin = float(msg_ans["ret_data"][0]["short_margin"]) # 空头保证金率
                     #print("期货合约：" + instrument.ToString())
-                    taskItem.query_results.append(instrument) # 查询结果数据
+                    task_item.query_results.append(instrument) # 查询结果数据
                 else: # 结束通知
-                    taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                    taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                    self.SendTraderEvent(retFunc, taskItem)
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
             else: # 查询失败
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：期货合约：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def QueryPositionDetail(self, instrument, strategy):
-        taskItem = self.NewTaskItem(strategy, define.trade_querypositiondetail_f_func)
-        self.taskDict[taskItem.task_id] = taskItem # 目前这里未加锁
-        msgReq = {"function":define.trade_querypositiondetail_f_func, "session":self.session, "task_id":taskItem.task_id, "instrument":instrument}
-        if self.SendData(msgReq) == False:
+        task_item = self.NewTaskItem(strategy, define.trade_querypositiondetail_f_func)
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_querypositiondetail_f_func, "session":self.session, "task_id":task_item.task_id, "instrument":instrument}
+        if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
-        return taskItem
+        return task_item
 
-    def OnQueryPositionDetail(self, retFunc, msgAns): # 每次一条
-        #print(msgAns["ret_func"], msgAns["ret_code"], msgAns["ret_info"], msgAns["ret_task"], msgAns["ret_last"], msgAns["ret_numb"])
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["ret_task"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
-            retCode = int(msgAns["ret_code"])
-            if retCode == 0:
-                if msgAns["ret_last"] == False:
-                    #print(msgAns["ret_data"][0]["otc_code"], msgAns["ret_data"][0]["otc_info"])
+    def OnQueryPositionDetail(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0:
+                if msg_ans["ret_last"] == False:
+                    #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
                     detail = self.PositionDetail()
-                    detail.instrument = msgAns["ret_data"][0]["instrument"] # 合约代码
-                    detail.exch_side = int(msgAns["ret_data"][0]["exch_side"]) # 交易类型
-                    detail.volume = int(msgAns["ret_data"][0]["volume"]) # 数量
-                    detail.open_price = float(msgAns["ret_data"][0]["open_price"]) # 开仓价格 # 接口 PGT 为 持仓均价
-                    detail.exchange = msgAns["ret_data"][0]["exchange"] # 交易所
-                    detail.margin = float(msgAns["ret_data"][0]["margin"]) # 投资者保证金
-                    detail.exch_margin = float(msgAns["ret_data"][0]["exch_margin"]) # 交易所保证金 # 接口 PGT 为 昨持仓量
+                    detail.instrument = msg_ans["ret_data"][0]["instrument"] # 合约代码
+                    detail.exch_side = int(msg_ans["ret_data"][0]["exch_side"]) # 交易类型
+                    detail.volume = int(msg_ans["ret_data"][0]["volume"]) # 数量
+                    detail.open_price = float(msg_ans["ret_data"][0]["open_price"]) # 开仓价格 # 接口 PGT 为 持仓均价
+                    detail.exchange = msg_ans["ret_data"][0]["exchange"] # 交易所
+                    detail.margin = float(msg_ans["ret_data"][0]["margin"]) # 投资者保证金
+                    detail.exch_margin = float(msg_ans["ret_data"][0]["exch_margin"]) # 交易所保证金 # 接口 PGT 为 昨持仓量
                     #print("客户持仓明细：" + detail.ToString())
-                    taskItem.query_results.append(detail) # 查询结果数据
+                    task_item.query_results.append(detail) # 查询结果数据
                 else: # 结束通知
-                    taskItem.status = define.TASK_STATUS_OVER # 任务状态
-                    taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                    self.SendTraderEvent(retFunc, taskItem)
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
             else: # 查询失败
-                taskItem.status = define.TASK_STATUS_FAIL # 任务状态
-                taskItem.messages.append("%d %s" % (retCode, msgAns["ret_info"])) # 任务信息
-                self.SendTraderEvent(retFunc, taskItem)
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：客户持仓明细：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
-    def OnOrderReply(self, retFunc, msgAns):
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["task_id"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
+    def OnOrderReply(self, ret_func, msg_ans):
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["task_id"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
             order = self.Order()
-            order.order_id = msgAns["order_id"] # 委托号
-            order.order_sys_id = msgAns["order_sys_id"] # 报单号
-            order.instrument = msgAns["instrument"] # 合约代码
-            order.exchange = msgAns["exchange"] # 交易所
-            order.exch_side = int(msgAns["exch_side"]) # 交易类型
-            order.fill_qty = int(msgAns["fill_qty"]) # 成交数量
-            order.status = int(msgAns["status"]) # 报单状态
-            order.status_msg = msgAns["status_msg"] # 状态信息
+            order.order_id = msg_ans["order_id"] # 委托号
+            order.order_sys_id = msg_ans["order_sys_id"] # 报单号
+            order.instrument = msg_ans["instrument"] # 合约代码
+            order.exchange = msg_ans["exchange"] # 交易所
+            order.exch_side = int(msg_ans["exch_side"]) # 交易类型
+            order.fill_qty = int(msg_ans["fill_qty"]) # 成交数量
+            order.status = int(msg_ans["status"]) # 报单状态
+            order.status_msg = msg_ans["status_msg"] # 状态信息
             #print("委托回报：" + order.ToString())
-            taskItem.order_replies.append(order) # 单个合约委托回报
+            task_item.order_replies.append(order) # 单个合约委托回报
             if self.trade_info != None:
-                self.trade_info.AddTbData_Order(task_id, taskItem.strategy, order) #
-            self.SendTraderEvent(retFunc, taskItem)
+                self.trade_info.AddTbData_Order(task_id, task_item.strategy, order) #
+            self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：委托回报：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
-    def OnTransReply(self, retFunc, msgAns):
-        retFunc = int(msgAns["ret_func"])
-        task_id = int(msgAns["task_id"])
-        if task_id in self.taskDict.keys():
-            taskItem = self.taskDict[task_id]
+    def OnTransReply(self, ret_func, msg_ans):
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["task_id"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
             trans = self.Trans()
-            trans.order_id = msgAns["order_id"] # 委托编号
-            trans.trans_id = msgAns["trans_id"] # 成交编号
-            trans.instrument = msgAns["instrument"] # 合约代码
-            trans.exchange = msgAns["exchange"] # 交易所
-            trans.exch_side = int(msgAns["exch_side"]) # 交易类型，1：买入，2：卖出
-            trans.fill_qty = int(msgAns["fill_qty"]) # 成交数量
-            trans.fill_price = float(msgAns["fill_price"]) # 成交价格
-            trans.fill_time = msgAns["fill_time"] # 成交时间
+            trans.order_id = msg_ans["order_id"] # 委托编号
+            trans.trans_id = msg_ans["trans_id"] # 成交编号
+            trans.instrument = msg_ans["instrument"] # 合约代码
+            trans.exchange = msg_ans["exchange"] # 交易所
+            trans.exch_side = int(msg_ans["exch_side"]) # 交易类型，1：买入，2：卖出
+            trans.fill_qty = int(msg_ans["fill_qty"]) # 成交数量
+            trans.fill_price = float(msg_ans["fill_price"]) # 成交价格
+            trans.fill_time = msg_ans["fill_time"] # 成交时间
             #print("成交回报：" + trans.ToString())
-            taskItem.trans_replies.append(trans) # 单个合约成交回报
+            task_item.trans_replies.append(trans) # 单个合约成交回报
             if self.trade_info != None:
-                self.trade_info.AddTbData_Trans(task_id, taskItem.strategy, trans) #
-            self.SendTraderEvent(retFunc, taskItem)
+                self.trade_info.AddTbData_Trans(task_id, task_item.strategy, trans) #
+            self.SendTraderEvent(ret_func, task_item)
         else:
             self.log_text = "%s：成交回报：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
-    def OnRiskInform(self, retFunc, msgAns):
-        riskInfo = self.RiskInfo()
-        riskInfo.seq_no = int(msgAns["seq_no"]) # 序列号
-        riskInfo.seq_series = int(msgAns["seq_series"]) # 序列系列号
-        riskInfo.content = msgAns["content"] # 消息正文
-        #print("风控通知：" + riskInfo.ToString())
+    def OnRiskInform(self, ret_func, msg_ans):
+        risk_info = self.RiskInfo()
+        risk_info.seq_no = int(msg_ans["seq_no"]) # 序列号
+        risk_info.seq_series = int(msg_ans["seq_series"]) # 序列系列号
+        risk_info.content = msg_ans["content"] # 消息正文
+        #print("风控通知：" + risk_info.ToString())
         # 因为无法得到任务号，目前不处理风控通知
 
 ####################################################################################################
 
 # 这里 南华UTP 和 易盛ESP 的资金数据是按 币种 返回多条的
 
-    def QueryCapital_Syn(self, strategy, queryWait = 5):
-        capitalList = []
-        taskItem = self.QueryCapital(strategy)
-        ret_wait = taskItem.event_task_finish.wait(timeout = queryWait) # 等待结果
+    def QueryCapital_Syn(self, strategy, query_wait = 5):
+        capital_list = []
+        task_item = self.QueryCapital(strategy)
+        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
         if ret_wait == True:
-            if taskItem.status == define.TASK_STATUS_OVER:
-                for item in taskItem.query_results:
-                    capitalList.append(item)
+            if task_item.status == define.TASK_STATUS_OVER:
+                for item in task_item.query_results:
+                    capital_list.append(item)
                     #self.log_text = "%s：期货资金：%s" % (strategy, item.ToString())
                     #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, capitalList]
+                return [True, capital_list]
             else:
-                self.log_text = "%s：期货 资金 查询失败！原因：%s" % (strategy, taskItem.messages[-1])
+                self.log_text = "%s：期货 资金 查询失败！原因：%s" % (strategy, task_item.messages[-1])
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                return [False, capitalList]
+                return [False, capital_list]
         else:
-            self.log_text = "%s：期货 资金 查询超时！状态：%d" % (strategy, taskItem.status)
+            self.log_text = "%s：期货 资金 查询超时！状态：%d" % (strategy, task_item.status)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-            return [False, capitalList]
+            return [False, capital_list]
 
 # 东证期货CTP持仓查询有点混乱的，目前以总仓和今仓为准计算昨仓，已开和已平也用累加：
 
@@ -1291,44 +1291,44 @@ class TradeX_Fue_As():
 
 # 另外 南华UTP 和 易盛ESP 返回的持仓可能同一个合约同一个方向有多条，需要累加起来，并且 tod_position、pre_position、open_volume、close_volume 均为零
 
-    def QueryPosition_Syn(self, instrument, strategy, queryWait = 5): # 需要指定合约，合约为空的话会全部被过滤掉
-        position_L = self.Position() #多
-        position_L.instrument = instrument
-        position_L.exch_side = define.DEF_EXCHSIDE_BUY
-        position_S = self.Position() #空
-        position_S.instrument = instrument
-        position_S.exch_side = define.DEF_EXCHSIDE_SELL
-        taskItem = self.QueryPosition(instrument, strategy)
-        ret_wait = taskItem.event_task_finish.wait(timeout = queryWait) # 等待结果
+    def QueryPosition_Syn(self, instrument, strategy, query_wait = 5): # 需要指定合约，合约为空的话会全部被过滤掉
+        position_l = self.Position() #多
+        position_l.instrument = instrument
+        position_l.exch_side = define.DEF_EXCHSIDE_BUY
+        position_s = self.Position() #空
+        position_s.instrument = instrument
+        position_s.exch_side = define.DEF_EXCHSIDE_SELL
+        task_item = self.QueryPosition(instrument, strategy)
+        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
         if ret_wait == True:
-            if taskItem.status == define.TASK_STATUS_OVER:
-                for item in taskItem.query_results:
+            if task_item.status == define.TASK_STATUS_OVER:
+                for item in task_item.query_results:
                     if item.instrument == instrument:
                         if item.exch_side == define.DEF_EXCHSIDE_BUY: # 多 # 目前发现 CTP 今仓和昨仓也是分开记录的，已开和已平暂时也用 += 吧
-                            position_L.position += item.position
-                            position_L.tod_position += item.tod_position
-                            position_L.pre_position = position_L.position - position_L.tod_position
-                            position_L.open_volume += item.open_volume
-                            position_L.close_volume += item.close_volume
+                            position_l.position += item.position
+                            position_l.tod_position += item.tod_position
+                            position_l.pre_position = position_l.position - position_l.tod_position
+                            position_l.open_volume += item.open_volume
+                            position_l.close_volume += item.close_volume
                         if item.exch_side == define.DEF_EXCHSIDE_SELL: # 空 # 目前发现 CTP 今仓和昨仓也是分开记录的，已开和已平暂时也用 += 吧
-                            position_S.position += item.position
-                            position_S.tod_position += item.tod_position
-                            position_S.pre_position = position_S.position - position_S.tod_position
-                            position_S.open_volume += item.open_volume
-                            position_S.close_volume += item.close_volume
+                            position_s.position += item.position
+                            position_s.tod_position += item.tod_position
+                            position_s.pre_position = position_s.position - position_s.tod_position
+                            position_s.open_volume += item.open_volume
+                            position_s.close_volume += item.close_volume
                     #self.log_text = "%s：期货持仓：%s" % (strategy, item.ToString())
                     #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, position_L, position_S]
+                return [True, position_l, position_s]
             else:
-                self.log_text = "%s：期货 持仓 查询失败！原因：%s" % (strategy, taskItem.messages[-1])
+                self.log_text = "%s：期货 持仓 查询失败！原因：%s" % (strategy, task_item.messages[-1])
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                return [False, position_L, position_S]
+                return [False, position_l, position_s]
         else:
-            self.log_text = "%s：期货 持仓 查询超时！状态：%d" % (strategy, taskItem.status)
+            self.log_text = "%s：期货 持仓 查询超时！状态：%d" % (strategy, task_item.status)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-            return [False, position_L, position_S]
+            return [False, position_l, position_s]
 
-    def PlaceOrder_FOC_Syn(self, label, order, strategy, tradeWait = 1, cancelWait = 5):
+    def PlaceOrder_FOC_Syn(self, label, order, strategy, trade_wait = 1, cancel_wait = 5):
         self.log_text = "%s：准备 %s：%s" % (strategy, label, order.ToString())
         self.logger.SendMessage("D", 0, self.log_cate, self.log_text, "T")
         
@@ -1336,45 +1336,45 @@ class TradeX_Fue_As():
 #        order.fill_qty = order.amount
 #        return [True, order] # 测试！！
         
-        taskItem_Place = self.PlaceOrder(order, strategy)
-        ret_wait = taskItem_Place.event_task_finish.wait(tradeWait) # 等待结果
+        task_item_place = self.PlaceOrder(order, strategy)
+        ret_wait = task_item_place.event_task_finish.wait(trade_wait) # 等待结果
         # 在 wait 结束时，要么报单异常，要么交易结束，要么等待超时
         if ret_wait == True: # 报单异常、交易结束
-            if taskItem_Place.status == define.TASK_STATUS_FAIL: # 报单异常
-                self.log_text = "%s：委托 %s %s 下单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.messages[-1])
+            if task_item_place.status == define.TASK_STATUS_FAIL: # 报单异常
+                self.log_text = "%s：委托 %s %s 下单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.messages[-1])
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                return [False, taskItem_Place.order]
+                return [False, task_item_place.order]
             else: # 交易结束
-                self.log_text = "%s：委托 %s %s 交易完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.order.status, taskItem_Place.order.fill_qty)
+                self.log_text = "%s：委托 %s %s 交易完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.order.status, task_item_place.order.fill_qty)
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, taskItem_Place.order]
+                return [True, task_item_place.order]
         else: # 等待超时
-            taskItem_Place.event_recv_answer.wait(120) # 等待交易所报单回报，保证获得 order_sys_id 用于撤单
-            if taskItem_Place.order.order_id != "": # 已保证 order_sys_id != ""
-                self.log_text = "%s：委托 %s %s 准备撤单。委托：%s，超时：%d" % (strategy, label, order.instrument, taskItem_Place.order.order_id, tradeWait)
+            task_item_place.event_recv_answer.wait(120) # 等待交易所报单回报，保证获得 order_sys_id 用于撤单
+            if task_item_place.order.order_id != "": # 已保证 order_sys_id != ""
+                self.log_text = "%s：委托 %s %s 准备撤单。委托：%s，超时：%d" % (strategy, label, order.instrument, task_item_place.order.order_id, trade_wait)
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                taskItem_Cancel = self.CancelOrder(taskItem_Place.order, strategy)
-                ret_wait = taskItem_Place.event_task_finish.wait(cancelWait) # 等待结果 # 使用 taskItem_Place
+                task_item_cancel = self.CancelOrder(task_item_place.order, strategy)
+                ret_wait = task_item_place.event_task_finish.wait(cancel_wait) # 等待结果 # 使用 task_item_place
                 # 在 wait 结束时，要么交易结束，要么等待超时
                 if ret_wait == True: # 交易结束
-                    self.log_text = "%s：委托 %s %s 撤单完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.order.status, taskItem_Place.order.fill_qty)
+                    self.log_text = "%s：委托 %s %s 撤单完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.order.status, task_item_place.order.fill_qty)
                     self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                    return [True, taskItem_Place.order]
+                    return [True, task_item_place.order]
                 else: # 等待超时
-                    if taskItem_Cancel.status == define.TASK_STATUS_FAIL: # 撤单异常
-                        self.log_text = "%s：委托 %s %s 撤单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, taskItem_Cancel.task_id, taskItem_Cancel.messages[-1])
+                    if task_item_cancel.status == define.TASK_STATUS_FAIL: # 撤单异常
+                        self.log_text = "%s：委托 %s %s 撤单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, task_item_cancel.task_id, task_item_cancel.messages[-1])
                         self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                        return [False, taskItem_Place.order]
+                        return [False, task_item_place.order]
                     else:
-                        self.log_text = "%s：委托 %s %s 撤单超时！任务：%d，超时：%d" % (strategy, label, order.instrument, taskItem_Cancel.task_id, cancelWait)
+                        self.log_text = "%s：委托 %s %s 撤单超时！任务：%d，超时：%d" % (strategy, label, order.instrument, task_item_cancel.task_id, cancel_wait)
                         self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                        return [False, taskItem_Place.order]
+                        return [False, task_item_place.order]
             else:
-                self.log_text = "%s：委托 %s %s 撤单时缺少委托编号！任务：%d" % (strategy, label, order.instrument, taskItem_Place.task_id)
+                self.log_text = "%s：委托 %s %s 撤单时缺少委托编号！任务：%d" % (strategy, label, order.instrument, task_item_place.task_id)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                return [False, taskItem_Place.order]
+                return [False, task_item_place.order]
 
-    def PlaceCombinOrder_FOC_Syn(self, label, order, strategy, tradeWait = 1, cancelWait = 5):
+    def PlaceCombinOrder_FOC_Syn(self, label, order, strategy, trade_wait = 1, cancel_wait = 5):
         self.log_text = "%s：准备 %s：%s" % (strategy, label, order.ToString())
         self.logger.SendMessage("D", 0, self.log_cate, self.log_text, "T")
         
@@ -1382,107 +1382,107 @@ class TradeX_Fue_As():
 #        order.fill_qty = order.amount * 2 # * 2
 #        return [True, order] # 测试！！
         
-        taskItem_Place = self.PlaceCombinOrder(order, strategy)
-        ret_wait = taskItem_Place.event_task_finish.wait(tradeWait) # 等待结果
+        task_item_place = self.PlaceCombinOrder(order, strategy)
+        ret_wait = task_item_place.event_task_finish.wait(trade_wait) # 等待结果
         # 在 wait 结束时，要么报单异常，要么交易结束，要么等待超时
         if ret_wait == True: # 报单异常、交易结束
-            if taskItem_Place.status == define.TASK_STATUS_FAIL: # 报单异常
-                self.log_text = "%s：委托 %s %s 下单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.messages[-1])
+            if task_item_place.status == define.TASK_STATUS_FAIL: # 报单异常
+                self.log_text = "%s：委托 %s %s 下单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.messages[-1])
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                return [False, taskItem_Place.order]
+                return [False, task_item_place.order]
             else: # 交易结束
-                self.log_text = "%s：委托 %s %s 交易完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.order.status, taskItem_Place.order.fill_qty)
+                self.log_text = "%s：委托 %s %s 交易完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.order.status, task_item_place.order.fill_qty)
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, taskItem_Place.order]
+                return [True, task_item_place.order]
         else: # 等待超时
-            taskItem_Place.event_recv_answer.wait(120) # 等待交易所报单回报，保证获得 order_sys_id 用于撤单
-            if taskItem_Place.order.order_id != "": # 已保证 order_sys_id != ""
-                self.log_text = "%s：委托 %s %s 准备撤单。委托：%s，超时：%d" % (strategy, label, order.instrument, taskItem_Place.order.order_id, tradeWait)
+            task_item_place.event_recv_answer.wait(120) # 等待交易所报单回报，保证获得 order_sys_id 用于撤单
+            if task_item_place.order.order_id != "": # 已保证 order_sys_id != ""
+                self.log_text = "%s：委托 %s %s 准备撤单。委托：%s，超时：%d" % (strategy, label, order.instrument, task_item_place.order.order_id, trade_wait)
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                taskItem_Cancel = self.CancelOrder(taskItem_Place.order, strategy)
-                ret_wait = taskItem_Place.event_task_finish.wait(cancelWait) # 等待结果 # 使用 taskItem_Place
+                task_item_cancel = self.CancelOrder(task_item_place.order, strategy)
+                ret_wait = task_item_place.event_task_finish.wait(cancel_wait) # 等待结果 # 使用 task_item_place
                 # 在 wait 结束时，要么交易结束，要么等待超时
                 if ret_wait == True: # 交易结束
-                    self.log_text = "%s：委托 %s %s 撤单完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.order.status, taskItem_Place.order.fill_qty)
+                    self.log_text = "%s：委托 %s %s 撤单完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.order.status, task_item_place.order.fill_qty)
                     self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                    return [True, taskItem_Place.order]
+                    return [True, task_item_place.order]
                 else: # 等待超时
-                    if taskItem_Cancel.status == define.TASK_STATUS_FAIL: # 撤单异常
-                        self.log_text = "%s：委托 %s %s 撤单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, taskItem_Cancel.task_id, taskItem_Cancel.messages[-1])
+                    if task_item_cancel.status == define.TASK_STATUS_FAIL: # 撤单异常
+                        self.log_text = "%s：委托 %s %s 撤单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, task_item_cancel.task_id, task_item_cancel.messages[-1])
                         self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                        return [False, taskItem_Place.order]
+                        return [False, task_item_place.order]
                     else:
-                        self.log_text = "%s：委托 %s %s 撤单超时！任务：%d，超时：%d" % (strategy, label, order.instrument, taskItem_Cancel.task_id, cancelWait)
+                        self.log_text = "%s：委托 %s %s 撤单超时！任务：%d，超时：%d" % (strategy, label, order.instrument, task_item_cancel.task_id, cancel_wait)
                         self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                        return [False, taskItem_Place.order]
+                        return [False, task_item_place.order]
             else:
-                self.log_text = "%s：委托 %s %s 撤单时缺少委托编号！任务：%d" % (strategy, label, order.instrument, taskItem_Place.task_id)
+                self.log_text = "%s：委托 %s %s 撤单时缺少委托编号！任务：%d" % (strategy, label, order.instrument, task_item_place.task_id)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-                return [False, taskItem_Place.order]
+                return [False, task_item_place.order]
 
-    def PlaceOrder_Basket_Syn(self, label, orders, strategy, tradeWait = 1, cancelWait = 5): # 同一合约的多个委托不能在一个 orders 中
-        tradeError = False
-        taskItemDict_Place = {} # 委托 下单 了的
+    def PlaceOrder_Basket_Syn(self, label, orders, strategy, trade_wait = 1, cancel_wait = 5): # 同一合约的多个委托不能在一个 orders 中
+        trade_error = False
+        task_item_dict_place = {} # 委托 下单 了的
         for order in orders: # 下单
-            taskItem_Place = self.PlaceOrder(order, strategy)
-            if taskItem_Place == None:
-                tradeError = True
+            task_item_place = self.PlaceOrder(order, strategy)
+            if task_item_place == None:
+                trade_error = True
                 self.log_text = "%s：下单 %s %s 返回任务对象为空！" % (strategy, label, order.instrument)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             else:
-                taskItemDict_Place[order.instrument] = taskItem_Place
-        if tradeError == True:
+                task_item_dict_place[order.instrument] = task_item_place
+        if trade_error == True:
             return [False, orders]
-        taskItemDict_Cancel = {} # 委托 撤单 了的
-        for taskItem_Place in taskItemDict_Place.values(): # 撤单
-            order = taskItem_Place.order # instrument
-            ret_wait = taskItem_Place.event_task_finish.wait(tradeWait) # 等待结果
+        task_item_dict_cancel = {} # 委托 撤单 了的
+        for task_item_place in task_item_dict_place.values(): # 撤单
+            order = task_item_place.order # instrument
+            ret_wait = task_item_place.event_task_finish.wait(trade_wait) # 等待结果
             # 在 wait 结束时，要么报单异常，要么交易结束，要么等待超时
             if ret_wait == True: # 报单异常、交易结束
-                if taskItem_Place.status == define.TASK_STATUS_FAIL: # 报单异常
-                    tradeError = True
-                    self.log_text = "%s：委托 %s %s 下单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.messages[-1])
+                if task_item_place.status == define.TASK_STATUS_FAIL: # 报单异常
+                    trade_error = True
+                    self.log_text = "%s：委托 %s %s 下单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.messages[-1])
                     self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 else:
-                    self.log_text = "%s：委托 %s %s 交易完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.order.status, taskItem_Place.order.fill_qty)
+                    self.log_text = "%s：委托 %s %s 交易完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.order.status, task_item_place.order.fill_qty)
                     self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
             else: # 等待超时
-                taskItem_Place.event_recv_answer.wait(120) # 等待交易所报单回报，保证获得 order_sys_id 用于撤单
-                if taskItem_Place.order.order_id != "": # 已保证 order_sys_id != ""
-                    self.log_text = "%s：委托 %s %s 准备撤单。委托：%s，超时：%d" % (strategy, label, order.instrument, taskItem_Place.order.order_id, tradeWait)
+                task_item_place.event_recv_answer.wait(120) # 等待交易所报单回报，保证获得 order_sys_id 用于撤单
+                if task_item_place.order.order_id != "": # 已保证 order_sys_id != ""
+                    self.log_text = "%s：委托 %s %s 准备撤单。委托：%s，超时：%d" % (strategy, label, order.instrument, task_item_place.order.order_id, trade_wait)
                     self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                    taskItem_Cancel = self.CancelOrder(taskItem_Place.order, strategy)
-                    if taskItem_Cancel == None:
-                        tradeError = True
+                    task_item_cancel = self.CancelOrder(task_item_place.order, strategy)
+                    if task_item_cancel == None:
+                        trade_error = True
                         self.log_text = "%s：撤单 %s %s 返回任务对象为空！" % (strategy, label, order.instrument)
                         self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                     else:
-                        taskItemDict_Cancel[order.instrument] = taskItem_Cancel
+                        task_item_dict_cancel[order.instrument] = task_item_cancel
                 else:
-                    tradeError = True
-                    self.log_text = "%s：委托 %s %s 撤单时缺少委托编号！任务：%d" % (strategy, label, order.instrument, taskItem_Place.task_id)
+                    trade_error = True
+                    self.log_text = "%s：委托 %s %s 撤单时缺少委托编号！任务：%d" % (strategy, label, order.instrument, task_item_place.task_id)
                     self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-        if tradeError == True:
+        if trade_error == True:
             return [False, orders]
-        for taskItem_Place in taskItemDict_Place.values(): # 完成
-            order = taskItem_Place.order # instrument
-            if order.instrument in taskItemDict_Cancel.keys():
-                taskItem_Cancel = taskItemDict_Cancel[order.instrument]
-                ret_wait = taskItem_Place.event_task_finish.wait(cancelWait) # 等待结果 # 使用 taskItem_Place
+        for task_item_place in task_item_dict_place.values(): # 完成
+            order = task_item_place.order # instrument
+            if order.instrument in task_item_dict_cancel.keys():
+                task_item_cancel = task_item_dict_cancel[order.instrument]
+                ret_wait = task_item_place.event_task_finish.wait(cancel_wait) # 等待结果 # 使用 task_item_place
                 # 在 wait 结束时，要么交易结束，要么等待超时
                 if ret_wait == True: # 交易结束
-                    self.log_text = "%s：委托 %s %s 撤单完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, taskItem_Place.task_id, taskItem_Place.order.status, taskItem_Place.order.fill_qty)
+                    self.log_text = "%s：委托 %s %s 撤单完成。任务：%d，状态：%d，成交：%d" % (strategy, label, order.instrument, task_item_place.task_id, task_item_place.order.status, task_item_place.order.fill_qty)
                     self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
                 else: # 等待超时
-                    if taskItem_Cancel.status == define.TASK_STATUS_FAIL: # 撤单异常
-                        tradeError = True
-                        self.log_text = "%s：委托 %s %s 撤单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, taskItem_Cancel.task_id, taskItem_Cancel.messages[-1])
+                    if task_item_cancel.status == define.TASK_STATUS_FAIL: # 撤单异常
+                        trade_error = True
+                        self.log_text = "%s：委托 %s %s 撤单异常！任务：%d，原因：%s" % (strategy, label, order.instrument, task_item_cancel.task_id, task_item_cancel.messages[-1])
                         self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                     else:
-                        tradeError = True
-                        self.log_text = "%s：委托 %s %s 撤单超时！任务：%d，超时：%d" % (strategy, label, order.instrument, taskItem_Cancel.task_id, cancelWait)
+                        trade_error = True
+                        self.log_text = "%s：委托 %s %s 撤单超时！任务：%d，超时：%d" % (strategy, label, order.instrument, task_item_cancel.task_id, cancel_wait)
                         self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
-        if tradeError == True:
+        if trade_error == True:
             return [False, orders]
         return [True, orders]
 
