@@ -26,7 +26,7 @@ import re
 import time
 import math
 import threading
-from datetime import datetime
+from datetime import datetime, date
 
 import numpy as np
 import pandas as pd
@@ -48,13 +48,13 @@ class Version(object):
         self.revision  = "revision"
         self.build     = "build"
         self.name      = "name         BasicX"
-        self.version   = "version      V0.1.0-Beta Build 20180514"
+        self.version   = "version      V0.1.0-Beta Build 20180515"
         self.author    = "author       Xu Rendong"
         self.developer = "developer    Developed by the X-Lab."
         self.company   = "company      X-Lab (Shanghai) Co., Ltd."
         self.copyright = "copyright    Copyright 2018-2018 X-Lab All Rights Reserved."
         self.homeurl   = "homeurl      http://www.xlab.com"
-        self.data = [0, 1, 0, 20180514, "", "", "", "", "", "", ""]
+        self.data = [0, 1, 0, 20180515, "", "", "", "", "", "", ""]
         self.columns = ["version"]
         self.index = [self.major, self.minor, self.revision, self.build, self.name, self.version, self.author, self.developer, self.company, self.copyright, self.homeurl]
         self.version_df = pd.DataFrame(data = self.data, columns = self.columns, index = self.index)
@@ -175,8 +175,8 @@ class BasicX(Singleton):
         self.folder_quotedata_stock_daily = ""
         self.folder_quotedata_stock_kline_1_m = ""
         if self.folder != "":
-            self.folder_financial = self.folder.decode("utf-8") + "/financial" # 可能路径含中文
-            self.folder_quotedata = self.folder.decode("utf-8") + "/quotedata" # 可能路径含中文
+            self.folder_financial = self.folder + "/financial" # 可能路径含中文
+            self.folder_quotedata = self.folder + "/quotedata" # 可能路径含中文
             self.folder_quotedata_stock = self.folder_quotedata + "/stock"
             self.folder_quotedata_stock_daily = self.folder_quotedata_stock + "/daily"
             self.folder_quotedata_stock_kline_1_m = self.folder_quotedata_stock + "/kline_1_m"
@@ -201,7 +201,7 @@ class BasicX(Singleton):
                 self.InitTables_QuoteData_DB() # 快一点
         
         self.security_dict = None # 首次计算除权时缓存一份证券信息
-        self.exRights_dict = None # 首次计算除权时缓存一份除权数据
+        self.exrights_dict = None # 首次计算除权时缓存一份除权数据
 
     def InitCacheData(self, **kwargs): # 目前先独立配置
         self.mongo_host = kwargs.get("host", "0.0.0.0")
@@ -278,7 +278,7 @@ class BasicX(Singleton):
         year = int(int_date / 10000)
         month = int((int_date % 10000) / 100)
         day = int_date % 100
-        return datetime.date(year, month, day)
+        return date(year, month, day)
 
     def TransTimeIntToStr(self, int_time):
         hour = int(int_time / 10000)
@@ -1139,7 +1139,7 @@ class BasicX(Singleton):
                 if kline_item.low == DEF_INIT_KLINE_ITEM_LOW: # 修正初始赋值
                     kline_item.low = 0.0
                 result_list.append({"date" : kline_item.date, "time" : kline_item.time, "open" : kline_item.open, "high" : kline_item.high, \
-                                   "low" : kline_item.low, "close" : kline_item.close, "volume" : kline_item.volume, "turnover" : kline_item.turnover})
+                                    "low" : kline_item.low, "close" : kline_item.close, "volume" : kline_item.volume, "turnover" : kline_item.turnover})
             if len(result_list) > 0:
                 result = pd.DataFrame(data = list(result_list), columns = columns)
         return result
