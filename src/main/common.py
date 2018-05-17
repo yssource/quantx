@@ -309,14 +309,32 @@ def TransStrategyState(straState): # 策略状态
         return "未知！"
 
 def TransSecurityCategory(category): #
-    if category == 1:
-        return "A股"
+    if category == 0:
+        return "未知"
+    elif category == 1:
+        return "沪A主板"
     elif category == 2:
-        return "ETF基金"
+        return "深A主板"
     elif category == 3:
-        return "分级基金"
+        return "深A中小板"
     elif category == 4:
-        return "开放基金"
+        return "深A创业板"
+    elif category == 5:
+        return "沪ETF基金"
+    elif category == 6:
+        return "深ETF基金"
+    elif category == 7:
+        return "沪LOF基金"
+    elif category == 8:
+        return "深LOF基金"
+    elif category == 9:
+        return "沪分级子基金"
+    elif category == 10:
+        return "深分级子基金"
+    elif category == 11:
+        return "沪封闭式基金"
+    elif category == 12:
+        return "深封闭式基金"
     else:
         return "？？？"
 

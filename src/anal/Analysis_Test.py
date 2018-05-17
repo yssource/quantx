@@ -21,6 +21,8 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
+import time
+
 import logger
 import basicx
 import analysis_base
@@ -32,6 +34,8 @@ class Analysis_Test(analysis_base.AnalysisBase):
         self.log_cate = "Analysis_Test"
         self.logger = logger.Logger()
         self.basicx = basicx.BasicX()
+        self.testing = False
+        self.suspend = False
 
     def OnWorking(self): # 供具体回测继承调用，在 运行 前执行一些操作
         result = self.basicx.GetStockDaily("sz", "000001", 20100101, 20171231)
@@ -39,10 +43,26 @@ class Analysis_Test(analysis_base.AnalysisBase):
             print(result)
 
     def OnSuspend(self): # 供具体回测继承调用，在 暂停 前执行一些操作
-        pass
+        self.suspend = True
 
     def OnContinue(self): # 供具体回测继承调用，在 继续 前执行一些操作
-        pass
+        self.suspend = False
 
     def OnTerminal(self): # 供具体回测继承调用，在 停止 前执行一些操作
-        pass
+        self.testing = False
+
+    def OnBackTest(self, symbol_list, trading_day_list):
+        self.testing = True
+        self.total_task = 100
+        self.finish_task = 0
+        self.logger.SendMessage("I", 1, self.log_cate, "开始数据分析...", "A")
+        while self.testing == True and self.finish_task < self.total_task:
+            time.sleep(0.25)
+            if self.suspend == True:
+                continue
+            self.finish_task += 1
+            self.SetAnalysisProgress(self.total_task, self.finish_task)
+        if self.testing == False:
+            self.logger.SendMessage("I", 1, self.log_cate, "数据分析终止！", "A")
+        else:
+            self.logger.SendMessage("I", 1, self.log_cate, "数据分析完成。", "A")

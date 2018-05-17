@@ -181,14 +181,19 @@ class CfgMain(object):
 class CfgAnal(object):
     def __init__(self):
         self.filter_security_check_all = 1
-        self.filter_security_category_a = 1
-        self.filter_security_category_etf = 0
-        self.filter_security_category_level = 0
-        self.filter_security_category_open = 0
-        self.filter_security_sector_main = 1
-        self.filter_security_sector_small = 1
-        self.filter_security_sector_start = 1
-        self.filter_security_sector_unknow = 0
+        self.filter_security_category_0 = 0
+        self.filter_security_category_1 = 1
+        self.filter_security_category_2 = 1
+        self.filter_security_category_3 = 1
+        self.filter_security_category_4 = 1
+        self.filter_security_category_5 = 0
+        self.filter_security_category_6 = 0
+        self.filter_security_category_7 = 0
+        self.filter_security_category_8 = 0
+        self.filter_security_category_9 = 0
+        self.filter_security_category_10 = 0
+        self.filter_security_category_11 = 0
+        self.filter_security_category_12 = 0
         self.filter_security_list_state_1 = 1
         self.filter_security_list_state_2 = 0
         self.filter_security_list_state_3 = 0
@@ -213,17 +218,22 @@ class CfgAnal(object):
         self.date_analysis_test_e = 0
 
     def LoadConfig(self, file_path):
-        config = configobj.ConfigObj(file_path)
+        config = configobj.ConfigObj(file_path, encoding = "UTF8")
         
         self.filter_security_check_all = int(config["filter"]["filter_security_check_all"])
-        self.filter_security_category_a = int(config["filter"]["filter_security_category_a"])
-        self.filter_security_category_etf = int(config["filter"]["filter_security_category_etf"])
-        self.filter_security_category_level = int(config["filter"]["filter_security_category_level"])
-        self.filter_security_category_open = int(config["filter"]["filter_security_category_open"])
-        self.filter_security_sector_main = int(config["filter"]["filter_security_sector_main"])
-        self.filter_security_sector_small = int(config["filter"]["filter_security_sector_small"])
-        self.filter_security_sector_start = int(config["filter"]["filter_security_sector_start"])
-        self.filter_security_sector_unknow = int(config["filter"]["filter_security_sector_unknow"])
+        self.filter_security_category_0 = int(config["filter"]["filter_security_category_0"])
+        self.filter_security_category_1 = int(config["filter"]["filter_security_category_1"])
+        self.filter_security_category_2 = int(config["filter"]["filter_security_category_2"])
+        self.filter_security_category_3 = int(config["filter"]["filter_security_category_3"])
+        self.filter_security_category_4 = int(config["filter"]["filter_security_category_4"])
+        self.filter_security_category_5 = int(config["filter"]["filter_security_category_5"])
+        self.filter_security_category_6 = int(config["filter"]["filter_security_category_6"])
+        self.filter_security_category_7 = int(config["filter"]["filter_security_category_7"])
+        self.filter_security_category_8 = int(config["filter"]["filter_security_category_8"])
+        self.filter_security_category_9 = int(config["filter"]["filter_security_category_9"])
+        self.filter_security_category_10 = int(config["filter"]["filter_security_category_10"])
+        self.filter_security_category_11 = int(config["filter"]["filter_security_category_11"])
+        self.filter_security_category_12 = int(config["filter"]["filter_security_category_12"])
         self.filter_security_list_state_1 = int(config["filter"]["filter_security_list_state_1"])
         self.filter_security_list_state_2 = int(config["filter"]["filter_security_list_state_2"])
         self.filter_security_list_state_3 = int(config["filter"]["filter_security_list_state_3"])
@@ -248,17 +258,22 @@ class CfgAnal(object):
         self.date_analysis_test_e = config["analysis"]["date_analysis_test_e"]
 
     def SaveConfig(self, cfg_anal, file_path):
-        config = configobj.ConfigObj(file_path)
+        config = configobj.ConfigObj(file_path, encoding = "UTF8")
         
         config["filter"]["filter_security_check_all"] = int(self.filter_security_check_all)
-        config["filter"]["filter_security_category_a"] = int(self.filter_security_category_a)
-        config["filter"]["filter_security_category_etf"] = int(self.filter_security_category_etf)
-        config["filter"]["filter_security_category_level"] = int(self.filter_security_category_level)
-        config["filter"]["filter_security_category_open"] = int(self.filter_security_category_open)
-        config["filter"]["filter_security_sector_main"] = int(self.filter_security_sector_main)
-        config["filter"]["filter_security_sector_small"] = int(self.filter_security_sector_small)
-        config["filter"]["filter_security_sector_start"] = int(self.filter_security_sector_start)
-        config["filter"]["filter_security_sector_unknow"] = int(self.filter_security_sector_unknow)
+        config["filter"]["filter_security_category_0"] = int(self.filter_security_category_0)
+        config["filter"]["filter_security_category_1"] = int(self.filter_security_category_1)
+        config["filter"]["filter_security_category_2"] = int(self.filter_security_category_2)
+        config["filter"]["filter_security_category_3"] = int(self.filter_security_category_3)
+        config["filter"]["filter_security_category_4"] = int(self.filter_security_category_4)
+        config["filter"]["filter_security_category_5"] = int(self.filter_security_category_5)
+        config["filter"]["filter_security_category_6"] = int(self.filter_security_category_6)
+        config["filter"]["filter_security_category_7"] = int(self.filter_security_category_7)
+        config["filter"]["filter_security_category_8"] = int(self.filter_security_category_8)
+        config["filter"]["filter_security_category_9"] = int(self.filter_security_category_9)
+        config["filter"]["filter_security_category_10"] = int(self.filter_security_category_10)
+        config["filter"]["filter_security_category_11"] = int(self.filter_security_category_11)
+        config["filter"]["filter_security_category_12"] = int(self.filter_security_category_12)
         config["filter"]["filter_security_list_state_1"] = int(self.filter_security_list_state_1)
         config["filter"]["filter_security_list_state_2"] = int(self.filter_security_list_state_2)
         config["filter"]["filter_security_list_state_3"] = int(self.filter_security_list_state_3)

@@ -121,7 +121,7 @@ class Analys(common.Singleton):
                                 self.analysis_info = analy_info # 先赋值，策略类初始化时要用
                                 analy_info.instance = analy_info.classer() # 策略类初始化
                                 analy_info.name = analy_info.instance.analysis_name
-                                analy_info.introduction = analy_info.instance.analy_intro
+                                analy_info.introduction = analy_info.instance.analysis_introduction
                                 analy_info.instance.Reload() # 可以执行一些初始化工作
                                 self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
@@ -148,7 +148,7 @@ class Analys(common.Singleton):
                                 self.analysis_info = analy_info # 先赋值，策略类初始化时要用
                                 analy_info.instance = analy_info.classer() # 策略类初始化
                                 analy_info.name = analy_info.instance.analysis_name
-                                analy_info.introduction = analy_info.instance.analy_intro
+                                analy_info.introduction = analy_info.instance.analysis_introduction
                                 analy_info.instance.Reload() # 可以执行一些初始化工作
                                 self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
                                 self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
