@@ -30,7 +30,7 @@ class Strategy_Trader_FUE_CTP(strategy_base.StrategyBase):
     def __init__(self):
         strategy_base.StrategyBase.__init__(self, "Strategy_Trader_FUE_CTP", "Trader_FUE_CTP", "手动交易-期货-CTP")
         self.log_cate = "Strategy_Trader_FUE_CTP"
-        self.panel = panel_trader_fue_ctp.Panel(self.strategy)
+        self.panel = panel_trader_fue_ctp.Panel(strategy = self.strategy)
 
     def OnDoubleClick(self):
         self.panel.show()

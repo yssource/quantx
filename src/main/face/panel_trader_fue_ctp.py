@@ -32,9 +32,10 @@ import center
 import trader
 
 class Panel(QDialog):
-    def __init__(self, strategy):
+    def __init__(self, **kwargs):
         super(Panel, self).__init__()
-        self.strategy = strategy
+        self.strategy = kwargs.get("strategy", "")
+        self.version_info = "V0.1.0-Beta Build 20180422"
         self.log_text = ""
         self.log_cate = "Panel_Trader_FUE_CTP"
         self.logger = logger.Logger()
@@ -101,7 +102,7 @@ class Panel(QDialog):
         self.list_exchange = [define.DEF_EXCHANGE_FUTURE_CFFE, define.DEF_EXCHANGE_FUTURE_SHFE, define.DEF_EXCHANGE_FUTURE_CZCE, define.DEF_EXCHANGE_FUTURE_DLCE]
         self.list_entr_type = [define.DEF_PRICE_TYPE_FUTURE_LIMIT, define.DEF_PRICE_TYPE_FUTURE_MARKET]
         
-        self.setWindowTitle("手动交易-期货-CTP %s" % define.VER_PANEL_TRADER_FUE_CTP)
+        self.setWindowTitle("手动交易-期货-CTP %s" % self.version_info)
         self.resize(380, 300)
         self.setFont(QFont("SimSun", 9))
         
