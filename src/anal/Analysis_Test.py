@@ -38,6 +38,7 @@ class Analysis_Test(analysis_base.AnalysisBase):
         self.suspend = False
 
     def OnWorking(self): # 供具体回测继承调用，在 运行 前执行一些操作
+        self.testing = True
         result = self.basicx.GetStockDaily("sz", "000001", 20100101, 20171231)
         if not result.empty:
             print(result)
@@ -50,9 +51,9 @@ class Analysis_Test(analysis_base.AnalysisBase):
 
     def OnTerminal(self): # 供具体回测继承调用，在 停止 前执行一些操作
         self.testing = False
+        self.suspend = False
 
     def OnBackTest(self, symbol_list, trading_day_list):
-        self.testing = True
         self.total_task = 100
         self.finish_task = 0
         self.logger.SendMessage("I", 1, self.log_cate, "开始数据分析...", "A")
