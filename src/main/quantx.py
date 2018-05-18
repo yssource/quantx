@@ -24,7 +24,8 @@
 import sys
 import netifaces
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QApplication
 
 import images
 import define
@@ -57,8 +58,8 @@ def CheckMacAddress(mac_address):
     return result
 
 def QuantX():
-    app = QtWidgets.QApplication(sys.argv)
-    app.setWindowIcon(QtGui.QIcon(define.DEF_ICON_MAIN_WINDOW))
+    app = QApplication(sys.argv)
+    app.setWindowIcon(QIcon(define.DEF_ICON_MAIN_WINDOW))
     
     #if CheckMacAddress("90:61:ae:cd:ae:0f") == False:
     #    return

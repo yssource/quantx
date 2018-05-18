@@ -260,6 +260,7 @@ class TradeX_Stk_Sy():
         self.holder_sz = holder_sz
         self.asset_account = asset_account
         self.login_time_out = login_time_out
+        self.sock = None
         self.session = 0
         self.task_id = 0
         self.started = False
@@ -334,6 +335,9 @@ class TradeX_Stk_Sy():
             else:
                 self.log_text = "%s：启动时连接交易服务器失败！" % self.trade_name
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+
+    def IsTraderReady(self):
+        return self.started == True and self.connected == True and self.userlogin == True and self.subscibed == True
 
     def Thread_Recv(self):
         self.log_text = "%s：启动交易数据接收线程..." % self.trade_name
@@ -426,7 +430,7 @@ class TradeX_Stk_Sy():
         self.subscibed = False
         self.userlogin = False
         self.connected = False
-        if self.sock:
+        if self.sock != None:
             self.sock.close()
 
     def OnReplyMsg(self, ret_func, msg_ans):
@@ -1212,140 +1216,175 @@ class TradeX_Stk_Sy():
 
     def QueryCapital_Syn(self, strategy, query_wait = 5):
         task_item = self.QueryCapital(strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                for capital in task_item.query_results: #应该只有一条的
-                    #self.log_text = "%s：证券资金：%s" % (strategy, capital.ToString())
-                    #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                    return [True, capital]
-                return [True, None]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    for capital in task_item.query_results: #应该只有一条的
+                        #self.log_text = "%s：证券资金：%s" % (strategy, capital.ToString())
+                        #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                        return [True, capital]
+                    return [True, None]
+                else:
+                    self.log_text = "%s：证券 资金 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, None]
             else:
-                self.log_text = "%s：证券 资金 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：证券 资金 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, None]
         else:
-            self.log_text = "%s：证券 资金 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：证券 资金 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, None]
 
     def QueryPosition_Syn(self, symbol, strategy, query_wait = 5):
         task_item = self.QueryPosition(strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                for position in task_item.query_results: #注意是：PositionDefer
-                    if position.symbol == symbol:
-                        return [True, position]
-                    #self.log_text = "%s：证券持仓：%s" % (strategy, position.ToString())
-                    #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, None]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    for position in task_item.query_results: #注意是：PositionDefer
+                        if position.symbol == symbol:
+                            return [True, position]
+                        #self.log_text = "%s：证券持仓：%s" % (strategy, position.ToString())
+                        #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                    return [True, None]
+                else:
+                    self.log_text = "%s：证券 持仓 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, None]
             else:
-                self.log_text = "%s：证券 持仓 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：证券 持仓 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, None]
         else:
-            self.log_text = "%s：证券 持仓 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：证券 持仓 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, None]
 
     def QueryPosition_All_Syn(self, strategy, query_wait = 5):
         task_item = self.QueryPosition(strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                if len(task_item.query_results) > 0:
-                    #for position in task_item.query_results: #注意是：PositionDefer
-                    #    self.log_text = "%s：证券持仓：%s" % (strategy, position.ToString())
-                    #    self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                    return [True, task_item.query_results]
-                return [True, None]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    if len(task_item.query_results) > 0:
+                        #for position in task_item.query_results: #注意是：PositionDefer
+                        #    self.log_text = "%s：证券持仓：%s" % (strategy, position.ToString())
+                        #    self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                        return [True, task_item.query_results]
+                    return [True, None]
+                else:
+                    self.log_text = "%s：证券 持仓 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, None]
             else:
-                self.log_text = "%s：证券 持仓 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：证券 持仓 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, None]
         else:
-            self.log_text = "%s：证券 持仓 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：证券 持仓 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, None]
 
     def QueryOrder_Syn(self, order_id, brow_index, strategy, query_wait = 5):
         task_item = self.QueryOrder(order_id, brow_index, strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                for order in task_item.query_results:
-                    if order.order_id == order_id:
-                        return [True, order]
-                    #self.log_text = "%s：证券委托：%s" % (strategy, order.ToString())
-                    #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, None]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    for order in task_item.query_results:
+                        if order.order_id == order_id:
+                            return [True, order]
+                        #self.log_text = "%s：证券委托：%s" % (strategy, order.ToString())
+                        #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                    return [True, None]
+                else:
+                    self.log_text = "%s：证券 委托 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, None]
             else:
-                self.log_text = "%s：证券 委托 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：证券 委托 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, None]
         else:
-            self.log_text = "%s：证券 委托 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：证券 委托 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, None]
 
     def QueryTrade_Syn(self, order_id, brow_index, strategy, query_wait = 5): # 返回列表
         trans_list = []
         task_item = self.QueryTrade(order_id, brow_index, strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                for trans in task_item.query_results:
-                    if trans.order_id == order_id:
-                        trans_list.append(trans) #
-                    #self.log_text = "%s：证券成交：%s" % (strategy, trans.ToString())
-                    #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, trans_list]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    for trans in task_item.query_results:
+                        if trans.order_id == order_id:
+                            trans_list.append(trans) #
+                        #self.log_text = "%s：证券成交：%s" % (strategy, trans.ToString())
+                        #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                    return [True, trans_list]
+                else:
+                    self.log_text = "%s：证券 成交 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, None]
             else:
-                self.log_text = "%s：证券 成交 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：证券 成交 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, None]
         else:
-            self.log_text = "%s：证券 成交 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：证券 成交 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, None]
 
     def QueryEtfBase_Syn(self, fund_id_2, strategy, query_wait = 5):
         task_item = self.QueryEtfBase(fund_id_2, strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                for etf_base_info in task_item.query_results: # 应该只有一条的
-                    #self.log_text = "%s：证券资金：%s" % (strategy, etf_base_info.ToString())
-                    #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                    return [True, etf_base_info]
-                return [True, None]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    for etf_base_info in task_item.query_results: # 应该只有一条的
+                        #self.log_text = "%s：证券资金：%s" % (strategy, etf_base_info.ToString())
+                        #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                        return [True, etf_base_info]
+                    return [True, None]
+                else:
+                    self.log_text = "%s：证券 ETF基本 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, None]
             else:
-                self.log_text = "%s：证券 ETF基本 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：证券 ETF基本 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, None]
         else:
-            self.log_text = "%s：证券 ETF基本 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：证券 ETF基本 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, None]
 
     def QueryEtfDetail_Syn(self, fund_id_2, strategy, query_wait = 5): # 返回列表
         stock_list = []
         task_item = self.QueryEtfDetail(fund_id_2, strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                for stock in task_item.query_results:
-                    stock_list.append(stock) #
-                    #self.log_text = "%s：证券ETF成分股：%s" % (strategy, stock.ToString())
-                    #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, stock_list]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    for stock in task_item.query_results:
+                        stock_list.append(stock) #
+                        #self.log_text = "%s：证券ETF成分股：%s" % (strategy, stock.ToString())
+                        #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                    return [True, stock_list]
+                else:
+                    self.log_text = "%s：证券 ETF成分股 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, None]
             else:
-                self.log_text = "%s：证券 ETF成分股 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：证券 ETF成分股 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, None]
         else:
-            self.log_text = "%s：证券 ETF成分股 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：证券 ETF成分股 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, None]
 
@@ -1358,6 +1397,10 @@ class TradeX_Stk_Sy():
 #        return [True, order] # 测试！！
         
         task_item_place = self.PlaceOrder(order, strategy)
+        if task_item_place == None:
+            self.log_text = "%s：委托 %s %s 下单异常！返回任务对象为空！" % (strategy, label, order.symbol)
+            self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+            return [False, order]
         ret_wait = task_item_place.event_task_finish.wait(trade_wait) # 等待结果
         # 在 wait 结束时，要么报单异常，要么交易结束，要么等待超时
         if ret_wait == True: # 报单异常、交易结束
@@ -1374,6 +1417,10 @@ class TradeX_Stk_Sy():
                 self.log_text = "%s: 委托 %s %s 准备撤单。 委托： %s， 超时： %d" % (strategy, label, order.symbol, task_item_place.order.order_id, trade_wait)
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
                 task_item_cancel = self.CancelOrder(task_item_place.order, strategy)
+                if task_item_cancel == None:
+                    self.log_text = "%s：委托 %s %s 撤单异常！返回任务对象为空！" % (strategy, label, order.symbol)
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, task_item_place.order]
                 ret_wait = task_item_place.event_task_finish.wait(cancel_wait) # 等待结果 #使用 task_item_place
                 # 在 wait 结束时，要么交易结束，要么等待超时
                 if ret_wait == True: # 交易结束

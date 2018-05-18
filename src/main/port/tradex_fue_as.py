@@ -444,6 +444,7 @@ class TradeX_Fue_As():
         self.password = password
         self.asset_account = asset_account
         self.login_time_out = login_time_out
+        self.sock = None
         self.session = 0
         self.task_id = 0
         self.started = False
@@ -520,6 +521,9 @@ class TradeX_Fue_As():
             else:
                 self.log_text = "%s：启动时连接交易服务器失败！" % self.trade_name
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+
+    def IsTraderReady(self):
+        return self.started == True and self.connected == True and self.userlogin == True and self.subscibed == True
 
     def Thread_Recv(self):
         self.log_text = "%s：启动交易数据接收线程..." % self.trade_name
@@ -612,7 +616,7 @@ class TradeX_Fue_As():
         self.subscibed = False
         self.userlogin = False
         self.connected = False
-        if self.sock:
+        if self.sock != None:
             self.sock.close()
 
     def OnReplyMsg(self, ret_func, msg_ans):
@@ -1252,20 +1256,25 @@ class TradeX_Fue_As():
     def QueryCapital_Syn(self, strategy, query_wait = 5):
         capital_list = []
         task_item = self.QueryCapital(strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                for item in task_item.query_results:
-                    capital_list.append(item)
-                    #self.log_text = "%s：期货资金：%s" % (strategy, item.ToString())
-                    #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, capital_list]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    for item in task_item.query_results:
+                        capital_list.append(item)
+                        #self.log_text = "%s：期货资金：%s" % (strategy, item.ToString())
+                        #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                    return [True, capital_list]
+                else:
+                    self.log_text = "%s：期货 资金 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, capital_list]
             else:
-                self.log_text = "%s：期货 资金 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：期货 资金 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, capital_list]
         else:
-            self.log_text = "%s：期货 资金 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：期货 资金 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, capital_list]
 
@@ -1299,32 +1308,37 @@ class TradeX_Fue_As():
         position_s.instrument = instrument
         position_s.exch_side = define.DEF_EXCHSIDE_SELL
         task_item = self.QueryPosition(instrument, strategy)
-        ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
-        if ret_wait == True:
-            if task_item.status == define.TASK_STATUS_OVER:
-                for item in task_item.query_results:
-                    if item.instrument == instrument:
-                        if item.exch_side == define.DEF_EXCHSIDE_BUY: # 多 # 目前发现 CTP 今仓和昨仓也是分开记录的，已开和已平暂时也用 += 吧
-                            position_l.position += item.position
-                            position_l.tod_position += item.tod_position
-                            position_l.pre_position = position_l.position - position_l.tod_position
-                            position_l.open_volume += item.open_volume
-                            position_l.close_volume += item.close_volume
-                        if item.exch_side == define.DEF_EXCHSIDE_SELL: # 空 # 目前发现 CTP 今仓和昨仓也是分开记录的，已开和已平暂时也用 += 吧
-                            position_s.position += item.position
-                            position_s.tod_position += item.tod_position
-                            position_s.pre_position = position_s.position - position_s.tod_position
-                            position_s.open_volume += item.open_volume
-                            position_s.close_volume += item.close_volume
-                    #self.log_text = "%s：期货持仓：%s" % (strategy, item.ToString())
-                    #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
-                return [True, position_l, position_s]
+        if task_item != None:
+            ret_wait = task_item.event_task_finish.wait(timeout = query_wait) # 等待结果
+            if ret_wait == True:
+                if task_item.status == define.TASK_STATUS_OVER:
+                    for item in task_item.query_results:
+                        if item.instrument == instrument:
+                            if item.exch_side == define.DEF_EXCHSIDE_BUY: # 多 # 目前发现 CTP 今仓和昨仓也是分开记录的，已开和已平暂时也用 += 吧
+                                position_l.position += item.position
+                                position_l.tod_position += item.tod_position
+                                position_l.pre_position = position_l.position - position_l.tod_position
+                                position_l.open_volume += item.open_volume
+                                position_l.close_volume += item.close_volume
+                            if item.exch_side == define.DEF_EXCHSIDE_SELL: # 空 # 目前发现 CTP 今仓和昨仓也是分开记录的，已开和已平暂时也用 += 吧
+                                position_s.position += item.position
+                                position_s.tod_position += item.tod_position
+                                position_s.pre_position = position_s.position - position_s.tod_position
+                                position_s.open_volume += item.open_volume
+                                position_s.close_volume += item.close_volume
+                        #self.log_text = "%s：期货持仓：%s" % (strategy, item.ToString())
+                        #self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
+                    return [True, position_l, position_s]
+                else:
+                    self.log_text = "%s：期货 持仓 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, position_l, position_s]
             else:
-                self.log_text = "%s：期货 持仓 查询失败！原因：%s" % (strategy, task_item.messages[-1])
+                self.log_text = "%s：期货 持仓 查询超时！状态：%d" % (strategy, task_item.status)
                 self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
                 return [False, position_l, position_s]
         else:
-            self.log_text = "%s：期货 持仓 查询超时！状态：%d" % (strategy, task_item.status)
+            self.log_text = "%s：期货 持仓 查询异常！返回任务对象为空！" % strategy
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
             return [False, position_l, position_s]
 
@@ -1337,6 +1351,10 @@ class TradeX_Fue_As():
 #        return [True, order] # 测试！！
         
         task_item_place = self.PlaceOrder(order, strategy)
+        if task_item_place == None:
+            self.log_text = "%s：委托 %s %s 下单异常！返回任务对象为空！" % (strategy, label, order.instrument)
+            self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+            return [False, order]
         ret_wait = task_item_place.event_task_finish.wait(trade_wait) # 等待结果
         # 在 wait 结束时，要么报单异常，要么交易结束，要么等待超时
         if ret_wait == True: # 报单异常、交易结束
@@ -1354,6 +1372,10 @@ class TradeX_Fue_As():
                 self.log_text = "%s：委托 %s %s 准备撤单。委托：%s，超时：%d" % (strategy, label, order.instrument, task_item_place.order.order_id, trade_wait)
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
                 task_item_cancel = self.CancelOrder(task_item_place.order, strategy)
+                if task_item_cancel == None:
+                    self.log_text = "%s：委托 %s %s 撤单异常！返回任务对象为空！" % (strategy, label, order.instrument)
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, task_item_place.order]
                 ret_wait = task_item_place.event_task_finish.wait(cancel_wait) # 等待结果 # 使用 task_item_place
                 # 在 wait 结束时，要么交易结束，要么等待超时
                 if ret_wait == True: # 交易结束
@@ -1383,6 +1405,10 @@ class TradeX_Fue_As():
 #        return [True, order] # 测试！！
         
         task_item_place = self.PlaceCombinOrder(order, strategy)
+        if task_item_place == None:
+            self.log_text = "%s：委托 %s %s 下单异常！返回任务对象为空！" % (strategy, label, order.instrument)
+            self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+            return [False, order]
         ret_wait = task_item_place.event_task_finish.wait(trade_wait) # 等待结果
         # 在 wait 结束时，要么报单异常，要么交易结束，要么等待超时
         if ret_wait == True: # 报单异常、交易结束
@@ -1400,6 +1426,10 @@ class TradeX_Fue_As():
                 self.log_text = "%s：委托 %s %s 准备撤单。委托：%s，超时：%d" % (strategy, label, order.instrument, task_item_place.order.order_id, trade_wait)
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
                 task_item_cancel = self.CancelOrder(task_item_place.order, strategy)
+                if task_item_cancel == None:
+                    self.log_text = "%s：委托 %s %s 撤单异常！返回任务对象为空！" % (strategy, label, order.instrument)
+                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "T")
+                    return [False, task_item_place.order]
                 ret_wait = task_item_place.event_task_finish.wait(cancel_wait) # 等待结果 # 使用 task_item_place
                 # 在 wait 结束时，要么交易结束，要么等待超时
                 if ret_wait == True: # 交易结束
