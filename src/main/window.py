@@ -68,6 +68,7 @@ class MainWindow(QMainWindow):
         self.config = config.Config()
         self.config.LoadConfig_Main(define.CFG_FILE_PATH_MAIN)
         self.config.LoadConfig_Anal(define.CFG_FILE_PATH_ANAL)
+        self.config.LoadConfig_Risk(define.CFG_FILE_PATH_RISK)
         
         self.log_text = ""
         self.log_cate = "MainWindow"

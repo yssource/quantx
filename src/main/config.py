@@ -299,10 +299,23 @@ class CfgAnal(object):
         
         config.write() # 配置文件格式必须为 UTF8 否则会报异常
 
+class CfgRisk(object):
+    def __init__(self):
+        pass
+
+    def LoadConfig(self, file_path):
+        config = configobj.ConfigObj(file_path, encoding = "UTF8")
+
+    def SaveConfig(self, cfg_anal, file_path):
+        config = configobj.ConfigObj(file_path, encoding = "UTF8")
+        
+        config.write() # 配置文件格式必须为 UTF8 否则会报异常
+
 class Config(common.Singleton):
     def __init__(self):
         self.cfg_main = CfgMain()
         self.cfg_anal = CfgAnal()
+        self.cfg_risk = CfgRisk()
 
     def LoadConfig_Main(self, file_path):
         self.cfg_main.LoadConfig(file_path)
@@ -310,8 +323,14 @@ class Config(common.Singleton):
     def LoadConfig_Anal(self, file_path):
         self.cfg_anal.LoadConfig(file_path)
 
+    def LoadConfig_Risk(self, file_path):
+        self.cfg_risk.LoadConfig(file_path)
+
     def SaveConfig_Main(self, cfg_main, file_path):
         pass
 
     def SaveConfig_Anal(self, cfg_anal, file_path):
         self.cfg_anal.SaveConfig(cfg_anal, file_path)
+
+    def SaveConfig_Risk(self, cfg_risk, file_path):
+        self.cfg_risk.SaveConfig(cfg_risk, file_path)

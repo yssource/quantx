@@ -580,7 +580,7 @@ class Panel(QDialog):
 
     def OnButtonPlaceOrder(self):
         if self.trader != None:
-            if self.trader.started == False:
+            if self.trader.IsTraderReady() == False:
                 self.logger.SendMessage("E", 4, self.log_cate, "交易服务尚未开启！", "M")
                 return
             else:
@@ -628,12 +628,12 @@ class Panel(QDialog):
                 QMessageBox.information(self, "提示", "委托下单提交完成。", QMessageBox.Ok)
                 return
         else:
-            self.logger.SendMessage("E", 4, self.log_cate, "没有连接交易服务！", "M")
+            self.logger.SendMessage("E", 4, self.log_cate, "交易服务尚未获取！", "M")
             return
 
     def OnButtonCancelOrder(self):
         if self.trader != None:
-            if self.trader.started == False:
+            if self.trader.IsTraderReady() == False:
                 self.logger.SendMessage("E", 4, self.log_cate, "交易服务尚未开启！", "M")
                 return
             else:
@@ -646,7 +646,7 @@ class Panel(QDialog):
                 QMessageBox.information(self, "提示", "委托撤单提交完成。", QMessageBox.Ok)
                 return
         else:
-            self.logger.SendMessage("E", 4, self.log_cate, "没有连接交易服务！", "M")
+            self.logger.SendMessage("E", 4, self.log_cate, "交易服务尚未获取！", "M")
             return
 
 ####################################################################################################

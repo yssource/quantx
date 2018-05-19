@@ -55,6 +55,7 @@ USER_CTRL_FAIL = 4 # 发生异常
 
 CFG_FILE_PATH_MAIN = "../etcs/cfg_main.ini"
 CFG_FILE_PATH_ANAL = "../etcs/cfg_anal.ini"
+CFG_FILE_PATH_RISK = "../etcs/cfg_risk.ini"
 
 TASK_STATUS_FAIL = -1 # 执行失败
 TASK_STATUS_WAIT = 0 # 等待执行
