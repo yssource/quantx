@@ -313,7 +313,7 @@ class SimulateTrader(QDialog):
                 for (inners, company, market, code, name, category, sector, is_st, list_state, list_date) in rows:
                     self.security[market + code] = Security(inners = inners, company = company, market = market, code = code, name = name, category = category, 
                                                             sector = sector, is_st = is_st, list_state = list_state, list_date = list_date)
-                #for key, value in self.security.iteritems():
+                #for key, value in self.security.items():
                 #    print(key, value.ToString())
             else:
                 print("证券信息数据为空！")
@@ -329,13 +329,13 @@ class SimulateTrader(QDialog):
                     self.quote_data[market + code] = QuoteData(inners = inners, market = market, code = code, name = name, category = category, 
                                                                open = open, high = high, low = low, close = close, pre_close = pre_close, volume = volume, 
                                                                turnover = turnover, trade_count = trade_count, quote_date = quote_date, quote_time = quote_time)
-                #for key, value in self.quote_data.iteritems():
+                #for key, value in self.quote_data.items():
                 #    print(key, value.ToString())
             else:
                 print("昨日行情数据为空！")
         else:
             print("获取昨日行情数据失败！")
-        for key, value in self.security.iteritems():
+        for key, value in self.security.items():
             if key in self.quote_data.keys():
                 quote = self.quote_data[key]
                 self.stock_list.append(StockInfo(market = value.market, code = value.code, name = value.name, close = quote.close))

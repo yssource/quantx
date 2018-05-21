@@ -34,7 +34,7 @@ class DBM_MsSQL():
         try: self.logger = logger.Logger()
         except: pass
         self.host = kwargs.get("host", "0.0.0.0")
-        self.port = kwargs.get("port", 0)
+        self.port = kwargs.get("port", "0")
         self.user = kwargs.get("user", "user")
         self.password = kwargs.get("password", "123456")
         self.database = kwargs.get("database", "test")

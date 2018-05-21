@@ -31,13 +31,13 @@ from datetime import datetime, date
 import numpy as np
 import pandas as pd
 
-pd.set_option("max_colwidth", 200)
-pd.set_option("display.width", 500)
-
 try: import logger
 except: pass
 import dbm_mongo
 import dbm_mysql
+
+pd.set_option("max_colwidth", 200)
+pd.set_option("display.width", 500)
 
 DEF_INIT_KLINE_ITEM_LOW = 99999.0
 
