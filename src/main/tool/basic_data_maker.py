@@ -23,10 +23,12 @@
 
 import os
 import re
+import threading
 
 import numpy as np
 import pandas as pd
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QTextCursor
+from PyQt5.QtCore import QEvent
 from PyQt5.QtWidgets import QApplication, QDialog, QPushButton, QTextEdit, QHBoxLayout, QVBoxLayout
 
 import common
@@ -36,7 +38,9 @@ import dbm_mysql
 pd.set_option("max_colwidth", 200)
 pd.set_option("display.width", 500)
 
-class Capital(object):
+DEF_EVENT_TEXT_INFO_PRINT = 1001
+
+class CapitalItem(object):
     def __init__(self, **kwargs):
         self.inners = kwargs.get("inners", 0) # 内部代码
         self.market = kwargs.get("market", "") #֤ 证券市场
@@ -50,7 +54,7 @@ class Capital(object):
         if date != None:
             self.end_date = date.year * 10000 + date.month * 100 + date.day
 
-class ExRights(object):
+class ExRightsItem(object):
     def __init__(self, **kwargs):
         self.inners = kwargs.get("inners", 0) # 内部代码
         self.market = kwargs.get("market", "") #֤ 证券市场
@@ -62,6 +66,28 @@ class ExRights(object):
         self.pg = 0.0 # 配股比率，每股
         self.price = 0.0 # 配股价
         self.bonus = 0.0 # 现金红利
+
+class IndustryItem(object):
+    def __init__(self, **kwargs):
+        self.standard = kwargs.get("standard", 0) # 行业划分标准
+        self.industry = kwargs.get("industry", 0) # 所属行业
+        self.industry_code_1 = kwargs.get("industry_code_1", "") # 一级行业代码
+        self.industry_name_1 = kwargs.get("industry_name_1", "") # 一级行业名称
+        self.industry_code_2 = kwargs.get("industry_code_2", "") # 二级行业代码
+        self.industry_name_2 = kwargs.get("industry_name_2", "") # 二级行业名称
+        self.industry_code_3 = kwargs.get("industry_code_3", "") # 三级行业代码
+        self.industry_name_3 = kwargs.get("industry_name_3", "") # 三级行业名称
+        self.industry_code_4 = kwargs.get("industry_code_4", "") # 四级行业代码
+        self.industry_name_4 = kwargs.get("industry_name_4", "") # 四级行业名称
+        self.inners = kwargs.get("inners", 0) # 证券内部编码
+        self.market = kwargs.get("market", "") # 证券市场
+        self.code = kwargs.get("code", "") # 证券代码
+        self.name = kwargs.get("name", "") # 证券名称
+        self.info_date = kwargs.get("info_date", 0) # 信息发布日期
+
+    def SetInfoDate(self, date):
+        if date != None:
+            self.info_date = date.year * 10000 + date.month * 100 + date.day
 
 class DataMaker_Capital():
     def __init__(self, parent = None):
@@ -136,13 +162,13 @@ class DataMaker_Capital():
                         stock_market = "SH"
                     elif SecuMarket == 90:
                         stock_market = "SZ"
-                    capital = Capital(inners = InnerCode, market = stock_market, code = SecuCode, name = SecuAbbr)
-                    capital.SetEndDate(EndDate) # 截止日期
+                    capital_item = CapitalItem(inners = InnerCode, market = stock_market, code = SecuCode, name = SecuAbbr)
+                    capital_item.SetEndDate(EndDate) # 截止日期
                     if TotalShares != None:
-                        capital.total_shares = TotalShares
+                        capital_item.total_shares = TotalShares
                     if AFloatListed != None:
-                        capital.circu_shares = AFloatListed
-                    self.capital_dict[InnerCode] = capital
+                        capital_item.circu_shares = AFloatListed
+                    self.capital_dict[InnerCode] = capital_item
                     #print InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, TotalShares, AFloatListed
             self.SendMessage("获取 股本结构 成功。总计 %d 个。" % len(result_list))
             self.CheckStockGuBen()
@@ -297,7 +323,7 @@ class DataMaker_ExRights():
                         if PlaPrice != None:
                             exrights_item.price = float(PlaPrice)
                     else:
-                        exrights_item = ExRights(inners = InnerCode, market = market, code = SecuCode, date = date)
+                        exrights_item = ExRightsItem(inners = InnerCode, market = market, code = SecuCode, date = date)
                         if ActualPlaRatio != None:
                             exrights_item.pg = float(ActualPlaRatio) / 10.0
                         if PlaPrice != None:
@@ -316,7 +342,7 @@ class DataMaker_ExRights():
                         if PlaPrice != None:
                             exrights_item.price = float(PlaPrice)
                     else:
-                        exrights_item = ExRights(inners = InnerCode, market = market, code = SecuCode, date = date)
+                        exrights_item = ExRightsItem(inners = InnerCode, market = market, code = SecuCode, date = date)
                         if ActualPlaRatio != None:
                             exrights_item.pg = float(ActualPlaRatio) / 10.0
                         if PlaPrice != None:
@@ -367,7 +393,7 @@ class DataMaker_ExRights():
                         if CashDiviRMB != None:
                             exrights_item.bonus += float(CashDiviRMB) / 10.0
                     else:
-                        exrights_item = ExRights(inners = InnerCode, market = market, code = SecuCode, date = date)
+                        exrights_item = ExRightsItem(inners = InnerCode, market = market, code = SecuCode, date = date)
                         if BonusShareRatio != None:
                             exrights_item.sg += float(BonusShareRatio) / 10.0
                         if TranAddShareRaio != None:
@@ -390,7 +416,7 @@ class DataMaker_ExRights():
                         if CashDiviRMB != None:
                             exrights_item.bonus += float(CashDiviRMB) / 10.0
                     else:
-                        exrights_item = ExRights(inners = InnerCode, market = market, code = SecuCode, date = date)
+                        exrights_item = ExRightsItem(inners = InnerCode, market = market, code = SecuCode, date = date)
                         if BonusShareRatio != None:
                             exrights_item.sg += float(BonusShareRatio) / 10.0
                         if TranAddShareRaio != None:
@@ -504,6 +530,139 @@ class DataMaker_ExRights():
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
 
+class DataMaker_Industry():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.industry_list = []
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def PullData_Industry(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_Industry 数据库 dbm 尚未连接！")
+            return
+        self.industry_list = []
+        # 证券市场：83 上海证券交易所、90 深圳证券交易所
+        # 证券类别：1 A股
+        # 上市板块：1 主板、2 中小企业板、6 创业板
+        # 查询字段：SecuMain：证券内部编码、证券代码、证券简称、证券市场
+        # 查询字段：LC_ExgIndustry：信息发布日期、行业划分标准、所属行业、是否执行、
+        #                           一级行业代码、一级行业名称、二级行业代码、二级行业名称、三级行业代码、三级行业名称、四级行业代码、四级行业名称
+        # 唯一约束：SecuMain = InnerCode、LC_ExgIndustry = CompanyCode & InfoPublDate & Standard & Industry & IfPerformed
+        str_sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuMarket, \
+                         LC_ExgIndustry.InfoPublDate, LC_ExgIndustry.Standard, LC_ExgIndustry.Industry, LC_ExgIndustry.IfPerformed, \
+                         LC_ExgIndustry.FirstIndustryCode, LC_ExgIndustry.FirstIndustryName, LC_ExgIndustry.SecondIndustryCode, LC_ExgIndustry.SecondIndustryName, \
+                         LC_ExgIndustry.ThirdIndustryCode, LC_ExgIndustry.ThirdIndustryName, LC_ExgIndustry.FourthIndustryCode, LC_ExgIndustry.FourthIndustryName \
+                  FROM SecuMain INNER JOIN LC_ExgIndustry \
+                  ON SecuMain.CompanyCode = LC_ExgIndustry.CompanyCode \
+                  WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                    AND (SecuMain.SecuCategory = 1) \
+                    AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
+                    AND (LC_ExgIndustry.IfPerformed = 1) \
+                  ORDER BY LC_ExgIndustry.Standard ASC, LC_ExgIndustry.Industry ASC, \
+                           LC_ExgIndustry.FirstIndustryCode ASC, LC_ExgIndustry.SecondIndustryCode ASC, LC_ExgIndustry.ThirdIndustryCode ASC, LC_ExgIndustry.FourthIndustryCode ASC"
+        result_list = dbm.ExecQuery(str_sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuMarket, InfoPublDate, Standard, Industry, IfPerformed, FirstIndustryCode, FirstIndustryName, SecondIndustryCode, SecondIndustryName, ThirdIndustryCode, ThirdIndustryName, FourthIndustryCode, FourthIndustryName) in result_list:
+                stock_market = ""
+                if SecuMarket == 83:
+                    stock_market = "SH"
+                elif SecuMarket == 90:
+                    stock_market = "SZ"
+                industry_item = IndustryItem(standard = Standard, industry = Industry, inners = InnerCode, market = stock_market, code = SecuCode, name = SecuAbbr, 
+                                    industry_code_1 = FirstIndustryCode, industry_name_1 = FirstIndustryName, industry_code_2 = SecondIndustryCode, industry_name_2 = SecondIndustryName, 
+                                    industry_code_3 = ThirdIndustryCode, industry_name_3 = ThirdIndustryName, industry_code_4 = FourthIndustryCode, industry_name_4 = FourthIndustryName)
+                industry_item.SetInfoDate(InfoPublDate) #
+                self.industry_list.append(industry_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuMarket, InfoPublDate, Standard, Industry, IfPerformed, FirstIndustryCode, FirstIndustryName, SecondIndustryCode, SecondIndustryName, ThirdIndustryCode, ThirdIndustryName, FourthIndustryCode, FourthIndustryName)
+            self.SendMessage("获取 行业划分 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 行业划分 失败！")
+
+    def SaveData_Industry(self, dbm, save_path):
+        if dbm == None:
+            self.SendMessage("SaveData_Industry 数据库 dbm 尚未连接！")
+            return
+        table_name = "industry_data"
+        sql = "SHOW TABLES"
+        result = dbm.QueryAllSql(sql)
+        data_tables = list(result)
+        #print(data_tables)
+        have_tables = re.findall("(\'.*?\')", str(data_tables))
+        have_tables = [re.sub("'", "", table) for table in have_tables]
+        #print(have_tables)
+        if table_name in have_tables:
+            sql = "TRUNCATE TABLE %s" % table_name
+            dbm.ExecuteSql(sql)
+        else:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`standard` int(32) NOT NULL DEFAULT '0' COMMENT '行业划分标准'," + \
+                  "`industry` int(32) NOT NULL DEFAULT '0' COMMENT '所属行业'," + \
+                  "`industry_code_1` varchar(32) DEFAULT '' COMMENT '一级行业代码'," + \
+                  "`industry_name_1` varchar(100) DEFAULT '' COMMENT '一级行业名称'," + \
+                  "`industry_code_2` varchar(32) DEFAULT '' COMMENT '二级行业代码'," + \
+                  "`industry_name_2` varchar(100) DEFAULT '' COMMENT '二级行业名称'," + \
+                  "`industry_code_3` varchar(32) DEFAULT '' COMMENT '三级行业代码'," + \
+                  "`industry_name_3` varchar(100) DEFAULT '' COMMENT '三级行业名称'," + \
+                  "`industry_code_4` varchar(32) DEFAULT '' COMMENT '四级行业代码'," + \
+                  "`industry_name_4` varchar(100) DEFAULT '' COMMENT '四级行业名称'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`info_date` date NOT NULL COMMENT '信息日期'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_standard_industry_market_code_info_date` (`standard`,`industry`,`market`,`code`,`info_date`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            dbm.ExecuteSql(sql)
+        total_record_num = 0
+        save_record_failed = 0
+        save_record_success = 0
+        save_index_from = 0 #
+        total_record_num = len(self.industry_list)
+        sql = "INSERT INTO %s" % table_name + "(standard, industry, industry_code_1, industry_name_1, industry_code_2, industry_name_2, industry_code_3, industry_name_3, industry_code_4, industry_name_4, inners, market, code, name, info_date) \
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        values = []
+        for i in range(save_index_from, total_record_num):
+            str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
+            values.append((self.industry_list[i].standard, self.industry_list[i].industry, 
+                           self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
+                           self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
+                           self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
+            if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
+                if len(values) > 0: # 有记录需要保存
+                    if dbm.ExecuteManySql(sql, values) == False:
+                        save_record_failed += len(values)
+                    else:
+                        save_record_success += len(values)
+                    #print("保存：", len(values))
+                    values = [] #
+        if len(values) > 0: # 有记录需要保存
+            if dbm.ExecuteManySql(sql, values) == False:
+                save_record_failed += len(values)
+            else:
+                save_record_success += len(values)
+            #print("保存：", len(values))
+        self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+        values = []
+        for i in range(total_record_num):
+            str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
+            values.append((self.industry_list[i].standard, self.industry_list[i].industry, 
+                           self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
+                           self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
+                           self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
+        columns = ["standard", "industry", "industry_code_1", "industry_name_1", "industry_code_2", "industry_name_2", 
+                   "industry_code_3", "industry_name_3", "industry_code_4", "industry_name_4", "inners", "market", "code", "name", "info_date"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values) > 0:
+            result = pd.DataFrame(data = values, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+
 class BasicDataMaker(QDialog):
     def __init__(self, save_folder):
         super(BasicDataMaker, self).__init__()
@@ -524,6 +683,10 @@ class BasicDataMaker(QDialog):
         self.dbm_jydb = None
         self.dbm_financial = None
         
+        self.text_info_list = []
+        self.text_info_index = 0
+        self.data_make_flag = False # 手动点击就不用锁了
+        
         self.save_folder = save_folder
         if not os.path.exists(self.save_folder):
             os.makedirs(self.save_folder)
@@ -533,8 +696,22 @@ class BasicDataMaker(QDialog):
     def __del__(self):
         pass
 
+    def event(self, event):
+        if event.type() == DEF_EVENT_TEXT_INFO_PRINT:
+            self.OnTextInfoPrint()
+        return QDialog.event(self, event)
+
+    def OnTextInfoPrint(self):
+        text_info_count = len(self.text_info_list)
+        if text_info_count > self.text_info_index:
+            for i in range(self.text_info_index, text_info_count):
+                self.text_edit_text_info.append(self.text_info_list[i])
+            self.text_edit_text_info.moveCursor(QTextCursor.End)
+            self.text_info_index = text_info_count #
+
     def SendMessage(self, text_info):
-        self.text_edit_text_info.append(text_info)
+        self.text_info_list.append(text_info)
+        QApplication.postEvent(self, QEvent(DEF_EVENT_TEXT_INFO_PRINT))
 
     def SetMsSQL(self, **kwargs):
         self.mssql_host = kwargs.get("host", "0.0.0.0")
@@ -576,10 +753,16 @@ class BasicDataMaker(QDialog):
         self.button_exrights.setStyleSheet("font:bold;color:blue")
         self.button_exrights.setFixedWidth(70)
         
+        self.button_industry = QPushButton("行业划分")
+        self.button_industry.setFont(QFont("SimSun", 9))
+        self.button_industry.setStyleSheet("font:bold;color:blue")
+        self.button_industry.setFixedWidth(70)
+        
         self.h_box_layout_buttons = QHBoxLayout()
         self.h_box_layout_buttons.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_buttons.addWidget(self.button_capital)
         self.h_box_layout_buttons.addWidget(self.button_exrights)
+        self.h_box_layout_buttons.addWidget(self.button_industry)
         self.h_box_layout_buttons.addStretch(1)
         
         self.h_box_layout_text_info = QHBoxLayout()
@@ -595,23 +778,67 @@ class BasicDataMaker(QDialog):
         
         self.button_capital.clicked.connect(self.OnButtonCapital)
         self.button_exrights.clicked.connect(self.OnButtonExRights)
+        self.button_industry.clicked.connect(self.OnButtonIndustry)
+
+    def Thread_Capital(self, data_type):
+        if self.data_make_flag == False:
+            self.data_make_flag = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                data_maker_capital = DataMaker_Capital(self)
+                data_maker_capital.PullData_Capital(self.dbm_jydb)
+                data_maker_capital.SaveData_Capital(self.dbm_financial, self.save_folder + "/capital_data")
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.data_make_flag = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
+    def Thread_ExRights(self, data_type):
+        if self.data_make_flag == False:
+            self.data_make_flag = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                data_maker_exrights = DataMaker_ExRights(self)
+                data_maker_exrights.PullData_Stock(self.dbm_jydb)
+                data_maker_exrights.PullData_PeiGu(self.dbm_jydb)
+                data_maker_exrights.PullData_FenHong(self.dbm_jydb)
+                data_maker_exrights.CalcMulerAdder()
+                data_maker_exrights.SaveData_ExRights(self.dbm_financial, self.save_folder + "/ex_rights_data")
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.data_make_flag = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
+    def Thread_Industry(self, data_type):
+        if self.data_make_flag == False:
+            self.data_make_flag = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                data_maker_industry = DataMaker_Industry(self)
+                data_maker_industry.PullData_Industry(self.dbm_jydb)
+                data_maker_industry.SaveData_Industry(self.dbm_financial, self.save_folder + "/industry_data")
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.data_make_flag = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
 
     def OnButtonCapital(self):
-        self.SendMessage("\n# -------------------- 股本结构 -------------------- #")
-        data_maker_capital = DataMaker_Capital(self)
-        data_maker_capital.PullData_Capital(self.dbm_jydb)
-        data_maker_capital.SaveData_Capital(self.dbm_financial, self.save_folder + "/capital_data")
-        self.SendMessage("# -------------------- 股本结构 -------------------- #")
+        self.thread_make_data = threading.Thread(target = self.Thread_Capital, args = ("股本结构",))
+        self.thread_make_data.start()
 
     def OnButtonExRights(self):
-        self.SendMessage("\n# -------------------- 除权数据 -------------------- #")
-        data_maker_exrights = DataMaker_ExRights(self)
-        data_maker_exrights.PullData_Stock(self.dbm_jydb)
-        data_maker_exrights.PullData_PeiGu(self.dbm_jydb)
-        data_maker_exrights.PullData_FenHong(self.dbm_jydb)
-        data_maker_exrights.CalcMulerAdder()
-        data_maker_exrights.SaveData_ExRights(self.dbm_financial, self.save_folder + "/ex_rights_data")
-        self.SendMessage("# -------------------- 除权数据 -------------------- #")
+        self.thread_make_data = threading.Thread(target = self.Thread_ExRights, args = ("除权数据",))
+        self.thread_make_data.start()
+
+    def OnButtonIndustry(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_Industry, args = ("行业划分",))
+        self.thread_make_data.start()
 
 if __name__ == "__main__":
     import sys
