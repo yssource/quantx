@@ -22,7 +22,7 @@
 # Be sure to retain the above copyright notice and conditions.
 
 import threading
-from datetime import datetime
+from datetime import datetime, date
 
 import define
 
@@ -63,6 +63,18 @@ def GetDateShort():
 
 def GetTimeShort():
     return datetime.now().strftime("%H:%M:%S")
+
+def TransDateIntToStr(int_date):
+    year = int(int_date / 10000)
+    month = int((int_date % 10000) / 100)
+    day = int_date % 100
+    return "%d-%d-%d" % (year, month, day)
+
+def TransDateIntToDate(int_date):
+    year = int(int_date / 10000)
+    month = int((int_date % 10000) / 100)
+    day = int_date % 100
+    return date(year, month, day)
 
 def PreTransStockTdfMarket(tmp_data): # TDF个股快照预处理
     try:
