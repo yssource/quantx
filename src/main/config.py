@@ -77,11 +77,23 @@ class CfgMain(object):
         self.logger_server_flag = "flag"
         
         self.data_folder = "../data"
+        
         self.data_db_need = 0
         self.data_db_host = "0.0.0.0"
         self.data_db_port = 9999
         self.data_db_user = "username"
         self.data_db_pass = "password"
+        self.data_db_charset = "utf8"
+        self.data_db_name_financial = "db_name"
+        self.data_db_name_quotedata = "db_name"
+        
+        self.jysj_db_need = 0
+        self.jysj_db_host = "0.0.0.0"
+        self.jysj_db_port = "9999" # 字符串
+        self.jysj_db_user = "username"
+        self.jysj_db_pass = "password"
+        self.jysj_db_charset = "utf8"
+        self.jysj_db_name_jydb = "db_name"
         
         self.anal_folder = "../anal"
         
@@ -154,11 +166,23 @@ class CfgMain(object):
         self.logger_server_Flag = config.get("nets", "logger_server_Flag")
         
         self.data_folder = config.get("data", "data_folder")
+        
         self.data_db_need = int(config.get("data", "data_db_need"))
         self.data_db_host = config.get("data", "data_db_host")
         self.data_db_port = int(config.get("data", "data_db_port"))
         self.data_db_user = config.get("data", "data_db_user")
         self.data_db_pass = config.get("data", "data_db_pass")
+        self.data_db_charset = config.get("data", "data_db_charset")
+        self.data_db_name_financial = config.get("data", "data_db_name_financial")
+        self.data_db_name_quotedata = config.get("data", "data_db_name_quotedata")
+        
+        self.jysj_db_need = int(config.get("data", "jysj_db_need"))
+        self.jysj_db_host = config.get("data", "jysj_db_host")
+        self.jysj_db_port = config.get("data", "jysj_db_port") # 字符串
+        self.jysj_db_user = config.get("data", "jysj_db_user")
+        self.jysj_db_pass = config.get("data", "jysj_db_pass")
+        self.jysj_db_charset = config.get("data", "jysj_db_charset")
+        self.jysj_db_name_jydb = config.get("data", "jysj_db_name_jydb")
         
         self.anal_folder = config.get("anal", "anal_folder")
         

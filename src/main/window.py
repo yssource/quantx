@@ -49,6 +49,8 @@ import basicx
 import trader
 import strate
 
+import basic_data_maker
+
 import strategy_base # 只是为了打包时能被编译到
 import analysis_base # 只是为了打包时能被编译到
 import panel_trader_stk_ape # 只是为了打包时能被编译到
@@ -100,6 +102,7 @@ class MainWindow(QMainWindow):
         self.is_tray_icon_loaded = False
         self.is_not_first_run = False
         self.current_main_tab_index = 0
+        self.basic_data_maker = None
         
         self.setWindowTitle(define.APP_TITLE_EN + " " + define.APP_VERSION)
         self.resize(define.DEF_MAIN_WINDOW_W, define.DEF_MAIN_WINDOW_H)
@@ -203,11 +206,17 @@ class MainWindow(QMainWindow):
         self.action_save_layout = QAction("保存布局", self)
         self.action_save_layout.setCheckable(True)
         self.action_save_layout.triggered.connect(self.OnActionSaveLayout)
+        
+        self.action_basic_data_maker = QAction(QIcon(define.DEF_ICON_ACTION_ABOUT), "基础数据生成(&B)", self)
+        self.action_basic_data_maker.setShortcut("Ctrl+B")
+        self.action_basic_data_maker.setStatusTip("基础数据生成")
+        self.action_basic_data_maker.triggered.connect(self.OnActionBasicDataMaker)
 
     def CreateMenuBar(self):
         self.menu_file = self.menuBar().addMenu("文件(&F)")
         self.menu_file.addAction(self.action_exit)
         self.menu_tool = self.menuBar().addMenu("工具(&T)")
+        self.menu_tool.addAction(self.action_basic_data_maker)
         self.menu_view = self.menuBar().addMenu("视图(&V)")
         self.menu_view_tooler = self.menu_view.addMenu(QIcon(define.DEF_ICON_MENU_VIEW_TOOLER), "工具条(&T)")
         self.menu_view_docker = self.menu_view.addMenu(QIcon(define.DEF_ICON_MENU_VIEW_DOCKER), "停靠栏(&D)")
@@ -648,3 +657,15 @@ class MainWindow(QMainWindow):
         for i in range(self.main_tab_widget.count()):
             if i != index:
                 self.main_tab_widget.setTabIcon(i, QIcon(define.DEF_ICON_MAIN_TAB_HIDE))
+
+    def OnActionBasicDataMaker(self):
+        if self.basic_data_maker == None:
+            self.basic_data_maker = basic_data_maker.BasicDataMaker(folder = self.config.cfg_main.data_folder)
+            self.basic_data_maker.SetMsSQL(host = self.config.cfg_main.jysj_db_host, port = self.config.cfg_main.jysj_db_port, 
+                                           user = self.config.cfg_main.jysj_db_user, password = self.config.cfg_main.jysj_db_pass, 
+                                           database = self.config.cfg_main.jysj_db_name_jydb, charset = self.config.cfg_main.jysj_db_charset)
+            if self.config.cfg_main.data_db_need == 1: # 否则不保存数据到数据库
+                self.basic_data_maker.SetMySQL(host = self.config.cfg_main.data_db_host, port = self.config.cfg_main.data_db_port, 
+                                               user = self.config.cfg_main.data_db_user, passwd = self.config.cfg_main.data_db_pass, 
+                                               db = self.config.cfg_main.data_db_name_financial, charset = self.config.cfg_main.data_db_charset)
+        self.basic_data_maker.show()

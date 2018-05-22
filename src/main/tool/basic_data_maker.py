@@ -175,63 +175,61 @@ class DataMaker_Capital():
         else:
             self.SendMessage("获取 股本结构 失败！")
 
-    def SaveData_Capital(self, dbm, save_path):
-        if dbm == None:
-            self.SendMessage("PushData_Capital 数据库 dbm 尚未连接！")
-            return
-        table_name = "capital_data"
-        sql = "SHOW TABLES"
-        result = dbm.QueryAllSql(sql)
-        data_tables = list(result)
-        #print(data_tables)
-        have_tables = re.findall("(\'.*?\')", str(data_tables))
-        have_tables = [re.sub("'", "", table) for table in have_tables]
-        #print(have_tables)
-        if table_name in have_tables:
-            sql = "TRUNCATE TABLE %s" % table_name
-            dbm.ExecuteSql(sql)
-        else:
-            sql = "CREATE TABLE `%s` (" % table_name + \
-                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
-                  "`end_date` date NOT NULL COMMENT '截止日期'," + \
-                  "`total_shares` bigint(64) DEFAULT '0' COMMENT '总股本，股'," + \
-                  "`circu_shares` bigint(64) DEFAULT '0' COMMENT '流通股本，股，A股'," + \
-                  "PRIMARY KEY (`id`)," + \
-                  "UNIQUE KEY `idx_market_code_end_date` (`market`,`code`,`end_date`)" + \
-                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-            dbm.ExecuteSql(sql)
+    def SaveData_Capital(self, dbm, table_name, save_path):
         capital_keys = list(self.capital_dict.keys())
         capital_keys.sort()
         capital_dict_list = [self.capital_dict[key] for key in capital_keys]
-        total_record_num = 0
-        save_record_failed = 0
-        save_record_success = 0
-        save_index_from = 0 #
         total_record_num = len(capital_dict_list)
-        sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, end_date, total_shares, circu_shares) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        values = []
-        for i in range(save_index_from, total_record_num):
-            str_date = common.TransDateIntToStr(capital_dict_list[i].end_date)
-            values.append((capital_dict_list[i].inners, capital_dict_list[i].market, capital_dict_list[i].code, capital_dict_list[i].name, str_date, capital_dict_list[i].total_shares, capital_dict_list[i].circu_shares))
-            if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                if len(values) > 0: # 有记录需要保存
-                    if dbm.ExecuteManySql(sql, values) == False:
-                        save_record_failed += len(values)
-                    else:
-                        save_record_success += len(values)
-                    #print("保存：", len(values))
-                    values = [] #
-        if len(values) > 0: # 有记录需要保存
-            if dbm.ExecuteManySql(sql, values) == False:
-                save_record_failed += len(values)
+        
+        if dbm != None:
+            sql = "SHOW TABLES"
+            result = dbm.QueryAllSql(sql)
+            data_tables = list(result)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            if table_name in have_tables:
+                sql = "TRUNCATE TABLE %s" % table_name
+                dbm.ExecuteSql(sql)
             else:
-                save_record_success += len(values)
-            #print("保存：", len(values))
-        self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+                sql = "CREATE TABLE `%s` (" % table_name + \
+                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                      "`end_date` date NOT NULL COMMENT '截止日期'," + \
+                      "`total_shares` bigint(64) DEFAULT '0' COMMENT '总股本，股'," + \
+                      "`circu_shares` bigint(64) DEFAULT '0' COMMENT '流通股本，股，A股'," + \
+                      "PRIMARY KEY (`id`)," + \
+                      "UNIQUE KEY `idx_market_code_end_date` (`market`,`code`,`end_date`)" + \
+                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+                dbm.ExecuteSql(sql)
+            values = []
+            save_record_failed = 0
+            save_record_success = 0
+            save_index_from = 0 #
+            sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, end_date, total_shares, circu_shares) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            for i in range(save_index_from, total_record_num):
+                str_date = common.TransDateIntToStr(capital_dict_list[i].end_date)
+                values.append((capital_dict_list[i].inners, capital_dict_list[i].market, capital_dict_list[i].code, capital_dict_list[i].name, str_date, capital_dict_list[i].total_shares, capital_dict_list[i].circu_shares))
+                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
+                    if len(values) > 0: # 有记录需要保存
+                        if dbm.ExecuteManySql(sql, values) == False:
+                            save_record_failed += len(values)
+                        else:
+                            save_record_success += len(values)
+                        #print("保存：", len(values))
+                        values = [] #
+            if len(values) > 0: # 有记录需要保存
+                if dbm.ExecuteManySql(sql, values) == False:
+                    save_record_failed += len(values)
+                else:
+                    save_record_success += len(values)
+                #print("保存：", len(values))
+            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+        
         values = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(capital_dict_list[i].end_date)
@@ -438,38 +436,7 @@ class DataMaker_ExRights():
                 value_item.muler = 1.0 + value_item.sg + value_item.pg
                 value_item.adder = 0.0 - value_item.bonus + value_item.pg * value_item.price
 
-    def SaveData_ExRights(self, dbm, save_path):
-        if dbm == None:
-            self.SendMessage("PushData_ExRights 数据库 dbm 尚未连接！")
-            return
-        table_name = "ex_rights_data"
-        sql = "SHOW TABLES"
-        result = dbm.QueryAllSql(sql)
-        data_tables = list(result)
-        #print(data_tables)
-        have_tables = re.findall("(\'.*?\')", str(data_tables))
-        have_tables = [re.sub("'", "", table) for table in have_tables]
-        #print(have_tables)
-        if table_name in have_tables:
-            sql = "TRUNCATE TABLE %s" % table_name
-            dbm.ExecuteSql(sql)
-        else:
-            sql = "CREATE TABLE `%s` (" % table_name + \
-                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                  "`date` date NOT NULL COMMENT '除权除息日期'," + \
-                  "`muler` float(16,7) DEFAULT '0.0000000' COMMENT '乘数'," + \
-                  "`adder` float(16,7) DEFAULT '0.0000000' COMMENT '加数'," + \
-                  "`sg` float(16,7) DEFAULT '0.0000000' COMMENT '送股比率，每股，非百分比'," + \
-                  "`pg` float(16,7) DEFAULT '0.0000000' COMMENT '配股比率，每股，非百分比'," + \
-                  "`price` float(10,3) DEFAULT '0.000' COMMENT '配股价，元'," + \
-                  "`bonus` float(16,7) DEFAULT '0.0000000' COMMENT '现金红利，每股，元'," + \
-                  "PRIMARY KEY (`id`)," + \
-                  "UNIQUE KEY `idx_market_code_date` (`market`,`code`,`date`)" + \
-                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-            dbm.ExecuteSql(sql)
+    def SaveData_ExRights(self, dbm, table_name, save_path):
         record_list_temp = []
         exrights_keys_sh = list(self.exrights_dict_sh.keys())
         exrights_keys_sz = list(self.exrights_dict_sz.keys())
@@ -493,31 +460,60 @@ class DataMaker_ExRights():
             #for exrights_item in exrights_item_list:
             #    print(exrights_item.inners, exrights_item.market, exrights_item.code, exrights_item.date, \
             #          exrights_item.muler, exrights_item.adder, exrights_item.sg, exrights_item.pg, exrights_item.price, exrights_item.bonus)
-        total_record_num = 0
-        save_record_failed = 0
-        save_record_success = 0
-        save_index_from = 0 #
         total_record_num = len(record_list_temp)
-        sql = "INSERT INTO %s" % table_name + "(inners, market, code, date, muler, adder, sg, pg, price, bonus) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        values = []
-        for i in range(save_index_from, total_record_num):
-            str_date = common.TransDateIntToStr(record_list_temp[i].date)
-            values.append((record_list_temp[i].inners, record_list_temp[i].market, record_list_temp[i].code, str_date, record_list_temp[i].muler, record_list_temp[i].adder, record_list_temp[i].sg, record_list_temp[i].pg, record_list_temp[i].price, record_list_temp[i].bonus))
-            if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                if len(values) > 0: # 有记录需要保存
-                    if dbm.ExecuteManySql(sql, values) == False:
-                        save_record_failed += len(values)
-                    else:
-                        save_record_success += len(values)
-                    #print("保存：", len(values))
-                    values = [] #
-        if len(values) > 0: # 有记录需要保存
-            if dbm.ExecuteManySql(sql, values) == False:
-                save_record_failed += len(values)
+        
+        if dbm != None:
+            sql = "SHOW TABLES"
+            result = dbm.QueryAllSql(sql)
+            data_tables = list(result)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            if table_name in have_tables:
+                sql = "TRUNCATE TABLE %s" % table_name
+                dbm.ExecuteSql(sql)
             else:
-                save_record_success += len(values)
-            #print("保存：", len(values))
-        self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+                sql = "CREATE TABLE `%s` (" % table_name + \
+                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                      "`date` date NOT NULL COMMENT '除权除息日期'," + \
+                      "`muler` float(16,7) DEFAULT '0.0000000' COMMENT '乘数'," + \
+                      "`adder` float(16,7) DEFAULT '0.0000000' COMMENT '加数'," + \
+                      "`sg` float(16,7) DEFAULT '0.0000000' COMMENT '送股比率，每股，非百分比'," + \
+                      "`pg` float(16,7) DEFAULT '0.0000000' COMMENT '配股比率，每股，非百分比'," + \
+                      "`price` float(10,3) DEFAULT '0.000' COMMENT '配股价，元'," + \
+                      "`bonus` float(16,7) DEFAULT '0.0000000' COMMENT '现金红利，每股，元'," + \
+                      "PRIMARY KEY (`id`)," + \
+                      "UNIQUE KEY `idx_market_code_date` (`market`,`code`,`date`)" + \
+                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+                dbm.ExecuteSql(sql)
+            values = []
+            save_record_failed = 0
+            save_record_success = 0
+            save_index_from = 0 #
+            sql = "INSERT INTO %s" % table_name + "(inners, market, code, date, muler, adder, sg, pg, price, bonus) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            for i in range(save_index_from, total_record_num):
+                str_date = common.TransDateIntToStr(record_list_temp[i].date)
+                values.append((record_list_temp[i].inners, record_list_temp[i].market, record_list_temp[i].code, str_date, record_list_temp[i].muler, record_list_temp[i].adder, record_list_temp[i].sg, record_list_temp[i].pg, record_list_temp[i].price, record_list_temp[i].bonus))
+                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
+                    if len(values) > 0: # 有记录需要保存
+                        if dbm.ExecuteManySql(sql, values) == False:
+                            save_record_failed += len(values)
+                        else:
+                            save_record_success += len(values)
+                        #print("保存：", len(values))
+                        values = [] #
+            if len(values) > 0: # 有记录需要保存
+                if dbm.ExecuteManySql(sql, values) == False:
+                    save_record_failed += len(values)
+                else:
+                    save_record_success += len(values)
+                #print("保存：", len(values))
+            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+        
         values = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(record_list_temp[i].date)
@@ -581,72 +577,70 @@ class DataMaker_Industry():
         else:
             self.SendMessage("获取 行业划分 失败！")
 
-    def SaveData_Industry(self, dbm, save_path):
-        if dbm == None:
-            self.SendMessage("SaveData_Industry 数据库 dbm 尚未连接！")
-            return
-        table_name = "industry_data"
-        sql = "SHOW TABLES"
-        result = dbm.QueryAllSql(sql)
-        data_tables = list(result)
-        #print(data_tables)
-        have_tables = re.findall("(\'.*?\')", str(data_tables))
-        have_tables = [re.sub("'", "", table) for table in have_tables]
-        #print(have_tables)
-        if table_name in have_tables:
-            sql = "TRUNCATE TABLE %s" % table_name
-            dbm.ExecuteSql(sql)
-        else:
-            sql = "CREATE TABLE `%s` (" % table_name + \
-                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                  "`standard` int(32) NOT NULL DEFAULT '0' COMMENT '行业划分标准'," + \
-                  "`industry` int(32) NOT NULL DEFAULT '0' COMMENT '所属行业'," + \
-                  "`industry_code_1` varchar(32) DEFAULT '' COMMENT '一级行业代码'," + \
-                  "`industry_name_1` varchar(100) DEFAULT '' COMMENT '一级行业名称'," + \
-                  "`industry_code_2` varchar(32) DEFAULT '' COMMENT '二级行业代码'," + \
-                  "`industry_name_2` varchar(100) DEFAULT '' COMMENT '二级行业名称'," + \
-                  "`industry_code_3` varchar(32) DEFAULT '' COMMENT '三级行业代码'," + \
-                  "`industry_name_3` varchar(100) DEFAULT '' COMMENT '三级行业名称'," + \
-                  "`industry_code_4` varchar(32) DEFAULT '' COMMENT '四级行业代码'," + \
-                  "`industry_name_4` varchar(100) DEFAULT '' COMMENT '四级行业名称'," + \
-                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
-                  "`info_date` date NOT NULL COMMENT '信息日期'," + \
-                  "PRIMARY KEY (`id`)," + \
-                  "UNIQUE KEY `idx_standard_industry_market_code_info_date` (`standard`,`industry`,`market`,`code`,`info_date`)" + \
-                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-            dbm.ExecuteSql(sql)
-        total_record_num = 0
-        save_record_failed = 0
-        save_record_success = 0
-        save_index_from = 0 #
+    def SaveData_Industry(self, dbm, table_name, save_path):
         total_record_num = len(self.industry_list)
-        sql = "INSERT INTO %s" % table_name + "(standard, industry, industry_code_1, industry_name_1, industry_code_2, industry_name_2, industry_code_3, industry_name_3, industry_code_4, industry_name_4, inners, market, code, name, info_date) \
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        values = []
-        for i in range(save_index_from, total_record_num):
-            str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
-            values.append((self.industry_list[i].standard, self.industry_list[i].industry, 
-                           self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
-                           self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
-                           self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
-            if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                if len(values) > 0: # 有记录需要保存
-                    if dbm.ExecuteManySql(sql, values) == False:
-                        save_record_failed += len(values)
-                    else:
-                        save_record_success += len(values)
-                    #print("保存：", len(values))
-                    values = [] #
-        if len(values) > 0: # 有记录需要保存
-            if dbm.ExecuteManySql(sql, values) == False:
-                save_record_failed += len(values)
+        
+        if dbm != None:
+            sql = "SHOW TABLES"
+            result = dbm.QueryAllSql(sql)
+            data_tables = list(result)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            if table_name in have_tables:
+                sql = "TRUNCATE TABLE %s" % table_name
+                dbm.ExecuteSql(sql)
             else:
-                save_record_success += len(values)
-            #print("保存：", len(values))
-        self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+                sql = "CREATE TABLE `%s` (" % table_name + \
+                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                      "`standard` int(32) NOT NULL DEFAULT '0' COMMENT '行业划分标准'," + \
+                      "`industry` int(32) NOT NULL DEFAULT '0' COMMENT '所属行业'," + \
+                      "`industry_code_1` varchar(32) DEFAULT '' COMMENT '一级行业代码'," + \
+                      "`industry_name_1` varchar(100) DEFAULT '' COMMENT '一级行业名称'," + \
+                      "`industry_code_2` varchar(32) DEFAULT '' COMMENT '二级行业代码'," + \
+                      "`industry_name_2` varchar(100) DEFAULT '' COMMENT '二级行业名称'," + \
+                      "`industry_code_3` varchar(32) DEFAULT '' COMMENT '三级行业代码'," + \
+                      "`industry_name_3` varchar(100) DEFAULT '' COMMENT '三级行业名称'," + \
+                      "`industry_code_4` varchar(32) DEFAULT '' COMMENT '四级行业代码'," + \
+                      "`industry_name_4` varchar(100) DEFAULT '' COMMENT '四级行业名称'," + \
+                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                      "`info_date` date NOT NULL COMMENT '信息日期'," + \
+                      "PRIMARY KEY (`id`)," + \
+                      "UNIQUE KEY `idx_standard_industry_market_code_info_date` (`standard`,`industry`,`market`,`code`,`info_date`)" + \
+                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+                dbm.ExecuteSql(sql)
+            values = []
+            save_record_failed = 0
+            save_record_success = 0
+            save_index_from = 0 #
+            sql = "INSERT INTO %s" % table_name + "(standard, industry, industry_code_1, industry_name_1, industry_code_2, industry_name_2, industry_code_3, industry_name_3, industry_code_4, industry_name_4, inners, market, code, name, info_date) \
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            for i in range(save_index_from, total_record_num):
+                str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
+                values.append((self.industry_list[i].standard, self.industry_list[i].industry, 
+                               self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
+                               self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
+                               self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
+                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
+                    if len(values) > 0: # 有记录需要保存
+                        if dbm.ExecuteManySql(sql, values) == False:
+                            save_record_failed += len(values)
+                        else:
+                            save_record_success += len(values)
+                        #print("保存：", len(values))
+                        values = [] #
+            if len(values) > 0: # 有记录需要保存
+                if dbm.ExecuteManySql(sql, values) == False:
+                    save_record_failed += len(values)
+                else:
+                    save_record_success += len(values)
+                #print("保存：", len(values))
+            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+        
         values = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
@@ -664,8 +658,16 @@ class DataMaker_Industry():
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
 
 class BasicDataMaker(QDialog):
-    def __init__(self, save_folder):
+    def __init__(self, **kwargs):
         super(BasicDataMaker, self).__init__()
+        self.folder = kwargs.get("folder", "") # 数据文件缓存
+        self.tb_trading_day = "trading_day"
+        self.tb_industry_data = "industry_data"
+        self.tb_security_info = "security_info"
+        self.tb_capital_data = "capital_data"
+        self.tb_ex_rights_data = "ex_rights_data"
+        self.tb_tod_ting_pai = "tod_ting_pai"
+        
         self.mssql_host = "0.0.0.0"
         self.mssql_port = 0
         self.mssql_user = "user"
@@ -685,11 +687,22 @@ class BasicDataMaker(QDialog):
         
         self.text_info_list = []
         self.text_info_index = 0
-        self.data_make_flag = False # 手动点击就不用锁了
+        self.flag_data_make = False # 手动点击就不用锁了
+        self.flag_use_database = False
         
-        self.save_folder = save_folder
-        if not os.path.exists(self.save_folder):
-            os.makedirs(self.save_folder)
+        if self.folder != "":
+            self.folder_financial = self.folder + "/financial" # 可能路径含中文
+            self.folder_quotedata = self.folder + "/quotedata" # 可能路径含中文
+            self.folder_quotedata_stock = self.folder_quotedata + "/stock"
+            self.folder_quotedata_stock_daily = self.folder_quotedata_stock + "/daily"
+            self.folder_quotedata_stock_kline_1_m = self.folder_quotedata_stock + "/kline_1_m"
+            if not os.path.exists(self.folder_financial):
+                os.makedirs(self.folder_financial)
+            # 下面已包含 folder_quotedata 和 folder_quotedata_stock 文件夹创建
+            if not os.path.exists(self.folder_quotedata_stock_daily):
+                os.makedirs(self.folder_quotedata_stock_daily)
+            if not os.path.exists(self.folder_quotedata_stock_kline_1_m):
+                os.makedirs(self.folder_quotedata_stock_kline_1_m)
         
         self.InitUserInterface()
 
@@ -728,35 +741,84 @@ class BasicDataMaker(QDialog):
         self.mysql_passwd = kwargs.get("passwd", "123456")
         self.mysql_db = kwargs.get("db", "test")
         self.mysql_charset = kwargs.get("charset", "utf8")
+        self.flag_use_database = True #
 
     def ConnectDB(self):
-        self.dbm_jydb = dbm_mssql.DBM_MsSQL(host = self.mssql_host, port = self.mssql_port, user = self.mssql_user, password = self.mssql_password, database = self.mssql_database, charset = self.mssql_charset)
-        self.dbm_financial = dbm_mysql.DBM_MySQL(host = self.mysql_host, port = self.mysql_port, user = self.mysql_user, passwd = self.mysql_passwd, db = self.mysql_db, charset = self.mysql_charset)
-        self.dbm_jydb.Start()
-        self.dbm_financial.Connect()
-        self.SendMessage("数据库连接完成。")
+        self.DisconnectDB() #
+        try:
+            self.dbm_jydb = dbm_mssql.DBM_MsSQL(host = self.mssql_host, port = self.mssql_port, user = self.mssql_user, password = self.mssql_password, database = self.mssql_database, charset = self.mssql_charset)
+            if self.dbm_jydb.Start() == True:
+                self.SendMessage("数据库 jydb 连接完成。")
+            else:
+                self.SendMessage("数据库 jydb 连接失败！")
+            if self.flag_use_database == True:
+                self.dbm_financial = dbm_mysql.DBM_MySQL(host = self.mysql_host, port = self.mysql_port, user = self.mysql_user, passwd = self.mysql_passwd, db = self.mysql_db, charset = self.mysql_charset)
+                if self.dbm_financial.Connect() == True:
+                    self.SendMessage("数据库 financial 连接完成。")
+                else:
+                    self.SendMessage("数据库 financial 连接失败！")
+            else:
+                self.SendMessage("不使用数据库 financial 保存基础数据。")
+        except Exception as e:
+            self.SendMessage("建立数据库连接发生异常！%s" % e)
+
+    def DisconnectDB(self):
+        try:
+            if self.dbm_jydb != None:
+                self.dbm_jydb.Stop()
+                self.dbm_jydb = None
+                self.SendMessage("数据库 jydb 连接断开！")
+            if self.flag_use_database == True:
+                if self.dbm_financial != None:
+                    self.dbm_financial.Disconnect()
+                    self.dbm_financial = None
+                    self.SendMessage("数据库 financial 连接断开！")
+        except Exception as e:
+            self.SendMessage("断开数据库连接发生异常！%s" % e)
 
     def InitUserInterface(self):
-        self.setWindowTitle("基础数据面板")
+        self.setWindowTitle("基础数据生成")
         self.resize(400, 600)
         self.setFont(QFont("SimSun", 9))
         
         self.text_edit_text_info = QTextEdit()
+        self.text_edit_text_info.setLineWrapMode(QTextEdit.NoWrap) # 不自动换行
+        
+        self.button_connect_db = QPushButton("数据库连接")
+        self.button_connect_db.setFont(QFont("SimSun", 9))
+        self.button_connect_db.setStyleSheet("color:black")
+        self.button_connect_db.setFixedWidth(70)
+        
+        self.button_disconnect_db = QPushButton("数据库断开")
+        self.button_disconnect_db.setFont(QFont("SimSun", 9))
+        self.button_disconnect_db.setStyleSheet("color:black")
+        self.button_disconnect_db.setFixedWidth(70)
         
         self.button_capital = QPushButton("股本结构")
         self.button_capital.setFont(QFont("SimSun", 9))
-        self.button_capital.setStyleSheet("font:bold;color:blue")
+        self.button_capital.setStyleSheet("color:blue")
+        self.button_capital.setFixedWidth(70)
+        
+        self.button_capital = QPushButton("股本结构")
+        self.button_capital.setFont(QFont("SimSun", 9))
+        self.button_capital.setStyleSheet("color:blue")
         self.button_capital.setFixedWidth(70)
         
         self.button_exrights = QPushButton("除权数据")
         self.button_exrights.setFont(QFont("SimSun", 9))
-        self.button_exrights.setStyleSheet("font:bold;color:blue")
+        self.button_exrights.setStyleSheet("color:blue")
         self.button_exrights.setFixedWidth(70)
         
         self.button_industry = QPushButton("行业划分")
         self.button_industry.setFont(QFont("SimSun", 9))
-        self.button_industry.setStyleSheet("font:bold;color:blue")
+        self.button_industry.setStyleSheet("color:blue")
         self.button_industry.setFixedWidth(70)
+        
+        self.h_box_layout_database = QHBoxLayout()
+        self.h_box_layout_database.setContentsMargins(-1, -1, -1, -1)
+        self.h_box_layout_database.addWidget(self.button_connect_db)
+        self.h_box_layout_database.addWidget(self.button_disconnect_db)
+        self.h_box_layout_database.addStretch(1)
         
         self.h_box_layout_buttons = QHBoxLayout()
         self.h_box_layout_buttons.setContentsMargins(-1, -1, -1, -1)
@@ -772,59 +834,65 @@ class BasicDataMaker(QDialog):
         self.v_box_layout = QVBoxLayout()
         self.v_box_layout.setContentsMargins(-1, -1, -1, -1)
         self.v_box_layout.addLayout(self.h_box_layout_text_info)
+        self.v_box_layout.addLayout(self.h_box_layout_database)
         self.v_box_layout.addLayout(self.h_box_layout_buttons)
         
         self.setLayout(self.v_box_layout)
         
+        self.button_connect_db.clicked.connect(self.ConnectDB)
+        self.button_disconnect_db.clicked.connect(self.DisconnectDB)
         self.button_capital.clicked.connect(self.OnButtonCapital)
         self.button_exrights.clicked.connect(self.OnButtonExRights)
         self.button_industry.clicked.connect(self.OnButtonIndustry)
 
     def Thread_Capital(self, data_type):
-        if self.data_make_flag == False:
-            self.data_make_flag = True
+        if self.flag_data_make == False:
+            self.flag_data_make = True
             try:
                 self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_capital_data)
                 data_maker_capital = DataMaker_Capital(self)
                 data_maker_capital.PullData_Capital(self.dbm_jydb)
-                data_maker_capital.SaveData_Capital(self.dbm_financial, self.save_folder + "/capital_data")
+                data_maker_capital.SaveData_Capital(self.dbm_financial, self.tb_capital_data, save_path)
                 self.SendMessage("# -------------------- %s -------------------- #" % data_type)
             except Exception as e:
                 self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
-            self.data_make_flag = False #
+            self.flag_data_make = False #
         else:
             self.SendMessage("正在生成数据，请等待...")
 
     def Thread_ExRights(self, data_type):
-        if self.data_make_flag == False:
-            self.data_make_flag = True
+        if self.flag_data_make == False:
+            self.flag_data_make = True
             try:
                 self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_ex_rights_data)
                 data_maker_exrights = DataMaker_ExRights(self)
                 data_maker_exrights.PullData_Stock(self.dbm_jydb)
                 data_maker_exrights.PullData_PeiGu(self.dbm_jydb)
                 data_maker_exrights.PullData_FenHong(self.dbm_jydb)
                 data_maker_exrights.CalcMulerAdder()
-                data_maker_exrights.SaveData_ExRights(self.dbm_financial, self.save_folder + "/ex_rights_data")
+                data_maker_exrights.SaveData_ExRights(self.dbm_financial, self.tb_ex_rights_data, save_path)
                 self.SendMessage("# -------------------- %s -------------------- #" % data_type)
             except Exception as e:
                 self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
-            self.data_make_flag = False #
+            self.flag_data_make = False #
         else:
             self.SendMessage("正在生成数据，请等待...")
 
     def Thread_Industry(self, data_type):
-        if self.data_make_flag == False:
-            self.data_make_flag = True
+        if self.flag_data_make == False:
+            self.flag_data_make = True
             try:
                 self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_industry_data)
                 data_maker_industry = DataMaker_Industry(self)
                 data_maker_industry.PullData_Industry(self.dbm_jydb)
-                data_maker_industry.SaveData_Industry(self.dbm_financial, self.save_folder + "/industry_data")
+                data_maker_industry.SaveData_Industry(self.dbm_financial, self.tb_industry_data, save_path)
                 self.SendMessage("# -------------------- %s -------------------- #" % data_type)
             except Exception as e:
                 self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
-            self.data_make_flag = False #
+            self.flag_data_make = False #
         else:
             self.SendMessage("正在生成数据，请等待...")
 
@@ -843,9 +911,8 @@ class BasicDataMaker(QDialog):
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    basic_data_maker = BasicDataMaker("I:/Project/Project/QuantX/src/main/tool")
-    basic_data_maker.show() # 先
+    basic_data_maker = BasicDataMaker(folder = "../data")
     basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "user", password = "user", database = "JYDB_NEW", charset = "GBK")
     basic_data_maker.SetMySQL(host = "10.0.7.80", port = 3306, user = "user", passwd = "user", db = "financial", charset = "utf8")
-    basic_data_maker.ConnectDB()
+    basic_data_maker.show()
     sys.exit(app.exec_())
