@@ -21,7 +21,9 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
+import re
 import time
+import math
 
 import pymysql
 
@@ -46,6 +48,7 @@ class DBM_MySQL():
         self.charset = kwargs.get("charset", "utf8")
         self.connect = None
         self.cursor = None
+        self.batch_number = 3000
 
     def __del__(self):
         self.Disconnect()
@@ -159,3 +162,42 @@ class DBM_MySQL():
                 self.log_text = "查询(全)错误：%s" % str(e)
                 self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
             return None
+
+    def TruncateOrCreateTable(self, table_name, sql_create):
+        sql = "SHOW TABLES"
+        result = self.QueryAllSql(sql)
+        if result != None:
+            data_tables = list(result)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            if table_name in have_tables:
+                sql = "TRUNCATE TABLE %s" % table_name
+                return self.ExecuteSql(sql)
+            else:
+                return self.ExecuteSql(sql_create)
+        else:
+            self.SendMessage("E", 4, self.log_cate, "查询数据库表列表失败！", "A")
+        return False
+
+    def BatchInsert(self, values_list, sql_insert):
+        save_record_failed = 0
+        save_record_success = 0
+        total_record_num = len(values_list)
+        divide_count = math.floor(total_record_num / self.batch_number)
+        if divide_count >= 1:
+            for i in range(divide_count):
+                if self.ExecuteManySql(sql_insert, values_list[(i * self.batch_number) : ((i + 1) * self.batch_number)]) == True:
+                    save_record_success += self.batch_number
+                else:
+                    save_record_failed += self.batch_number
+                #print("保存：", self.batch_number)
+        left_number = total_record_num - divide_count * self.batch_number
+        if left_number > 0:
+            if self.ExecuteManySql(sql_insert, values_list[(divide_count * self.batch_number) : (total_record_num)]) == True:
+                save_record_success += left_number
+            else:
+                save_record_failed += left_number
+            #print("保存：", left_number)
+        return total_record_num, save_record_success, save_record_failed
