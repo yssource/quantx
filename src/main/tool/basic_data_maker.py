@@ -238,7 +238,7 @@ class SecurityInfoItem(object):
         if date != None:
             self.list_date = date.year * 10000 + date.month * 100 + date.day
 
-class TingPaiStock(object):
+class TingPaiStockItem(object):
     def __init__(self, **kwargs):
         self.inners = kwargs.get("inners", 0) # 内部代码
         self.market = kwargs.get("market", "")
@@ -267,6 +267,20 @@ class TingPaiStock(object):
                 self.category = 3
             else: # 普通开放式基金
                 self.category = 4
+
+class TradingDayItem(object):
+    def __init__(self, **kwargs):
+        self.natural_date = kwargs.get("natural_date", 0) # 日期
+        self.market = kwargs.get("market", 0) #֤ 证券市场，72、83、89
+        self.trading_day = kwargs.get("trading_day", 0) # 是否交易
+        self.week_end = kwargs.get("week_end", 0) # 是否周末
+        self.month_end = kwargs.get("month_end", 0) # 是否月末
+        self.quarter_end = kwargs.get("quarter_end", 0) # 是否季末
+        self.year_end = kwargs.get("year_end", 0) # 是否年末
+
+    def SetNaturalDate(self, date):
+        if date != None:
+            self.natural_date = date.year * 10000 + date.month * 100 + date.day
 
 class DataMaker_Capital():
     def __init__(self, parent = None):
@@ -1235,9 +1249,9 @@ class DataMaker_TingPaiStock():
                     stock_market = "SH"
                 elif SecuMarket == 90:
                     stock_market = "SZ"
-                ting_pai_stock = TingPaiStock(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, tp_date = SuspendDate, tp_time = SuspendTime, tp_reason = SuspendReason, tp_statement = SuspendStatement, tp_term = SuspendTerm, fp_date = ResumptionDate, fp_time = ResumptionTime, fp_statement = ResumptionStatement, update_time = UpdateTime)
-                ting_pai_stock.SetCategory(SecuCategory, SecuCode) #
-                self.ting_pai_stock_list.append(ting_pai_stock)
+                ting_pai_stock_item = TingPaiStockItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, tp_date = SuspendDate, tp_time = SuspendTime, tp_reason = SuspendReason, tp_statement = SuspendStatement, tp_term = SuspendTerm, fp_date = ResumptionDate, fp_time = ResumptionTime, fp_statement = ResumptionStatement, update_time = UpdateTime)
+                ting_pai_stock_item.SetCategory(SecuCategory, SecuCode) #
+                self.ting_pai_stock_list.append(ting_pai_stock_item)
                 #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, SuspendDate, SuspendTime, SuspendReason, SuspendStatement, SuspendTerm, ResumptionDate, ResumptionTime, ResumptionStatement, UpdateTime)
                 #print(SecuCode, SecuAbbr, SecuMarket, SuspendDate, ResumptionDate, SuspendReason)
             self.SendMessage("获取 今日停牌股票数据 成功。总计 %d 个。%s" % (len(result_list), now_date))
@@ -1316,6 +1330,106 @@ class DataMaker_TingPaiStock():
                            str_date_tp, self.ting_pai_stock_list[i].tp_time, self.ting_pai_stock_list[i].tp_reason, self.ting_pai_stock_list[i].tp_statement, self.ting_pai_stock_list[i].tp_term, 
                            str_date_fp, self.ting_pai_stock_list[i].fp_time, self.ting_pai_stock_list[i].fp_statement, str_date_up))
         columns = ["inners", "market", "code", "name", "category", "tp_date", "tp_time", "tp_reason", "tp_statement", "tp_term", "fp_date", "fp_time", "fp_statement", "update_time"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values) > 0:
+            result = pd.DataFrame(data = values, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+
+class DataMaker_TradingDay():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.trading_day_list = []
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def PullData_TradingDay(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_TradingDay 数据库 dbm 尚未连接！")
+            return
+        self.trading_day_list = []
+        # 证券市场：72、83 沪深交易所、89
+        # 查询字段：QT_TradingDayNew：日期、是否交易日、证券市场、是否周末、是否月末、是否季末、是否年末
+        # 唯一约束：QT_TradingDayNew = Date、SecuMarket
+        sql = "SELECT TradingDate, IfTradingDay, SecuMarket, IfWeekEnd, IfMonthEnd, IfQuarterEnd, IfYearEnd \
+               FROM QT_TradingDayNew \
+               ORDER BY TradingDate ASC, SecuMarket ASC" # WHERE QT_TradingDayNew.SecuMarket = 83 \
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (TradingDate, IfTradingDay, SecuMarket, IfWeekEnd, IfMonthEnd, IfQuarterEnd, IfYearEnd) in result_list:
+                trading_day = 0 if 2 == IfTradingDay else 1
+                week_end = 0 if 2 == IfWeekEnd else 1
+                month_end = 0 if 2 == IfMonthEnd else 1
+                quarter_end = 0 if 2 == IfQuarterEnd else 1
+                year_end = 0 if 2 == IfYearEnd else 1
+                trading_day_item = TradingDayItem(market = SecuMarket, trading_day = trading_day, week_end = week_end, month_end = month_end, quarter_end = quarter_end, year_end = year_end)
+                trading_day_item.SetNaturalDate(TradingDate) #
+                self.trading_day_list.append(trading_day_item)
+                #print(TradingDate, IfTradingDay, SecuMarket, IfWeekEnd, IfMonthEnd, IfQuarterEnd, IfYearEnd)
+            self.SendMessage("获取 交易日期 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 交易日期 失败！")
+
+    def SaveData_TradingDay(self, dbm, table_name, save_path):
+        total_record_num = len(self.trading_day_list)
+        
+        if dbm != None:
+            sql = "SHOW TABLES"
+            result = dbm.QueryAllSql(sql)
+            data_tables = list(result)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            if table_name in have_tables:
+                sql = "TRUNCATE TABLE %s" % table_name
+                dbm.ExecuteSql(sql)
+            else:
+                sql = "CREATE TABLE `%s` (" % table_name + \
+                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                      "``natural_date` date NOT NULL COMMENT '日期'," + \
+                      "``market` int(4) unsigned NOT NULL DEFAULT '0' COMMENT '证券市场，72、83、89'," + \
+                      "`trading_day` int(1) DEFAULT '0' COMMENT '是否交易'," + \
+                      "``week_end` int(1) DEFAULT '0' COMMENT '是否周末'," + \
+                      "``month_end` int(1) DEFAULT '0' COMMENT '是否月末'," + \
+                      "``quarter_end` int(1) DEFAULT '0' COMMENT '是否季末'," + \
+                      "``year_end` int(1) DEFAULT '0' COMMENT '是否年末'," + \
+                      "PRIMARY KEY (`id`)," + \
+                      "UNIQUE KEY `idx_natural_date_market` (`natural_date`,`market`)" + \
+                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+                dbm.ExecuteSql(sql)
+            values = []
+            save_record_failed = 0
+            save_record_success = 0
+            save_index_from = 0 #
+            sql = "INSERT INTO %s" % table_name + "(natural_date, market, trading_day, week_end, month_end, quarter_end, year_end) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            for i in range(save_index_from, total_record_num):
+                str_date = common.TransDateIntToStr(self.trading_day_list[i].natural_date)
+                values.append((str_date, self.trading_day_list[i].market, self.trading_day_list[i].trading_day, self.trading_day_list[i].week_end, self.trading_day_list[i].month_end, self.trading_day_list[i].quarter_end, self.trading_day_list[i].year_end))
+                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
+                    if len(values) > 0: # 有记录需要保存
+                        if dbm.ExecuteManySql(sql, values) == False:
+                            save_record_failed += len(values)
+                        else:
+                            save_record_success += len(values)
+                        #print("保存：", len(values))
+                        values = [] #
+            if len(values) > 0: # 有记录需要保存
+                if dbm.ExecuteManySql(sql, values) == False:
+                    save_record_failed += len(values)
+                else:
+                    save_record_success += len(values)
+                #print("保存：", len(values))
+            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+        
+        values = []
+        for i in range(total_record_num):
+            str_date = common.TransDateIntToStr(self.trading_day_list[i].natural_date)
+            values.append((str_date, self.trading_day_list[i].market, self.trading_day_list[i].trading_day, self.trading_day_list[i].week_end, self.trading_day_list[i].month_end, self.trading_day_list[i].quarter_end, self.trading_day_list[i].year_end))
+        columns = ["natural_date", "market", "trading_day", "week_end", "month_end", "quarter_end", "year_end"]
         result = pd.DataFrame(columns = columns) # 空
         if len(values) > 0:
             result = pd.DataFrame(data = values, columns = columns)
@@ -1496,24 +1610,39 @@ class BasicDataMaker(QDialog):
         self.button_ting_pai_stock.setStyleSheet("color:blue")
         self.button_ting_pai_stock.setFixedWidth(70)
         
+        self.button_trading_day = QPushButton("交易日期")
+        self.button_trading_day.setFont(QFont("SimSun", 9))
+        self.button_trading_day.setStyleSheet("color:blue")
+        self.button_trading_day.setFixedWidth(70)
+        
         self.h_box_layout_database = QHBoxLayout()
         self.h_box_layout_database.setContentsMargins(-1, -1, -1, -1)
+        self.h_box_layout_database.addStretch(1)
         self.h_box_layout_database.addWidget(self.button_connect_db)
+        self.h_box_layout_database.addStretch(1)
         self.h_box_layout_database.addWidget(self.button_disconnect_db)
         self.h_box_layout_database.addStretch(1)
         
         self.h_box_layout_buttons_1 = QHBoxLayout()
         self.h_box_layout_buttons_1.setContentsMargins(-1, -1, -1, -1)
+        self.h_box_layout_buttons_1.addStretch(1)
         self.h_box_layout_buttons_1.addWidget(self.button_capital)
+        self.h_box_layout_buttons_1.addStretch(1)
         self.h_box_layout_buttons_1.addWidget(self.button_exrights)
+        self.h_box_layout_buttons_1.addStretch(1)
         self.h_box_layout_buttons_1.addWidget(self.button_industry)
+        self.h_box_layout_buttons_1.addStretch(1)
         self.h_box_layout_buttons_1.addWidget(self.button_pre_quote_stk)
+        self.h_box_layout_buttons_1.addStretch(1)
         self.h_box_layout_buttons_1.addWidget(self.button_security_info)
         self.h_box_layout_buttons_1.addStretch(1)
         
         self.h_box_layout_buttons_2 = QHBoxLayout()
         self.h_box_layout_buttons_2.setContentsMargins(-1, -1, -1, -1)
+        self.h_box_layout_buttons_2.addStretch(1)
         self.h_box_layout_buttons_2.addWidget(self.button_ting_pai_stock)
+        self.h_box_layout_buttons_2.addStretch(1)
+        self.h_box_layout_buttons_2.addWidget(self.button_trading_day)
         self.h_box_layout_buttons_2.addStretch(1)
         
         self.h_box_layout_text_info = QHBoxLayout()
@@ -1537,6 +1666,7 @@ class BasicDataMaker(QDialog):
         self.button_pre_quote_stk.clicked.connect(self.OnButtonPreQuoteStk)
         self.button_security_info.clicked.connect(self.OnButtonSecurityInfo)
         self.button_ting_pai_stock.clicked.connect(self.OnButtonTingPaiStock)
+        self.button_trading_day.clicked.connect(self.OnButtonTradingDay)
 
     def Thread_Capital(self, data_type):
         if self.flag_data_make == False:
@@ -1637,6 +1767,22 @@ class BasicDataMaker(QDialog):
         else:
             self.SendMessage("正在生成数据，请等待...")
 
+    def Thread_TradingDay(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_trading_day)
+                data_maker_trading_day = DataMaker_TradingDay(self)
+                data_maker_trading_day.PullData_TradingDay(self.dbm_jydb)
+                data_maker_trading_day.SaveData_TradingDay(self.dbm_financial, self.tb_trading_day, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
     def OnButtonCapital(self):
         self.thread_make_data = threading.Thread(target = self.Thread_Capital, args = ("股本结构",))
         self.thread_make_data.start()
@@ -1659,6 +1805,10 @@ class BasicDataMaker(QDialog):
 
     def OnButtonTingPaiStock(self):
         self.thread_make_data = threading.Thread(target = self.Thread_TingPaiStock, args = ("当日停牌",))
+        self.thread_make_data.start()
+
+    def OnButtonTradingDay(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_TradingDay, args = ("交易日期",))
         self.thread_make_data.start()
 
 if __name__ == "__main__":
