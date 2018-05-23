@@ -24,6 +24,7 @@
 import os
 import re
 import threading
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -89,6 +90,45 @@ class IndustryItem(object):
         if date != None:
             self.info_date = date.year * 10000 + date.month * 100 + date.day
 
+class PreQuoteStkItem(object):
+    def __init__(self, **kwargs):
+        self.inners = kwargs.get("inners", 0) # 内部代码
+        self.market = kwargs.get("market", "")
+        self.code = kwargs.get("code", "")
+        self.name = kwargs.get("name", "")
+        self.category = kwargs.get("category", "")
+        self.open = kwargs.get("open", 0.0)
+        self.high = kwargs.get("high", 0.0)
+        self.low = kwargs.get("low", 0.0)
+        self.close = kwargs.get("close", 0.0)
+        self.pre_close = kwargs.get("pre_close", 0.0)
+        self.volume = kwargs.get("volume", 0) # 成交量，股
+        self.turnover = kwargs.get("turnover", 0.0) # 成交额，元
+        self.trade_count = kwargs.get("trade_count", 0) # 成交笔数
+        self.quote_date = kwargs.get("quote_date", 0) # YYYYMMDD
+        self.quote_time = kwargs.get("quote_time", 0) # HHMMSSmmm 精度：毫秒
+
+    def SetCategory(self, category, symbol):
+        if category == 1: # A股
+            self.category = 1
+        elif category == 62: # ETF基金 # 测试显示ETF基金的证券类别也全部被标记为 8 的
+            self.category = 2
+        elif category == 8: # 开放式基金
+            if symbol[0:2] == "51" or symbol[0:3] == "159": # ETF基金
+                self.category = 2
+            elif symbol[0:3] == "502" or symbol[0:3] == "150": # 分级基金
+                self.category = 3
+            else: # 普通开放式基金
+                self.category = 4
+
+    def SetQuoteDate(self, date):
+        if date != None:
+            self.quote_date = date.year * 10000 + date.month * 100 + date.day
+
+    def SetQuoteTime(self, time):
+        if time != None:
+            self.quote_time = time.hour * 10000000 + time.minute * 100000 + time.second * 1000 + time.microsecond / 1000
+
 class DataMaker_Capital():
     def __init__(self, parent = None):
         self.parent = parent
@@ -140,20 +180,20 @@ class DataMaker_Capital():
         # 查询字段：SecuMain：证券内部编码、证券代码、证券简称、证券市场
         # 查询字段：LC_ShareStru：截止日期、总股本(股)、已上市流通A股(股)
         # 唯一约束：SecuMain = InnerCode、LC_ShareStru = CompanyCode & EndDate
-        str_sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuMarket, LC_ShareStru.EndDate, LC_ShareStru.TotalShares, LC_ShareStru.AFloatListed \
-                  FROM SecuMain INNER JOIN LC_ShareStru \
-                  ON SecuMain.CompanyCode = LC_ShareStru.CompanyCode \
-                  WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
-                    AND (SecuMain.SecuCategory = 1) \
-                    AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
-                    AND CAST(LC_ShareStru.CompanyCode as nvarchar) + CAST(LC_ShareStru.EndDate as nvarchar) IN \
-                      ( \
-                        SELECT CAST(CompanyCode as nvarchar) + CAST(MAX(EndDate) as nvarchar) \
-                        FROM LC_ShareStru \
-                        GROUP BY CompanyCode \
-                      ) \
-                  ORDER BY SecuMain.SecuMarket ASC, SecuMain.SecuCode ASC"
-        result_list = dbm.ExecQuery(str_sql)
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuMarket, LC_ShareStru.EndDate, LC_ShareStru.TotalShares, LC_ShareStru.AFloatListed \
+               FROM SecuMain INNER JOIN LC_ShareStru \
+               ON SecuMain.CompanyCode = LC_ShareStru.CompanyCode \
+               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                   AND (SecuMain.SecuCategory = 1) \
+                   AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
+                   AND CAST(LC_ShareStru.CompanyCode as nvarchar) + CAST(LC_ShareStru.EndDate as nvarchar) IN \
+                       ( \
+                           SELECT CAST(CompanyCode as nvarchar) + CAST(MAX(EndDate) as nvarchar) \
+                           FROM LC_ShareStru \
+                           GROUP BY CompanyCode \
+                       ) \
+               ORDER BY SecuMain.SecuMarket ASC, SecuMain.SecuCode ASC"
+        result_list = dbm.ExecQuery(sql)
         if result_list != None:
             for (InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, TotalShares, AFloatListed) in result_list:
                 if not SecuCode[0] == "X": # 排除未上市的新股
@@ -261,12 +301,12 @@ class DataMaker_ExRights():
         # 上市板块：1 主板、2 中小企业板、6 创业板
         # 查询字段：SecuMain：证券内部编码、证券代码、证券市场、证券类别、上市板块
         # 唯一约束：SecuMain = InnerCode
-        str_sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuMarket, SecuMain.SecuCategory, SecuMain.ListedSector \
-                  FROM SecuMain \
-                  WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
-                    AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
-                  ORDER BY SecuMain.SecuCode ASC"
-        result_list = dbm.ExecQuery(str_sql)
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuMarket, SecuMain.SecuCategory, SecuMain.ListedSector \
+               FROM SecuMain \
+               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                   AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
+               ORDER BY SecuMain.SecuCode ASC"
+        result_list = dbm.ExecQuery(sql)
         stock_count_sh = 0
         stock_count_sz = 0
         if result_list != None:
@@ -292,15 +332,15 @@ class DataMaker_ExRights():
         # 查询字段：SecuMain：证券内部编码、证券代码、证券市场、证券类别、上市板块
         # 查询字段：LC_ASharePlacement：除权日、实际配股比例(10配X)、每股配股价格(元)
         # 唯一约束：SecuMain = InnerCode、LC_ASharePlacement = InnerCode, InitialInfoPublDate
-        str_sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuMarket, SecuMain.SecuCategory, SecuMain.ListedSector, \
-                         LC_ASharePlacement.ExRightDate, LC_ASharePlacement.ActualPlaRatio, LC_ASharePlacement.PlaPrice \
-                  FROM SecuMain INNER JOIN LC_ASharePlacement \
-                  ON SecuMain.InnerCode = LC_ASharePlacement.InnerCode \
-                  WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
-                    AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
-                    AND LC_ASharePlacement.ExRightDate IS NOT NULL \
-                  ORDER BY SecuMain.SecuCode ASC, LC_ASharePlacement.ExRightDate ASC"
-        result_list = dbm.ExecQuery(str_sql)
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuMarket, SecuMain.SecuCategory, SecuMain.ListedSector, \
+                      LC_ASharePlacement.ExRightDate, LC_ASharePlacement.ActualPlaRatio, LC_ASharePlacement.PlaPrice \
+               FROM SecuMain INNER JOIN LC_ASharePlacement \
+               ON SecuMain.InnerCode = LC_ASharePlacement.InnerCode \
+               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                   AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
+                   AND LC_ASharePlacement.ExRightDate IS NOT NULL \
+               ORDER BY SecuMain.SecuCode ASC, LC_ASharePlacement.ExRightDate ASC"
+        result_list = dbm.ExecQuery(sql)
         datas_count_sh = 0
         datas_count_sz = 0
         if result_list != None:
@@ -360,15 +400,15 @@ class DataMaker_ExRights():
         # 查询字段：SecuMain：证券内部编码、证券代码、证券市场、证券类别、上市板块
         # 查询字段：LC_Dividend：是否分红、除权除息日、送股比例(10送X)、转增股比例(10转增X)、派现(含税/人民币元)
         # 唯一约束：SecuMain = InnerCode、LC_Dividend = InnerCode, EndDate
-        str_sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuMarket, SecuMain.SecuCategory, SecuMain.ListedSector, \
-                         LC_Dividend.IfDividend, LC_Dividend.ExDiviDate, LC_Dividend.BonusShareRatio, LC_Dividend.TranAddShareRaio, LC_Dividend.CashDiviRMB \
-                  FROM SecuMain INNER JOIN LC_Dividend \
-                  ON SecuMain.InnerCode = LC_Dividend.InnerCode \
-                  WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
-                    AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
-                    AND LC_Dividend.ExDiviDate IS NOT NULL \
-                  ORDER BY SecuMain.SecuCode ASC, LC_Dividend.ExDiviDate ASC"
-        result_list = dbm.ExecQuery(str_sql)
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuMarket, SecuMain.SecuCategory, SecuMain.ListedSector, \
+                      LC_Dividend.IfDividend, LC_Dividend.ExDiviDate, LC_Dividend.BonusShareRatio, LC_Dividend.TranAddShareRaio, LC_Dividend.CashDiviRMB \
+               FROM SecuMain INNER JOIN LC_Dividend \
+               ON SecuMain.InnerCode = LC_Dividend.InnerCode \
+               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                   AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
+                   AND LC_Dividend.ExDiviDate IS NOT NULL \
+               ORDER BY SecuMain.SecuCode ASC, LC_Dividend.ExDiviDate ASC"
+        result_list = dbm.ExecQuery(sql)
         datas_count_sh = 0
         datas_count_sz = 0
         if result_list != None:
@@ -547,19 +587,19 @@ class DataMaker_Industry():
         # 查询字段：LC_ExgIndustry：信息发布日期、行业划分标准、所属行业、是否执行、
         #                           一级行业代码、一级行业名称、二级行业代码、二级行业名称、三级行业代码、三级行业名称、四级行业代码、四级行业名称
         # 唯一约束：SecuMain = InnerCode、LC_ExgIndustry = CompanyCode & InfoPublDate & Standard & Industry & IfPerformed
-        str_sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuMarket, \
-                         LC_ExgIndustry.InfoPublDate, LC_ExgIndustry.Standard, LC_ExgIndustry.Industry, LC_ExgIndustry.IfPerformed, \
-                         LC_ExgIndustry.FirstIndustryCode, LC_ExgIndustry.FirstIndustryName, LC_ExgIndustry.SecondIndustryCode, LC_ExgIndustry.SecondIndustryName, \
-                         LC_ExgIndustry.ThirdIndustryCode, LC_ExgIndustry.ThirdIndustryName, LC_ExgIndustry.FourthIndustryCode, LC_ExgIndustry.FourthIndustryName \
-                  FROM SecuMain INNER JOIN LC_ExgIndustry \
-                  ON SecuMain.CompanyCode = LC_ExgIndustry.CompanyCode \
-                  WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
-                    AND (SecuMain.SecuCategory = 1) \
-                    AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
-                    AND (LC_ExgIndustry.IfPerformed = 1) \
-                  ORDER BY LC_ExgIndustry.Standard ASC, LC_ExgIndustry.Industry ASC, \
-                           LC_ExgIndustry.FirstIndustryCode ASC, LC_ExgIndustry.SecondIndustryCode ASC, LC_ExgIndustry.ThirdIndustryCode ASC, LC_ExgIndustry.FourthIndustryCode ASC"
-        result_list = dbm.ExecQuery(str_sql)
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuMarket, \
+                      LC_ExgIndustry.InfoPublDate, LC_ExgIndustry.Standard, LC_ExgIndustry.Industry, LC_ExgIndustry.IfPerformed, \
+                      LC_ExgIndustry.FirstIndustryCode, LC_ExgIndustry.FirstIndustryName, LC_ExgIndustry.SecondIndustryCode, LC_ExgIndustry.SecondIndustryName, \
+                      LC_ExgIndustry.ThirdIndustryCode, LC_ExgIndustry.ThirdIndustryName, LC_ExgIndustry.FourthIndustryCode, LC_ExgIndustry.FourthIndustryName \
+               FROM SecuMain INNER JOIN LC_ExgIndustry \
+               ON SecuMain.CompanyCode = LC_ExgIndustry.CompanyCode \
+               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                   AND (SecuMain.SecuCategory = 1) \
+                   AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
+                   AND (LC_ExgIndustry.IfPerformed = 1) \
+               ORDER BY LC_ExgIndustry.Standard ASC, LC_ExgIndustry.Industry ASC, \
+                        LC_ExgIndustry.FirstIndustryCode ASC, LC_ExgIndustry.SecondIndustryCode ASC, LC_ExgIndustry.ThirdIndustryCode ASC, LC_ExgIndustry.FourthIndustryCode ASC"
+        result_list = dbm.ExecQuery(sql)
         if result_list != None:
             for (InnerCode, SecuCode, SecuAbbr, SecuMarket, InfoPublDate, Standard, Industry, IfPerformed, FirstIndustryCode, FirstIndustryName, SecondIndustryCode, SecondIndustryName, ThirdIndustryCode, ThirdIndustryName, FourthIndustryCode, FourthIndustryName) in result_list:
                 stock_market = ""
@@ -657,6 +697,160 @@ class DataMaker_Industry():
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
 
+class DataMaker_PreQuoteStk():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.quote_data_list = []
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def TransTimeIntToStr(self, str_date, int_time):
+        hour = int(int_time / 10000000)
+        minute = int((int_time % 10000000) / 100000)
+        second = int((int_time % 100000) / 1000)
+        microsecond = int_time % 1000
+        return "%s %d:%d:%d.%d" % (str_date, hour, minute, second, microsecond)
+
+    def PullData_PreQuoteStk(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_PreQuoteStk 数据库 dbm 尚未连接！")
+            return
+        pre_date = ""
+        now_date = datetime.now().strftime("%Y-%m-%d")
+        # 证券市场：72、83 沪深交易所、89
+        # 查询字段：QT_TradingDayNew：日期、是否交易日、证券市场
+        # 唯一约束：QT_TradingDayNew = Date、SecuMarket
+        sql = "SELECT MAX(TradingDate) \
+               FROM QT_TradingDayNew \
+               WHERE QT_TradingDayNew.SecuMarket = 83 \
+                   AND QT_TradingDayNew.TradingDate < '%s' \
+                   AND QT_TradingDayNew.IfTradingDay = 1" % now_date
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (TradingDate,) in result_list:
+                pre_date = TradingDate.strftime("%Y-%m-%d")
+        if pre_date == "":
+            self.SendMessage("获取 上一交易日期 失败！")
+            return
+        else:
+            self.SendMessage("获取 上一交易日期 成功。%s" % pre_date)
+        self.quote_data_list = []
+        # 证券市场：83 上海证券交易所、90 深圳证券交易所
+        # 证券类别：1 A股、8 开放式基金、62 ETF基金
+        # 上市板块：1 主板、2 中小企业板、6 创业板
+        # 查询字段：SecuMain：证券内部编码、证券代码、证券简称、证券类别、证券市场
+        # 查询字段：QT_DailyQuote：交易日、昨收盘、今开盘、最高价、最低价、收盘价、成交量、成交金额、成交笔数、更新时间
+        # 唯一约束：SecuMain = InnerCode、QT_DailyQuote = InnerCode & TradingDay
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuCategory, SecuMain.SecuMarket, \
+                      QT_DailyQuote.TradingDay, QT_DailyQuote.PrevClosePrice, QT_DailyQuote.OpenPrice, QT_DailyQuote.HighPrice, QT_DailyQuote.LowPrice, QT_DailyQuote.ClosePrice, \
+                      QT_DailyQuote.TurnoverVolume, QT_DailyQuote.TurnoverValue, QT_DailyQuote.TurnoverDeals, QT_DailyQuote.XGRQ \
+               FROM SecuMain INNER JOIN QT_DailyQuote \
+               ON SecuMain.InnerCode = QT_DailyQuote.InnerCode \
+               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                   AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
+                   AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
+                   AND QT_DailyQuote.TradingDay = '%s' \
+               ORDER BY SecuMain.SecuMarket ASC, SecuMain.SecuCode ASC" % pre_date
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals, XGRQ) in result_list:
+                stock_name = SecuAbbr.replace(" ", "")
+                stock_market = ""
+                if SecuMarket == 83:
+                    stock_market = "SH"
+                elif SecuMarket == 90:
+                    stock_market = "SZ"
+                pre_quote_stk_item = PreQuoteStkItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, open = OpenPrice, high = HighPrice, low = LowPrice, close = ClosePrice, pre_close = PrevClosePrice, volume = TurnoverVolume, turnover = TurnoverValue, trade_count = TurnoverDeals)
+                pre_quote_stk_item.SetCategory(SecuCategory, SecuCode) #
+                pre_quote_stk_item.SetQuoteDate(TradingDay) #
+                pre_quote_stk_item.SetQuoteTime(XGRQ) #
+                self.quote_data_list.append(pre_quote_stk_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals, XGRQ)
+                #print(pre_quote_stk_item.code, pre_quote_stk_item.category, pre_quote_stk_item.quote_date, pre_quote_stk_item.quote_time, XGRQ, XGRQ.hour, XGRQ.minute, XGRQ.second, XGRQ.microsecond)
+            self.SendMessage("获取 上一交易日行情数据 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 上一交易日行情数据 失败！")
+
+    def SaveData_PreQuoteStk(self, dbm, table_name, save_path):
+        total_record_num = len(self.quote_data_list)
+        
+        if dbm != None:
+            sql = "SHOW TABLES"
+            result = dbm.QueryAllSql(sql)
+            data_tables = list(result)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            if table_name in have_tables:
+                sql = "TRUNCATE TABLE %s" % table_name
+                dbm.ExecuteSql(sql)
+            else:
+                sql = "CREATE TABLE `%s` (" % table_name + \
+                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                      "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
+                      "`open` float(16,4) DEFAULT '0.0000' COMMENT '开盘价'," + \
+                      "`high` float(16,4) DEFAULT '0.0000' COMMENT '最高价'," + \
+                      "`low` float(16,4) DEFAULT '0.0000' COMMENT '最低价'," + \
+                      "`close` float(16,4) DEFAULT '0.0000' COMMENT '收盘价'," + \
+                      "`pre_close` float(16,4) DEFAULT '0.0000' COMMENT '昨收价'," + \
+                      "`volume` bigint(64) DEFAULT '0' COMMENT '成交量，股'," + \
+                      "`turnover` double(64,2) DEFAULT '0.00' COMMENT '成交额，元'," + \
+                      "`trade_count` int(32) DEFAULT '0' COMMENT '成交笔数'," + \
+                      "`quote_date` date DEFAULT NULL COMMENT '行情日期，2015-12-31'," + \
+                      "`quote_time` datetime(6) DEFAULT NULL COMMENT '行情时间'," + \
+                      "PRIMARY KEY (`id`)," + \
+                      "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+                dbm.ExecuteSql(sql)
+            values = []
+            save_record_failed = 0
+            save_record_success = 0
+            save_index_from = 0 #
+            sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, open, high, low, close, pre_close, volume, turnover, trade_count, quote_date, quote_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            for i in range(save_index_from, total_record_num):
+                str_date = common.TransDateIntToStr(self.quote_data_list[i].quote_date)
+                str_time = self.TransTimeIntToStr(str_date, self.quote_data_list[i].quote_time)
+                values.append((self.quote_data_list[i].inners, self.quote_data_list[i].market, self.quote_data_list[i].code, self.quote_data_list[i].name, self.quote_data_list[i].category, 
+                               self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
+                               self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
+                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
+                    if len(values) > 0: # 有记录需要保存
+                        if dbm.ExecuteManySql(sql, values) == False:
+                            save_record_failed += len(values)
+                        else:
+                            save_record_success += len(values)
+                        #print("保存：", len(values))
+                        values = [] #
+            if len(values) > 0: # 有记录需要保存
+                if dbm.ExecuteManySql(sql, values) == False:
+                    save_record_failed += len(values)
+                else:
+                    save_record_success += len(values)
+                #print("保存：", len(values))
+            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+        
+        values = []
+        for i in range(total_record_num):
+            str_date = common.TransDateIntToStr(self.quote_data_list[i].quote_date)
+            str_time = self.TransTimeIntToStr(str_date, self.quote_data_list[i].quote_time)
+            values.append((self.quote_data_list[i].inners, self.quote_data_list[i].market, self.quote_data_list[i].code, self.quote_data_list[i].name, self.quote_data_list[i].category, 
+                           self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
+                           self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
+        columns = ["inners", "market", "code", "name", "category", "open", "high", "low", "close", "pre_close", "volume", "turnover", "trade_count", "quote_date", "quote_time"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values) > 0:
+            result = pd.DataFrame(data = values, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+
 class BasicDataMaker(QDialog):
     def __init__(self, **kwargs):
         super(BasicDataMaker, self).__init__()
@@ -667,6 +861,7 @@ class BasicDataMaker(QDialog):
         self.tb_capital_data = "capital_data"
         self.tb_ex_rights_data = "ex_rights_data"
         self.tb_tod_ting_pai = "tod_ting_pai"
+        self.tb_pre_quote_stk = "pre_quote_stk"
         
         self.mssql_host = "0.0.0.0"
         self.mssql_port = 0
@@ -814,6 +1009,11 @@ class BasicDataMaker(QDialog):
         self.button_industry.setStyleSheet("color:blue")
         self.button_industry.setFixedWidth(70)
         
+        self.button_pre_quote_stk = QPushButton("昨日行情")
+        self.button_pre_quote_stk.setFont(QFont("SimSun", 9))
+        self.button_pre_quote_stk.setStyleSheet("color:blue")
+        self.button_pre_quote_stk.setFixedWidth(70)
+        
         self.h_box_layout_database = QHBoxLayout()
         self.h_box_layout_database.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_database.addWidget(self.button_connect_db)
@@ -825,6 +1025,7 @@ class BasicDataMaker(QDialog):
         self.h_box_layout_buttons.addWidget(self.button_capital)
         self.h_box_layout_buttons.addWidget(self.button_exrights)
         self.h_box_layout_buttons.addWidget(self.button_industry)
+        self.h_box_layout_buttons.addWidget(self.button_pre_quote_stk)
         self.h_box_layout_buttons.addStretch(1)
         
         self.h_box_layout_text_info = QHBoxLayout()
@@ -844,6 +1045,7 @@ class BasicDataMaker(QDialog):
         self.button_capital.clicked.connect(self.OnButtonCapital)
         self.button_exrights.clicked.connect(self.OnButtonExRights)
         self.button_industry.clicked.connect(self.OnButtonIndustry)
+        self.button_pre_quote_stk.clicked.connect(self.OnButtonPreQuoteStk)
 
     def Thread_Capital(self, data_type):
         if self.flag_data_make == False:
@@ -896,6 +1098,22 @@ class BasicDataMaker(QDialog):
         else:
             self.SendMessage("正在生成数据，请等待...")
 
+    def Thread_PreQuoteStk(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_pre_quote_stk)
+                data_maker_pre_quote_stk = DataMaker_PreQuoteStk(self)
+                data_maker_pre_quote_stk.PullData_PreQuoteStk(self.dbm_jydb)
+                data_maker_pre_quote_stk.SaveData_PreQuoteStk(self.dbm_financial, self.tb_pre_quote_stk, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
     def OnButtonCapital(self):
         self.thread_make_data = threading.Thread(target = self.Thread_Capital, args = ("股本结构",))
         self.thread_make_data.start()
@@ -906,6 +1124,10 @@ class BasicDataMaker(QDialog):
 
     def OnButtonIndustry(self):
         self.thread_make_data = threading.Thread(target = self.Thread_Industry, args = ("行业划分",))
+        self.thread_make_data.start()
+
+    def OnButtonPreQuoteStk(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_PreQuoteStk, args = ("昨日行情",))
         self.thread_make_data.start()
 
 if __name__ == "__main__":
