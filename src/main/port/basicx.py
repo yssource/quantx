@@ -155,7 +155,7 @@ class BasicX(Singleton):
         self.tb_security_info = "security_info"
         self.tb_capital_data = "capital_data"
         self.tb_ex_rights_data = "ex_rights_data"
-        self.tb_tod_ting_pai = "tod_ting_pai"
+        self.tb_ting_pai_stock = "tod_ting_pai"
         
         self.flag_use_database = True
         if self.host == "0.0.0.0": # 不使用数据库
@@ -579,7 +579,7 @@ class BasicX(Singleton):
             #              exrights_item.muler, exrights_item.adder, exrights_item.sg, exrights_item.pg, exrights_item.price, exrights_item.bonus)
         return result
 
-    def GetTodTingPai(self):
+    def GetTingPaiStock(self):
         save_path = ""
         dbm = self.dbm_financial
         columns = ["inners", "market", "code", "name", "category", "tp_date", "tp_time", "tp_reason", "tp_statement", "tp_term", "fp_date", "fp_time", "fp_statement", "update_time"]
@@ -589,7 +589,7 @@ class BasicX(Singleton):
                 self.log_text = "直接缓存获取 当日停牌证券 时，本地数据缓存路径为空！"
                 self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
             else:
-                save_path = "%s/%s" % (self.folder_financial, self.tb_tod_ting_pai)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_ting_pai_stock)
                 if not os.path.exists(save_path): # 缓存文件不存在
                     self.log_text = "直接缓存获取 当日停牌证券 时，本地数据缓存文件不存在！"
                     self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
@@ -600,12 +600,12 @@ class BasicX(Singleton):
             if self.folder_financial == "": # 缓存路径为空
                 need_query = True
             else:
-                save_path = "%s/%s" % (self.folder_financial, self.tb_tod_ting_pai)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_ting_pai_stock)
                 if not os.path.exists(save_path): # 缓存文件不存在
                     need_query = True
                 else:
                     modify_time_lf = datetime.fromtimestamp(os.path.getmtime(save_path))
-                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_tod_ting_pai)
+                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_ting_pai_stock)
                     if modify_time_db != None and modify_time_lf < modify_time_db: # 数据库时间更新 # 如果 modify_time_db 为 None 估计数据库表不存在也就不用查询了
                         need_query = True
                     else: # 读取缓存文件
@@ -613,7 +613,7 @@ class BasicX(Singleton):
             if need_query == True: # 查询数据表
                 sql = "SELECT inners, market, code, name, category, " + \
                       "tp_date, tp_time, tp_reason, tp_statement, tp_term, fp_date, fp_time, fp_statement, update_time " + \
-                      "FROM %s " % self.tb_tod_ting_pai + \
+                      "FROM %s " % self.tb_ting_pai_stock + \
                       "ORDER BY market ASC, code ASC"
                 rows = dbm.QueryAllSql(sql)
                 if len(rows) > 0:

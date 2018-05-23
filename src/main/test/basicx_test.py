@@ -42,7 +42,7 @@ def Main(basicx_test):
     #result = basicx_test.GetSecurityInfo()
     #result = basicx_test.GetCapitalData()
     #result = basicx_test.GetExRightsData()
-    #result = basicx_test.GetTodTingPai()
+    #result = basicx_test.GetTingPaiStock()
     #result = basicx_test.GetStockDaily("sz", "000001", 20100104, 20170126)
     #result = basicx_test.GetStockDaily("sz", "000001", 20160613, 20160620) # 删除文件，数据需要全部查询
     #result = basicx_test.GetStockDaily("sz", "000001", 20160614, 20160617) # 都在缓存数据中

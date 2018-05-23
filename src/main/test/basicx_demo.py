@@ -44,7 +44,7 @@ if __name__ == "__main__":
     #result = basicx_demo.GetSecurityInfo()
     #result = basicx_demo.GetCapitalData()
     #result = basicx_demo.GetExRightsData()
-    #result = basicx_demo.GetTodTingPai()
+    #result = basicx_demo.GetTingPaiStock()
     #result = basicx_demo.GetStockDaily("sz", "000001", 20160101, 20161231)
     #result = basicx_demo.GetStockKline_1_M("sh", "600000", 20160101, 20161231)
     #if not result.empty:

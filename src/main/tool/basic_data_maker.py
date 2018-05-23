@@ -238,6 +238,36 @@ class SecurityInfoItem(object):
         if date != None:
             self.list_date = date.year * 10000 + date.month * 100 + date.day
 
+class TingPaiStock(object):
+    def __init__(self, **kwargs):
+        self.inners = kwargs.get("inners", 0) # 内部代码
+        self.market = kwargs.get("market", "")
+        self.code = kwargs.get("code", "")
+        self.name = kwargs.get("name", "")
+        self.category = kwargs.get("category", "")
+        self.tp_date = kwargs.get("tp_date", datetime(1900, 1, 1)) # 停牌日期
+        self.tp_time = kwargs.get("tp_time", "") # 停牌时间
+        self.tp_reason = kwargs.get("tp_reason", "") # 停牌原因
+        self.tp_statement = kwargs.get("tp_statement", 0) # 停牌事项说明
+        self.tp_term = kwargs.get("tp_term", "") # 停牌期限
+        self.fp_date = kwargs.get("fp_date", datetime(1900, 1, 1)) # 复牌日期
+        self.fp_time = kwargs.get("fp_time", "") # 复牌时间
+        self.fp_statement = kwargs.get("fp_statement", 0) # 复牌事项说明
+        self.update_time = kwargs.get("update_time", datetime(1900, 1, 1))
+
+    def SetCategory(self, category, symbol):
+        if category == 1: # A股
+            self.category = 1
+        elif category == 62: # ETF基金 # 测试显示ETF基金的证券类别也全部被标记为 8 的
+            self.category = 2
+        elif category == 8: # 开放式基金
+            if symbol[0:2] == "51" or symbol[0:3] == "159": # ETF基金
+                self.category = 2
+            elif symbol[0:3] == "502" or symbol[0:3] == "150": # 分级基金
+                self.category = 3
+            else: # 普通开放式基金
+                self.category = 4
+
 class DataMaker_Capital():
     def __init__(self, parent = None):
         self.parent = parent
@@ -1165,6 +1195,134 @@ class DataMaker_SecurityInfo():
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
 
+class DataMaker_TingPaiStock():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.ting_pai_stock_list = []
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def PullData_TingPaiStock(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_TingPaiStock 数据库 dbm 尚未连接！")
+            return
+        self.ting_pai_stock_list = []
+        now_date = datetime.now().strftime("%Y-%m-%d")
+        # 证券市场：83 上海证券交易所、90 深圳证券交易所
+        # 证券类别：1 A股、8 开放式基金、62 ETF基金
+        # 上市板块：1 主板、2 中小企业板、6 创业板
+        # 查询字段：SecuMain：证券内部编码、证券代码、证券简称、证券类别、证券市场
+        # 查询字段：LC_SuspendResumption：停牌日期、停牌时间、停牌原因、停牌事项说明、停牌期限、复牌日期、复牌时间、复牌事项说明、更新时间
+        # 唯一约束：SecuMain = InnerCode、LC_SuspendResumption = InnerCode & SuspendDate & SuspendTime
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuCategory, SecuMain.SecuMarket, \
+                      LC_SuspendResumption.SuspendDate, LC_SuspendResumption.SuspendTime, LC_SuspendResumption.SuspendReason, LC_SuspendResumption.SuspendStatement, LC_SuspendResumption.SuspendTerm, \
+                      LC_SuspendResumption.ResumptionDate, LC_SuspendResumption.ResumptionTime, LC_SuspendResumption.ResumptionStatement, LC_SuspendResumption.UpdateTime \
+               FROM SecuMain INNER JOIN LC_SuspendResumption \
+               ON SecuMain.InnerCode = LC_SuspendResumption.InnerCode \
+               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                   AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
+                   AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
+                   AND (LC_SuspendResumption.ResumptionDate = '1900-01-01' OR LC_SuspendResumption.ResumptionDate > '%s') \
+               ORDER BY SecuMain.SecuMarket ASC, SecuMain.SecuCode ASC" % now_date # 复牌日期 1900-01-01 的为长期停牌
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, SuspendDate, SuspendTime, SuspendReason, SuspendStatement, SuspendTerm, ResumptionDate, ResumptionTime, ResumptionStatement, UpdateTime) in result_list:
+                stock_name = SecuAbbr.replace(" ", "")
+                stock_market = ""
+                if SecuMarket == 83:
+                    stock_market = "SH"
+                elif SecuMarket == 90:
+                    stock_market = "SZ"
+                ting_pai_stock = TingPaiStock(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, tp_date = SuspendDate, tp_time = SuspendTime, tp_reason = SuspendReason, tp_statement = SuspendStatement, tp_term = SuspendTerm, fp_date = ResumptionDate, fp_time = ResumptionTime, fp_statement = ResumptionStatement, update_time = UpdateTime)
+                ting_pai_stock.SetCategory(SecuCategory, SecuCode) #
+                self.ting_pai_stock_list.append(ting_pai_stock)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, SuspendDate, SuspendTime, SuspendReason, SuspendStatement, SuspendTerm, ResumptionDate, ResumptionTime, ResumptionStatement, UpdateTime)
+                #print(SecuCode, SecuAbbr, SecuMarket, SuspendDate, ResumptionDate, SuspendReason)
+            self.SendMessage("获取 今日停牌股票数据 成功。总计 %d 个。%s" % (len(result_list), now_date))
+        else:
+            self.SendMessage("获取 今日停牌股票数据 失败！")
+
+    def SaveData_TingPaiStock(self, dbm, table_name, save_path):
+        total_record_num = len(self.ting_pai_stock_list)
+        
+        if dbm != None:
+            sql = "SHOW TABLES"
+            result = dbm.QueryAllSql(sql)
+            data_tables = list(result)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            if table_name in have_tables:
+                sql = "TRUNCATE TABLE %s" % table_name
+                dbm.ExecuteSql(sql)
+            else:
+                sql = "CREATE TABLE `%s` (" % table_name + \
+                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                      "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
+                      "``tp_date` datetime(6) DEFAULT NULL COMMENT '停牌日期'," + \
+                      "``tp_time` varchar(30) DEFAULT '' COMMENT '停牌时间'," + \
+                      "``tp_reason` varchar(110) DEFAULT '' COMMENT '停牌原因'," + \
+                      "``tp_statement` int(8) DEFAULT '0' COMMENT '停牌事项说明，详见说明'," + \
+                      "``tp_term` varchar(60) DEFAULT '' COMMENT '停牌期限'," + \
+                      "``fp_date` datetime(6) DEFAULT NULL COMMENT '复牌日期'," + \
+                      "``fp_time` varchar(30) DEFAULT '' COMMENT '复牌时间'," + \
+                      "``fp_statement` varchar(110) DEFAULT '' COMMENT '复牌事项说明'," + \
+                      "``update_time` datetime(6) DEFAULT NULL COMMENT '更新时间'," + \
+                      "PRIMARY KEY (`id`)," + \
+                      "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+                dbm.ExecuteSql(sql)
+            values = []
+            save_record_failed = 0
+            save_record_success = 0
+            save_index_from = 0 #
+            sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, tp_date, tp_time, tp_reason, tp_statement, tp_term, fp_date, fp_time, fp_statement, update_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+            for i in range(save_index_from, total_record_num):
+                str_date_tp = self.ting_pai_stock_list[i].tp_date.strftime("%Y-%m-%d")
+                str_date_fp = self.ting_pai_stock_list[i].fp_date.strftime("%Y-%m-%d")
+                str_date_up = self.ting_pai_stock_list[i].update_time.strftime("%Y-%m-%d")
+                values.append((self.ting_pai_stock_list[i].inners, self.ting_pai_stock_list[i].market, self.ting_pai_stock_list[i].code, self.ting_pai_stock_list[i].name, self.ting_pai_stock_list[i].category, 
+                               str_date_tp, self.ting_pai_stock_list[i].tp_time, self.ting_pai_stock_list[i].tp_reason, self.ting_pai_stock_list[i].tp_statement, self.ting_pai_stock_list[i].tp_term, 
+                               str_date_fp, self.ting_pai_stock_list[i].fp_time, self.ting_pai_stock_list[i].fp_statement, str_date_up))
+                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
+                    if len(values) > 0: # 有记录需要保存
+                        if dbm.ExecuteManySql(sql, values) == False:
+                            save_record_failed += len(values)
+                        else:
+                            save_record_success += len(values)
+                        #print("保存：", len(values))
+                        values = [] #
+            if len(values) > 0: # 有记录需要保存
+                if dbm.ExecuteManySql(sql, values) == False:
+                    save_record_failed += len(values)
+                else:
+                    save_record_success += len(values)
+                #print("保存：", len(values))
+            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+        
+        values = []
+        for i in range(total_record_num):
+            str_date_tp = self.ting_pai_stock_list[i].tp_date.strftime("%Y-%m-%d")
+            str_date_fp = self.ting_pai_stock_list[i].fp_date.strftime("%Y-%m-%d")
+            str_date_up = self.ting_pai_stock_list[i].update_time.strftime("%Y-%m-%d")
+            values.append((self.ting_pai_stock_list[i].inners, self.ting_pai_stock_list[i].market, self.ting_pai_stock_list[i].code, self.ting_pai_stock_list[i].name, self.ting_pai_stock_list[i].category, 
+                           str_date_tp, self.ting_pai_stock_list[i].tp_time, self.ting_pai_stock_list[i].tp_reason, self.ting_pai_stock_list[i].tp_statement, self.ting_pai_stock_list[i].tp_term, 
+                           str_date_fp, self.ting_pai_stock_list[i].fp_time, self.ting_pai_stock_list[i].fp_statement, str_date_up))
+        columns = ["inners", "market", "code", "name", "category", "tp_date", "tp_time", "tp_reason", "tp_statement", "tp_term", "fp_date", "fp_time", "fp_statement", "update_time"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values) > 0:
+            result = pd.DataFrame(data = values, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+
 class BasicDataMaker(QDialog):
     def __init__(self, **kwargs):
         super(BasicDataMaker, self).__init__()
@@ -1174,7 +1332,7 @@ class BasicDataMaker(QDialog):
         self.tb_security_info = "security_info"
         self.tb_capital_data = "capital_data"
         self.tb_ex_rights_data = "ex_rights_data"
-        self.tb_tod_ting_pai = "tod_ting_pai"
+        self.tb_ting_pai_stock = "tod_ting_pai"
         self.tb_pre_quote_stk = "pre_quote_stk"
         
         self.mssql_host = "0.0.0.0"
@@ -1333,20 +1491,30 @@ class BasicDataMaker(QDialog):
         self.button_security_info.setStyleSheet("color:blue")
         self.button_security_info.setFixedWidth(70)
         
+        self.button_ting_pai_stock = QPushButton("当日停牌")
+        self.button_ting_pai_stock.setFont(QFont("SimSun", 9))
+        self.button_ting_pai_stock.setStyleSheet("color:blue")
+        self.button_ting_pai_stock.setFixedWidth(70)
+        
         self.h_box_layout_database = QHBoxLayout()
         self.h_box_layout_database.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_database.addWidget(self.button_connect_db)
         self.h_box_layout_database.addWidget(self.button_disconnect_db)
         self.h_box_layout_database.addStretch(1)
         
-        self.h_box_layout_buttons = QHBoxLayout()
-        self.h_box_layout_buttons.setContentsMargins(-1, -1, -1, -1)
-        self.h_box_layout_buttons.addWidget(self.button_capital)
-        self.h_box_layout_buttons.addWidget(self.button_exrights)
-        self.h_box_layout_buttons.addWidget(self.button_industry)
-        self.h_box_layout_buttons.addWidget(self.button_pre_quote_stk)
-        self.h_box_layout_buttons.addWidget(self.button_security_info)
-        self.h_box_layout_buttons.addStretch(1)
+        self.h_box_layout_buttons_1 = QHBoxLayout()
+        self.h_box_layout_buttons_1.setContentsMargins(-1, -1, -1, -1)
+        self.h_box_layout_buttons_1.addWidget(self.button_capital)
+        self.h_box_layout_buttons_1.addWidget(self.button_exrights)
+        self.h_box_layout_buttons_1.addWidget(self.button_industry)
+        self.h_box_layout_buttons_1.addWidget(self.button_pre_quote_stk)
+        self.h_box_layout_buttons_1.addWidget(self.button_security_info)
+        self.h_box_layout_buttons_1.addStretch(1)
+        
+        self.h_box_layout_buttons_2 = QHBoxLayout()
+        self.h_box_layout_buttons_2.setContentsMargins(-1, -1, -1, -1)
+        self.h_box_layout_buttons_2.addWidget(self.button_ting_pai_stock)
+        self.h_box_layout_buttons_2.addStretch(1)
         
         self.h_box_layout_text_info = QHBoxLayout()
         self.h_box_layout_text_info.setContentsMargins(-1, -1, -1, -1)
@@ -1356,7 +1524,8 @@ class BasicDataMaker(QDialog):
         self.v_box_layout.setContentsMargins(-1, -1, -1, -1)
         self.v_box_layout.addLayout(self.h_box_layout_text_info)
         self.v_box_layout.addLayout(self.h_box_layout_database)
-        self.v_box_layout.addLayout(self.h_box_layout_buttons)
+        self.v_box_layout.addLayout(self.h_box_layout_buttons_1)
+        self.v_box_layout.addLayout(self.h_box_layout_buttons_2)
         
         self.setLayout(self.v_box_layout)
         
@@ -1367,6 +1536,7 @@ class BasicDataMaker(QDialog):
         self.button_industry.clicked.connect(self.OnButtonIndustry)
         self.button_pre_quote_stk.clicked.connect(self.OnButtonPreQuoteStk)
         self.button_security_info.clicked.connect(self.OnButtonSecurityInfo)
+        self.button_ting_pai_stock.clicked.connect(self.OnButtonTingPaiStock)
 
     def Thread_Capital(self, data_type):
         if self.flag_data_make == False:
@@ -1451,6 +1621,22 @@ class BasicDataMaker(QDialog):
         else:
             self.SendMessage("正在生成数据，请等待...")
 
+    def Thread_TingPaiStock(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_ting_pai_stock)
+                data_maker_ting_pai_stock = DataMaker_TingPaiStock(self)
+                data_maker_ting_pai_stock.PullData_TingPaiStock(self.dbm_jydb)
+                data_maker_ting_pai_stock.SaveData_TingPaiStock(self.dbm_financial, self.tb_ting_pai_stock, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
     def OnButtonCapital(self):
         self.thread_make_data = threading.Thread(target = self.Thread_Capital, args = ("股本结构",))
         self.thread_make_data.start()
@@ -1469,6 +1655,10 @@ class BasicDataMaker(QDialog):
 
     def OnButtonSecurityInfo(self):
         self.thread_make_data = threading.Thread(target = self.Thread_SecurityInfo, args = ("证券信息",))
+        self.thread_make_data.start()
+
+    def OnButtonTingPaiStock(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_TingPaiStock, args = ("当日停牌",))
         self.thread_make_data.start()
 
 if __name__ == "__main__":
