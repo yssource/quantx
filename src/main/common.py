@@ -76,6 +76,12 @@ def TransDateIntToDate(int_date):
     day = int_date % 100
     return date(year, month, day)
 
+def TransTimeIntToStr(int_time):
+    hour = int(int_time / 10000)
+    minute = int((int_time % 10000) / 100)
+    second = int_time % 100
+    return "%d:%d:%d" % (hour, minute, second)
+
 def PreTransStockTdfMarket(tmp_data): # TDF个股快照预处理
     try:
         src_data = tmp_data.astype(define.stock_tdf_market_s_type_src)

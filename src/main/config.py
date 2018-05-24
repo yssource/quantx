@@ -238,6 +238,8 @@ class CfgAnal(object):
         self.ignore_ex_rights_data_loss = 1
         self.ignore_local_data_imperfect = 1
         
+        self.benchmark_rate = 0.0
+        self.trading_days_year = 250
         self.date_analysis_test_s = 20180101
         self.date_analysis_test_e = 0
 
@@ -278,6 +280,8 @@ class CfgAnal(object):
         self.ignore_ex_rights_data_loss = int(config["ignore"]["ignore_ex_rights_data_loss"])
         self.ignore_local_data_imperfect = int(config["ignore"]["ignore_local_data_imperfect"])
         
+        self.benchmark_rate = float(config["analysis"]["benchmark_rate"])
+        self.trading_days_year = int(config["analysis"]["trading_days_year"])
         self.date_analysis_test_s = config["analysis"]["date_analysis_test_s"]
         self.date_analysis_test_e = config["analysis"]["date_analysis_test_e"]
 
@@ -318,6 +322,8 @@ class CfgAnal(object):
         config["ignore"]["ignore_ex_rights_data_loss"] = int(self.ignore_ex_rights_data_loss)
         config["ignore"]["ignore_local_data_imperfect"] = int(self.ignore_local_data_imperfect)
         
+        config["analysis"]["benchmark_rate"] = float(self.benchmark_rate)
+        config["analysis"]["trading_days_year"] = int(self.trading_days_year)
         config["analysis"]["date_analysis_test_s"] = self.date_analysis_test_s
         config["analysis"]["date_analysis_test_e"] = self.date_analysis_test_e
         
