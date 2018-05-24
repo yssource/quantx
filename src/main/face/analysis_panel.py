@@ -21,6 +21,7 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
+import os
 import time
 import datetime
 import operator
@@ -29,7 +30,7 @@ from datetime import datetime, date
 
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QAbstractTableModel, QDateTime, QEvent, Qt
-from PyQt5.QtWidgets import QAbstractItemView, QApplication, QCheckBox, QComboBox, QDateTimeEdit, QDialog, QLabel, QLineEdit, QHeaderView
+from PyQt5.QtWidgets import QAbstractItemView, QApplication, QCheckBox, QComboBox, QDateTimeEdit, QDialog, QFileDialog, QLabel, QLineEdit, QHeaderView
 from PyQt5.QtWidgets import QMessageBox, QProgressBar, QPushButton, QRadioButton, QTableView, QTextEdit, QHBoxLayout, QVBoxLayout
 
 import config
@@ -38,6 +39,7 @@ import common
 import logger
 import analys
 import basicx
+import assess
 
 class DataTableModel(QAbstractTableModel): # 第一列为选择框控件
     def __init__(self, parent):
@@ -350,6 +352,8 @@ class AnalysisPanel(QDialog):
         self.suspend = False
         self.analysis_trading_day_list = [] # 存储交易日期date
         self.analysis_trading_day_dict = {} # 用于交易日数计算
+        self.daily_report_folder = ""
+        self.assess = assess.Assess(data_folder = self.config.cfg_main.data_folder, save_folder = self.config.cfg_anal.save_folder)
         
         self.InitUserInterface()
 
@@ -602,14 +606,15 @@ class AnalysisPanel(QDialog):
         self.progress_bar_get_quote_data.setMinimum(0)
         self.progress_bar_get_quote_data.setMaximum(100)
         self.progress_bar_get_quote_data.setValue(0)
+        self.progress_bar_get_quote_data.setMaximumSize(95, 21)
         
-        self.button_get_data_suspend = QPushButton("暂停")
+        self.button_get_data_suspend = QPushButton("暂 停")
         self.button_get_data_suspend.setFont(QFont("SimSun", 9))
-        self.button_get_data_suspend.setMaximumSize(42, 25)
+        self.button_get_data_suspend.setMaximumSize(50, 25)
         
-        self.button_get_data_stop = QPushButton("停止")
+        self.button_get_data_stop = QPushButton("停 止")
         self.button_get_data_stop.setFont(QFont("SimSun", 9))
-        self.button_get_data_stop.setMaximumSize(42, 25)
+        self.button_get_data_stop.setMaximumSize(50, 25)
         
         self.button_get_trading_day.clicked.connect(self.OnClickButtonGetTradingDay)
         self.button_get_security_info.clicked.connect(self.OnClickButtonGetSecurityInfo)
@@ -619,6 +624,44 @@ class AnalysisPanel(QDialog):
         self.button_get_stock_kline_1_m.clicked.connect(self.OnClickButtonGetStockKline_1_M)
         self.button_get_data_suspend.clicked.connect(self.OnClickButtonGetDataSuspend)
         self.button_get_data_stop.clicked.connect(self.OnClickButtonGetDataStop)
+        
+        self.label_daily_report_file = QLabel()
+        self.label_daily_report_file.setText(" 历史净值:")
+        
+        self.line_edit_daily_report_file = QLineEdit(self)
+        self.line_edit_daily_report_file.setMinimumWidth(320)
+        self.line_edit_daily_report_file.setReadOnly(True)
+        
+        self.button_daily_report_load = QPushButton("导入文件")
+        self.button_daily_report_load.setFont(QFont("SimSun", 9))
+        self.button_daily_report_load.setMaximumSize(64, 25)
+        self.button_daily_report_load.setEnabled(True)
+        
+        self.line_edit_daily_report_evaluate_account = QLineEdit(self)
+        self.line_edit_daily_report_evaluate_account.setMinimumWidth(60)
+        self.line_edit_daily_report_evaluate_account.setReadOnly(False)
+        self.line_edit_daily_report_evaluate_account.setToolTip("模型评估净值账号")
+        self.line_edit_daily_report_evaluate_account.setText(self.config.cfg_anal.account_daily_report)
+        
+        self.dt_edit_daily_report_evaluate_s = QDateTimeEdit()
+        self.dt_edit_daily_report_evaluate_s.setCalendarPopup(True)
+        self.dt_edit_daily_report_evaluate_s.setDisplayFormat("yyyy-MM-dd")
+        self.dt_edit_daily_report_evaluate_s.setDateTime(QDateTime.fromString(self.config.cfg_anal.date_daily_report_s, "yyyyMMdd"))
+        self.dt_edit_daily_report_evaluate_s.setToolTip("模型评估起始日期")
+        
+        self.dt_edit_daily_report_evaluate_e = QDateTimeEdit()
+        self.dt_edit_daily_report_evaluate_e.setCalendarPopup(True)
+        self.dt_edit_daily_report_evaluate_e.setDisplayFormat("yyyy-MM-dd")
+        self.dt_edit_daily_report_evaluate_e.setDateTime(QDateTime.fromString(self.config.cfg_anal.date_daily_report_e, "yyyyMMdd"))
+        self.dt_edit_daily_report_evaluate_e.setToolTip("模型评估终止日期")
+        
+        self.button_daily_report_evaluate = QPushButton("模型评估")
+        self.button_daily_report_evaluate.setFont(QFont("SimSun", 9))
+        self.button_daily_report_evaluate.setMaximumSize(64, 25)
+        self.button_daily_report_evaluate.setEnabled(False)
+        
+        self.button_daily_report_load.clicked.connect(self.OnClickButtonDailyReportLoad)
+        self.button_daily_report_evaluate.clicked.connect(self.OnClickButtonDailyReportEvaluate)
         
         self.edits_right_1 = QTextEdit(self)
         self.edits_right_1.setMinimumWidth(788)
@@ -764,6 +807,16 @@ class AnalysisPanel(QDialog):
         self.h_box_get_data.addWidget(self.button_get_data_stop)
         self.h_box_get_data.addStretch(1)
         
+        self.h_box_daily_report_evaluate = QHBoxLayout()
+        self.h_box_daily_report_evaluate.setContentsMargins(0, 0, 0, 0)
+        self.h_box_daily_report_evaluate.addWidget(self.label_daily_report_file)
+        self.h_box_daily_report_evaluate.addWidget(self.line_edit_daily_report_file)
+        self.h_box_daily_report_evaluate.addWidget(self.button_daily_report_load)
+        self.h_box_daily_report_evaluate.addWidget(self.line_edit_daily_report_evaluate_account)
+        self.h_box_daily_report_evaluate.addWidget(self.dt_edit_daily_report_evaluate_s)
+        self.h_box_daily_report_evaluate.addWidget(self.dt_edit_daily_report_evaluate_e)
+        self.h_box_daily_report_evaluate.addWidget(self.button_daily_report_evaluate)
+        
         self.v_box_left = QVBoxLayout()
         self.v_box_left.setContentsMargins(0, 0, 0, 0)
         self.v_box_left.addLayout(self.h_box_data_list)
@@ -772,6 +825,7 @@ class AnalysisPanel(QDialog):
         self.v_box_left.addLayout(self.h_box_security_setting_3)
         self.v_box_left.addLayout(self.h_box_get_data)
         self.v_box_left.addLayout(self.h_box_operate)
+        self.v_box_left.addLayout(self.h_box_daily_report_evaluate)
         self.v_box_left.addStretch(1)
         
         self.v_box_right = QVBoxLayout()
@@ -856,6 +910,12 @@ class AnalysisPanel(QDialog):
         if str_trading_day_s != "" and str_trading_day_e != "":
             self.config.cfg_anal.date_analysis_test_s = str_trading_day_s.replace("-", "")
             self.config.cfg_anal.date_analysis_test_e = str_trading_day_e.replace("-", "")
+        #self.config.cfg_anal.save_folder
+        #self.config.cfg_anal.benchmark_rate
+        #self.config.cfg_anal.trading_days_year
+        self.config.cfg_anal.date_daily_report_s = self.dt_edit_daily_report_evaluate_s.dateTime().toString("yyyyMMdd")
+        self.config.cfg_anal.date_daily_report_e = self.dt_edit_daily_report_evaluate_e.dateTime().toString("yyyyMMdd")
+        self.config.cfg_anal.account_daily_report = self.line_edit_daily_report_evaluate_account.text()
         try:
             self.config.SaveConfig_Anal(self.config.cfg_anal, define.CFG_FILE_PATH_ANAL)
         except Exception as e:
@@ -1194,3 +1254,32 @@ class AnalysisPanel(QDialog):
             self.combo_box_analysis_date_s.clear()
             self.combo_box_analysis_date_e.clear()
             self.label_analysis_date_count.setText("0")
+
+    def OnClickButtonDailyReportLoad(self):
+        dlg_file = QFileDialog.getOpenFileName(None, caption = "选择净值文件...", directory = self.daily_report_folder, filter = "Excel Files(*.xls*)")
+        if dlg_file != "":
+            file_path = dlg_file[0].__str__()
+            if file_path != "":
+                self.daily_report_folder = os.path.dirname(file_path)
+                self.line_edit_daily_report_file.setText(file_path)
+                ret = self.assess.SaveDailyReport(file_path)
+                if ret == True:
+                    self.button_daily_report_evaluate.setEnabled(True)
+
+    # 函数 assess.StrategyEvaluation() 中 valuex.MakeNetValueCompare() 的 plot 画图只能在主线程做，不然会报错
+    def OnClickButtonDailyReportEvaluate(self):
+        self.button_daily_report_evaluate.setEnabled(False)
+        try:
+            account_daily_report = self.line_edit_daily_report_evaluate_account.text()
+            date_daily_report_s = int(self.dt_edit_daily_report_evaluate_s.dateTime().toString("yyyyMMdd"))
+            date_daily_report_e = int(self.dt_edit_daily_report_evaluate_e.dateTime().toString("yyyyMMdd"))
+            daily_report = self.assess.GetDailyReport(account_daily_report, date_daily_report_s, date_daily_report_e)
+            if not daily_report.empty:
+                self.assess.StrategyEvaluation(daily_report)
+            else:
+                self.log_text = "选取的账号和时间段净值数据为空！"
+                self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+        except Exception as e:
+            self.log_text = "根据每日净值进行模型评估发生异常！%s" % e
+            self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+        self.button_daily_report_evaluate.setEnabled(True)

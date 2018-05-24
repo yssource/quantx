@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 
 import config
 
-class Evaluate():
+class ValueX():
     def __init__(self, **kwargs):
         self.daily_report = kwargs.get("daily_report", None) # 日期从早到晚排序
         self.config = config.Config()

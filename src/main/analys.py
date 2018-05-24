@@ -104,64 +104,65 @@ class Analys(common.Singleton):
         dlg_file = QFileDialog.getOpenFileName(None, caption = "选择回测文件...", directory = anal_folder, filter = "Python Files(*.py*)")
         if dlg_file != "":
             file_path = dlg_file[0].__str__()
-            file_name = os.path.basename(file_path)
-            if file_name != "":
-                if file_name[-3:] == ".py":
-                    if file_name != "__init__.py" and file_name != "analysis_base.py":
-                        if not (file_name[:-3] in sys.modules.keys()):
-                            file_path = anal_folder + "/" + file_name
-                            analy_info = center.AnalysisInfo()
-                            analy_info.analysis = file_name[:-3]
-                            try:
-                                __import__(analy_info.analysis)
-                                analy_info.module = sys.modules[analy_info.analysis]
-                                analy_info.classer = getattr(analy_info.module, analy_info.analysis)
-                                analy_info.filePath = file_path
-                                analy_info.state = define.USER_CTRL_LOAD
-                                self.analysis_info = analy_info # 先赋值，策略类初始化时要用
-                                analy_info.instance = analy_info.classer() # 策略类初始化
-                                analy_info.name = analy_info.instance.analysis_name
-                                analy_info.introduction = analy_info.instance.analysis_introduction
-                                analy_info.instance.Reload() # 可以执行一些初始化工作
-                                self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
-                                self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-                            except Exception as e:
-                                self.log_text = "回测 %s.py 加载发生错误！%s" % (analy_info.analysis, e)
-                                self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
-                                self.OnUnloadAnalysis(analy_info) #
+            if file_path != "":
+                file_name = os.path.basename(file_path)
+                if file_name != "":
+                    if file_name[-3:] == ".py":
+                        if file_name != "__init__.py" and file_name != "analysis_base.py":
+                            if not (file_name[:-3] in sys.modules.keys()):
+                                file_path = anal_folder + "/" + file_name
+                                analy_info = center.AnalysisInfo()
+                                analy_info.analysis = file_name[:-3]
+                                try:
+                                    __import__(analy_info.analysis)
+                                    analy_info.module = sys.modules[analy_info.analysis]
+                                    analy_info.classer = getattr(analy_info.module, analy_info.analysis)
+                                    analy_info.filePath = file_path
+                                    analy_info.state = define.USER_CTRL_LOAD
+                                    self.analysis_info = analy_info # 先赋值，策略类初始化时要用
+                                    analy_info.instance = analy_info.classer() # 策略类初始化
+                                    analy_info.name = analy_info.instance.analysis_name
+                                    analy_info.introduction = analy_info.instance.analysis_introduction
+                                    analy_info.instance.Reload() # 可以执行一些初始化工作
+                                    self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
+                                    self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+                                except Exception as e:
+                                    self.log_text = "回测 %s.py 加载发生错误！%s" % (analy_info.analysis, e)
+                                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+                                    self.OnUnloadAnalysis(analy_info) #
+                            else:
+                                QMessageBox.information(None, "提示", "选择的回测模块 %s 系统已经加载！" % file_name[:-3], QMessageBox.Ok)
                         else:
-                            QMessageBox.information(None, "提示", "选择的回测模块 %s 系统已经加载！" % file_name[:-3], QMessageBox.Ok)
-                    else:
-                        QMessageBox.information(None, "提示", "选择的回测文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
-                elif file_name[-4:] == ".pyd":
-                    if file_name != "analysis_base.pyd":
-                        if not (file_name[:-4] in sys.modules.keys()):
-                            file_path = anal_folder + "/" + file_name
-                            analy_info = center.AnalysisInfo()
-                            analy_info.analysis = file_name[:-4]
-                            try:
-                                __import__(analy_info.analysis)
-                                analy_info.module = sys.modules[analy_info.analysis]
-                                analy_info.classer = getattr(analy_info.module, analy_info.analysis)
-                                analy_info.filePath = file_path
-                                analy_info.state = define.USER_CTRL_LOAD
-                                self.analysis_info = analy_info # 先赋值，策略类初始化时要用
-                                analy_info.instance = analy_info.classer() # 策略类初始化
-                                analy_info.name = analy_info.instance.analysis_name
-                                analy_info.introduction = analy_info.instance.analysis_introduction
-                                analy_info.instance.Reload() # 可以执行一些初始化工作
-                                self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
-                                self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-                            except Exception as e:
-                                self.log_text = "回测 %s.pyd 加载发生错误！%s" % (analy_info.analysis, e)
-                                self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
-                                self.OnUnloadAnalysis(analy_info) #
+                            QMessageBox.information(None, "提示", "选择的回测文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
+                    elif file_name[-4:] == ".pyd":
+                        if file_name != "analysis_base.pyd":
+                            if not (file_name[:-4] in sys.modules.keys()):
+                                file_path = anal_folder + "/" + file_name
+                                analy_info = center.AnalysisInfo()
+                                analy_info.analysis = file_name[:-4]
+                                try:
+                                    __import__(analy_info.analysis)
+                                    analy_info.module = sys.modules[analy_info.analysis]
+                                    analy_info.classer = getattr(analy_info.module, analy_info.analysis)
+                                    analy_info.filePath = file_path
+                                    analy_info.state = define.USER_CTRL_LOAD
+                                    self.analysis_info = analy_info # 先赋值，策略类初始化时要用
+                                    analy_info.instance = analy_info.classer() # 策略类初始化
+                                    analy_info.name = analy_info.instance.analysis_name
+                                    analy_info.introduction = analy_info.instance.analysis_introduction
+                                    analy_info.instance.Reload() # 可以执行一些初始化工作
+                                    self.log_text = "用户 加载 回测：%s, %s, %s, %d, %s" % (analy_info.analysis, analy_info.name, analy_info.introduction, analy_info.state, analy_info.file_path)
+                                    self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+                                except Exception as e:
+                                    self.log_text = "回测 %s.pyd 加载发生错误！%s" % (analy_info.analysis, e)
+                                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+                                    self.OnUnloadAnalysis(analy_info) #
+                            else:
+                                QMessageBox.information(None, "提示", "选择的回测模块 %s 系统已经加载！" % file_name[:-4], QMessageBox.Ok)
                         else:
-                            QMessageBox.information(None, "提示", "选择的回测模块 %s 系统已经加载！" % file_name[:-4], QMessageBox.Ok)
+                            QMessageBox.information(None, "提示", "选择的回测文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
                     else:
-                        QMessageBox.information(None, "提示", "选择的回测文件 %s 不是用户定义！" % file_name, QMessageBox.Ok)
-                else:
-                    QMessageBox.information(None, "提示", "选择的回测文件 %s 后缀名称异常！" % file_name, QMessageBox.Ok)
+                        QMessageBox.information(None, "提示", "选择的回测文件 %s 后缀名称异常！" % file_name, QMessageBox.Ok)
 
     def OnUnloadAnalysis(self, analysis_info):
         if analysis_info.instance != None:
