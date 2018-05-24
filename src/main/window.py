@@ -207,9 +207,9 @@ class MainWindow(QMainWindow):
         self.action_save_layout.setCheckable(True)
         self.action_save_layout.triggered.connect(self.OnActionSaveLayout)
         
-        self.action_basic_data_maker = QAction(QIcon(define.DEF_ICON_ACTION_ABOUT), "基础数据生成(&B)", self)
+        self.action_basic_data_maker = QAction(QIcon(define.DEF_ICON_ACTION_ABOUT), "基础数据(&B)", self)
         self.action_basic_data_maker.setShortcut("Ctrl+B")
-        self.action_basic_data_maker.setStatusTip("基础数据生成")
+        self.action_basic_data_maker.setStatusTip("基础数据生成工具")
         self.action_basic_data_maker.triggered.connect(self.OnActionBasicDataMaker)
 
     def CreateMenuBar(self):

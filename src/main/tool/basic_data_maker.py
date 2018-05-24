@@ -373,67 +373,36 @@ class DataMaker_Capital():
         capital_keys.sort()
         capital_dict_list = [self.capital_dict[key] for key in capital_keys]
         total_record_num = len(capital_dict_list)
-        
-        if dbm != None:
-            sql = "SHOW TABLES"
-            result = dbm.QueryAllSql(sql)
-            data_tables = list(result)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            if table_name in have_tables:
-                sql = "TRUNCATE TABLE %s" % table_name
-                dbm.ExecuteSql(sql)
-            else:
-                sql = "CREATE TABLE `%s` (" % table_name + \
-                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
-                      "`end_date` date NOT NULL COMMENT '截止日期'," + \
-                      "`total_shares` bigint(64) DEFAULT '0' COMMENT '总股本，股'," + \
-                      "`circu_shares` bigint(64) DEFAULT '0' COMMENT '流通股本，股，A股'," + \
-                      "PRIMARY KEY (`id`)," + \
-                      "UNIQUE KEY `idx_market_code_end_date` (`market`,`code`,`end_date`)" + \
-                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-                dbm.ExecuteSql(sql)
-            values = []
-            save_record_failed = 0
-            save_record_success = 0
-            save_index_from = 0 #
-            sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, end_date, total_shares, circu_shares) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            for i in range(save_index_from, total_record_num):
-                str_date = common.TransDateIntToStr(capital_dict_list[i].end_date)
-                values.append((capital_dict_list[i].inners, capital_dict_list[i].market, capital_dict_list[i].code, capital_dict_list[i].name, str_date, capital_dict_list[i].total_shares, capital_dict_list[i].circu_shares))
-                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                    if len(values) > 0: # 有记录需要保存
-                        if dbm.ExecuteManySql(sql, values) == False:
-                            save_record_failed += len(values)
-                        else:
-                            save_record_success += len(values)
-                        #print("保存：", len(values))
-                        values = [] #
-            if len(values) > 0: # 有记录需要保存
-                if dbm.ExecuteManySql(sql, values) == False:
-                    save_record_failed += len(values)
-                else:
-                    save_record_success += len(values)
-                #print("保存：", len(values))
-            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
-        
-        values = []
+        values_list = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(capital_dict_list[i].end_date)
-            values.append((capital_dict_list[i].inners, capital_dict_list[i].market, capital_dict_list[i].code, capital_dict_list[i].name, str_date, capital_dict_list[i].total_shares, capital_dict_list[i].circu_shares))
+            values_list.append((capital_dict_list[i].inners, capital_dict_list[i].market, capital_dict_list[i].code, capital_dict_list[i].name, str_date, capital_dict_list[i].total_shares, capital_dict_list[i].circu_shares))
         columns = ["inners", "market", "code", "name", "end_date", "total_shares", "circu_shares"]
         result = pd.DataFrame(columns = columns) # 空
-        if len(values) > 0:
-            result = pd.DataFrame(data = values, columns = columns)
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
         #print(result)
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`end_date` date NOT NULL COMMENT '截止日期'," + \
+                  "`total_shares` bigint(64) DEFAULT '0' COMMENT '总股本，股'," + \
+                  "`circu_shares` bigint(64) DEFAULT '0' COMMENT '流通股本，股，A股'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_market_code_end_date` (`market`,`code`,`end_date`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, end_date, total_shares, circu_shares) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
 class DataMaker_ExRights():
     def __init__(self, parent = None):
@@ -654,70 +623,39 @@ class DataMaker_ExRights():
             #    print(exrights_item.inners, exrights_item.market, exrights_item.code, exrights_item.date, \
             #          exrights_item.muler, exrights_item.adder, exrights_item.sg, exrights_item.pg, exrights_item.price, exrights_item.bonus)
         total_record_num = len(record_list_temp)
-        
-        if dbm != None:
-            sql = "SHOW TABLES"
-            result = dbm.QueryAllSql(sql)
-            data_tables = list(result)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            if table_name in have_tables:
-                sql = "TRUNCATE TABLE %s" % table_name
-                dbm.ExecuteSql(sql)
-            else:
-                sql = "CREATE TABLE `%s` (" % table_name + \
-                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                      "`date` date NOT NULL COMMENT '除权除息日期'," + \
-                      "`muler` float(16,7) DEFAULT '0.0000000' COMMENT '乘数'," + \
-                      "`adder` float(16,7) DEFAULT '0.0000000' COMMENT '加数'," + \
-                      "`sg` float(16,7) DEFAULT '0.0000000' COMMENT '送股比率，每股，非百分比'," + \
-                      "`pg` float(16,7) DEFAULT '0.0000000' COMMENT '配股比率，每股，非百分比'," + \
-                      "`price` float(10,3) DEFAULT '0.000' COMMENT '配股价，元'," + \
-                      "`bonus` float(16,7) DEFAULT '0.0000000' COMMENT '现金红利，每股，元'," + \
-                      "PRIMARY KEY (`id`)," + \
-                      "UNIQUE KEY `idx_market_code_date` (`market`,`code`,`date`)" + \
-                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-                dbm.ExecuteSql(sql)
-            values = []
-            save_record_failed = 0
-            save_record_success = 0
-            save_index_from = 0 #
-            sql = "INSERT INTO %s" % table_name + "(inners, market, code, date, muler, adder, sg, pg, price, bonus) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            for i in range(save_index_from, total_record_num):
-                str_date = common.TransDateIntToStr(record_list_temp[i].date)
-                values.append((record_list_temp[i].inners, record_list_temp[i].market, record_list_temp[i].code, str_date, record_list_temp[i].muler, record_list_temp[i].adder, record_list_temp[i].sg, record_list_temp[i].pg, record_list_temp[i].price, record_list_temp[i].bonus))
-                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                    if len(values) > 0: # 有记录需要保存
-                        if dbm.ExecuteManySql(sql, values) == False:
-                            save_record_failed += len(values)
-                        else:
-                            save_record_success += len(values)
-                        #print("保存：", len(values))
-                        values = [] #
-            if len(values) > 0: # 有记录需要保存
-                if dbm.ExecuteManySql(sql, values) == False:
-                    save_record_failed += len(values)
-                else:
-                    save_record_success += len(values)
-                #print("保存：", len(values))
-            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
-        
-        values = []
+        values_list = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(record_list_temp[i].date)
-            values.append((record_list_temp[i].inners, record_list_temp[i].market, record_list_temp[i].code, str_date, record_list_temp[i].muler, record_list_temp[i].adder, record_list_temp[i].sg, record_list_temp[i].pg, record_list_temp[i].price, record_list_temp[i].bonus))
+            values_list.append((record_list_temp[i].inners, record_list_temp[i].market, record_list_temp[i].code, str_date, record_list_temp[i].muler, record_list_temp[i].adder, record_list_temp[i].sg, record_list_temp[i].pg, record_list_temp[i].price, record_list_temp[i].bonus))
         columns = ["inners", "market", "code", "date", "muler", "adder", "sg", "pg", "price", "bonus"]
         result = pd.DataFrame(columns = columns) # 空
-        if len(values) > 0:
-            result = pd.DataFrame(data = values, columns = columns)
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
         #print(result)
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`date` date NOT NULL COMMENT '除权除息日期'," + \
+                  "`muler` float(16,7) DEFAULT '0.0000000' COMMENT '乘数'," + \
+                  "`adder` float(16,7) DEFAULT '0.0000000' COMMENT '加数'," + \
+                  "`sg` float(16,7) DEFAULT '0.0000000' COMMENT '送股比率，每股，非百分比'," + \
+                  "`pg` float(16,7) DEFAULT '0.0000000' COMMENT '配股比率，每股，非百分比'," + \
+                  "`price` float(10,3) DEFAULT '0.000' COMMENT '配股价，元'," + \
+                  "`bonus` float(16,7) DEFAULT '0.0000000' COMMENT '现金红利，每股，元'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_market_code_date` (`market`,`code`,`date`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, market, code, date, muler, adder, sg, pg, price, bonus) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
 class DataMaker_Industry():
     def __init__(self, parent = None):
@@ -772,83 +710,49 @@ class DataMaker_Industry():
 
     def SaveData_Industry(self, dbm, table_name, save_path):
         total_record_num = len(self.industry_list)
-        
-        if dbm != None:
-            sql = "SHOW TABLES"
-            result = dbm.QueryAllSql(sql)
-            data_tables = list(result)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            if table_name in have_tables:
-                sql = "TRUNCATE TABLE %s" % table_name
-                dbm.ExecuteSql(sql)
-            else:
-                sql = "CREATE TABLE `%s` (" % table_name + \
-                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                      "`standard` int(32) NOT NULL DEFAULT '0' COMMENT '行业划分标准'," + \
-                      "`industry` int(32) NOT NULL DEFAULT '0' COMMENT '所属行业'," + \
-                      "`industry_code_1` varchar(32) DEFAULT '' COMMENT '一级行业代码'," + \
-                      "`industry_name_1` varchar(100) DEFAULT '' COMMENT '一级行业名称'," + \
-                      "`industry_code_2` varchar(32) DEFAULT '' COMMENT '二级行业代码'," + \
-                      "`industry_name_2` varchar(100) DEFAULT '' COMMENT '二级行业名称'," + \
-                      "`industry_code_3` varchar(32) DEFAULT '' COMMENT '三级行业代码'," + \
-                      "`industry_name_3` varchar(100) DEFAULT '' COMMENT '三级行业名称'," + \
-                      "`industry_code_4` varchar(32) DEFAULT '' COMMENT '四级行业代码'," + \
-                      "`industry_name_4` varchar(100) DEFAULT '' COMMENT '四级行业名称'," + \
-                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
-                      "`info_date` date NOT NULL COMMENT '信息日期'," + \
-                      "PRIMARY KEY (`id`)," + \
-                      "UNIQUE KEY `idx_standard_industry_market_code_info_date` (`standard`,`industry`,`market`,`code`,`info_date`)" + \
-                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-                dbm.ExecuteSql(sql)
-            values = []
-            save_record_failed = 0
-            save_record_success = 0
-            save_index_from = 0 #
-            sql = "INSERT INTO %s" % table_name + "(standard, industry, industry_code_1, industry_name_1, industry_code_2, industry_name_2, industry_code_3, industry_name_3, industry_code_4, industry_name_4, inners, market, code, name, info_date) \
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            for i in range(save_index_from, total_record_num):
-                str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
-                values.append((self.industry_list[i].standard, self.industry_list[i].industry, 
-                               self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
-                               self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
-                               self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
-                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                    if len(values) > 0: # 有记录需要保存
-                        if dbm.ExecuteManySql(sql, values) == False:
-                            save_record_failed += len(values)
-                        else:
-                            save_record_success += len(values)
-                        #print("保存：", len(values))
-                        values = [] #
-            if len(values) > 0: # 有记录需要保存
-                if dbm.ExecuteManySql(sql, values) == False:
-                    save_record_failed += len(values)
-                else:
-                    save_record_success += len(values)
-                #print("保存：", len(values))
-            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
-        
-        values = []
+        values_list = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
-            values.append((self.industry_list[i].standard, self.industry_list[i].industry, 
+            values_list.append((self.industry_list[i].standard, self.industry_list[i].industry, 
                            self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
                            self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
                            self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
         columns = ["standard", "industry", "industry_code_1", "industry_name_1", "industry_code_2", "industry_name_2", 
                    "industry_code_3", "industry_name_3", "industry_code_4", "industry_name_4", "inners", "market", "code", "name", "info_date"]
         result = pd.DataFrame(columns = columns) # 空
-        if len(values) > 0:
-            result = pd.DataFrame(data = values, columns = columns)
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
         #print(result)
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`standard` int(32) NOT NULL DEFAULT '0' COMMENT '行业划分标准'," + \
+                  "`industry` int(32) NOT NULL DEFAULT '0' COMMENT '所属行业'," + \
+                  "`industry_code_1` varchar(32) DEFAULT '' COMMENT '一级行业代码'," + \
+                  "`industry_name_1` varchar(100) DEFAULT '' COMMENT '一级行业名称'," + \
+                  "`industry_code_2` varchar(32) DEFAULT '' COMMENT '二级行业代码'," + \
+                  "`industry_name_2` varchar(100) DEFAULT '' COMMENT '二级行业名称'," + \
+                  "`industry_code_3` varchar(32) DEFAULT '' COMMENT '三级行业代码'," + \
+                  "`industry_name_3` varchar(100) DEFAULT '' COMMENT '三级行业名称'," + \
+                  "`industry_code_4` varchar(32) DEFAULT '' COMMENT '四级行业代码'," + \
+                  "`industry_name_4` varchar(100) DEFAULT '' COMMENT '四级行业名称'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`info_date` date NOT NULL COMMENT '信息日期'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_standard_industry_market_code_info_date` (`standard`,`industry`,`market`,`code`,`info_date`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(standard, industry, industry_code_1, industry_name_1, industry_code_2, industry_name_2, industry_code_3, industry_name_3, industry_code_4, industry_name_4, inners, market, code, name, info_date) \
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
 class DataMaker_PreQuoteStk():
     def __init__(self, parent = None):
@@ -928,81 +832,47 @@ class DataMaker_PreQuoteStk():
 
     def SaveData_PreQuoteStk(self, dbm, table_name, save_path):
         total_record_num = len(self.quote_data_list)
-        
-        if dbm != None:
-            sql = "SHOW TABLES"
-            result = dbm.QueryAllSql(sql)
-            data_tables = list(result)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            if table_name in have_tables:
-                sql = "TRUNCATE TABLE %s" % table_name
-                dbm.ExecuteSql(sql)
-            else:
-                sql = "CREATE TABLE `%s` (" % table_name + \
-                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
-                      "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
-                      "`open` float(16,4) DEFAULT '0.0000' COMMENT '开盘价'," + \
-                      "`high` float(16,4) DEFAULT '0.0000' COMMENT '最高价'," + \
-                      "`low` float(16,4) DEFAULT '0.0000' COMMENT '最低价'," + \
-                      "`close` float(16,4) DEFAULT '0.0000' COMMENT '收盘价'," + \
-                      "`pre_close` float(16,4) DEFAULT '0.0000' COMMENT '昨收价'," + \
-                      "`volume` bigint(64) DEFAULT '0' COMMENT '成交量，股'," + \
-                      "`turnover` double(64,2) DEFAULT '0.00' COMMENT '成交额，元'," + \
-                      "`trade_count` int(32) DEFAULT '0' COMMENT '成交笔数'," + \
-                      "`quote_date` date DEFAULT NULL COMMENT '行情日期，2015-12-31'," + \
-                      "`quote_time` datetime(6) DEFAULT NULL COMMENT '行情时间'," + \
-                      "PRIMARY KEY (`id`)," + \
-                      "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
-                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-                dbm.ExecuteSql(sql)
-            values = []
-            save_record_failed = 0
-            save_record_success = 0
-            save_index_from = 0 #
-            sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, open, high, low, close, pre_close, volume, turnover, trade_count, quote_date, quote_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            for i in range(save_index_from, total_record_num):
-                str_date = common.TransDateIntToStr(self.quote_data_list[i].quote_date)
-                str_time = self.TransTimeIntToStr(str_date, self.quote_data_list[i].quote_time)
-                values.append((self.quote_data_list[i].inners, self.quote_data_list[i].market, self.quote_data_list[i].code, self.quote_data_list[i].name, self.quote_data_list[i].category, 
-                               self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
-                               self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
-                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                    if len(values) > 0: # 有记录需要保存
-                        if dbm.ExecuteManySql(sql, values) == False:
-                            save_record_failed += len(values)
-                        else:
-                            save_record_success += len(values)
-                        #print("保存：", len(values))
-                        values = [] #
-            if len(values) > 0: # 有记录需要保存
-                if dbm.ExecuteManySql(sql, values) == False:
-                    save_record_failed += len(values)
-                else:
-                    save_record_success += len(values)
-                #print("保存：", len(values))
-            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
-        
-        values = []
+        values_list = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(self.quote_data_list[i].quote_date)
             str_time = self.TransTimeIntToStr(str_date, self.quote_data_list[i].quote_time)
-            values.append((self.quote_data_list[i].inners, self.quote_data_list[i].market, self.quote_data_list[i].code, self.quote_data_list[i].name, self.quote_data_list[i].category, 
+            values_list.append((self.quote_data_list[i].inners, self.quote_data_list[i].market, self.quote_data_list[i].code, self.quote_data_list[i].name, self.quote_data_list[i].category, 
                            self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
                            self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
         columns = ["inners", "market", "code", "name", "category", "open", "high", "low", "close", "pre_close", "volume", "turnover", "trade_count", "quote_date", "quote_time"]
         result = pd.DataFrame(columns = columns) # 空
-        if len(values) > 0:
-            result = pd.DataFrame(data = values, columns = columns)
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
         #print(result)
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
+                  "`open` float(16,4) DEFAULT '0.0000' COMMENT '开盘价'," + \
+                  "`high` float(16,4) DEFAULT '0.0000' COMMENT '最高价'," + \
+                  "`low` float(16,4) DEFAULT '0.0000' COMMENT '最低价'," + \
+                  "`close` float(16,4) DEFAULT '0.0000' COMMENT '收盘价'," + \
+                  "`pre_close` float(16,4) DEFAULT '0.0000' COMMENT '昨收价'," + \
+                  "`volume` bigint(64) DEFAULT '0' COMMENT '成交量，股'," + \
+                  "`turnover` double(64,2) DEFAULT '0.00' COMMENT '成交额，元'," + \
+                  "`trade_count` int(32) DEFAULT '0' COMMENT '成交笔数'," + \
+                  "`quote_date` date DEFAULT NULL COMMENT '行情日期，2015-12-31'," + \
+                  "`quote_time` datetime(6) DEFAULT NULL COMMENT '行情时间'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, open, high, low, close, pre_close, volume, turnover, trade_count, quote_date, quote_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
 class DataMaker_SecurityInfo():
     def __init__(self, parent = None):
@@ -1142,72 +1012,41 @@ class DataMaker_SecurityInfo():
         security_keys.sort()
         security_dict_list = [self.security_dict[key] for key in security_keys]
         total_record_num = len(security_dict_list)
-        
-        if dbm != None:
-            sql = "SHOW TABLES"
-            result = dbm.QueryAllSql(sql)
-            data_tables = list(result)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            if table_name in have_tables:
-                sql = "TRUNCATE TABLE %s" % table_name
-                dbm.ExecuteSql(sql)
-            else:
-                sql = "CREATE TABLE `%s` (" % table_name + \
-                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                      "`company` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '公司代码'," + \
-                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
-                      "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
-                      "`sector` int(8) DEFAULT '0' COMMENT '上市板块，详见说明'," + \
-                      "`is_st` int(8) DEFAULT '0' COMMENT '是否ST股，0:否、1:是'," + \
-                      "`list_state` int(8) DEFAULT '0' COMMENT '上市状态，详见说明'," + \
-                      "`list_date` date COMMENT '上市日期'," + \
-                      "PRIMARY KEY (`id`)," + \
-                      "UNIQUE KEY `idx_inners` (`inners`)," + \
-                      "UNIQUE KEY `idx_company` (`company`)," + \
-                      "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
-                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-                dbm.ExecuteSql(sql)
-            values = []
-            save_record_failed = 0
-            save_record_success = 0
-            save_index_from = 0 #
-            sql = "INSERT INTO %s" % table_name + "(inners, company, market, code, name, category, sector, is_st, list_state, list_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            for i in range(save_index_from, total_record_num):
-                str_date = common.TransDateIntToStr(security_dict_list[i].list_date)
-                values.append((security_dict_list[i].inners, security_dict_list[i].company, security_dict_list[i].market, security_dict_list[i].code, security_dict_list[i].name, security_dict_list[i].category, security_dict_list[i].sector, security_dict_list[i].is_st, security_dict_list[i].list_state, str_date))
-                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                    if len(values) > 0: # 有记录需要保存
-                        if dbm.ExecuteManySql(sql, values) == False:
-                            save_record_failed += len(values)
-                        else:
-                            save_record_success += len(values)
-                        #print("保存：", len(values))
-                        values = [] #
-            if len(values) > 0: # 有记录需要保存
-                if dbm.ExecuteManySql(sql, values) == False:
-                    save_record_failed += len(values)
-                else:
-                    save_record_success += len(values)
-                #print("保存：", len(values))
-            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
-        
-        values = []
+        values_list = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(security_dict_list[i].list_date)
-            values.append((security_dict_list[i].inners, security_dict_list[i].company, security_dict_list[i].market, security_dict_list[i].code, security_dict_list[i].name, security_dict_list[i].category, security_dict_list[i].sector, security_dict_list[i].is_st, security_dict_list[i].list_state, str_date))
+            values_list.append((security_dict_list[i].inners, security_dict_list[i].company, security_dict_list[i].market, security_dict_list[i].code, security_dict_list[i].name, security_dict_list[i].category, security_dict_list[i].sector, security_dict_list[i].is_st, security_dict_list[i].list_state, str_date))
         columns = ["inners", "company", "market", "code", "name", "category", "sector", "is_st", "list_state", "list_date"]
         result = pd.DataFrame(columns = columns) # 空
-        if len(values) > 0:
-            result = pd.DataFrame(data = values, columns = columns)
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
         #print(result)
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`company` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '公司代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
+                  "`sector` int(8) DEFAULT '0' COMMENT '上市板块，详见说明'," + \
+                  "`is_st` int(8) DEFAULT '0' COMMENT '是否ST股，0:否、1:是'," + \
+                  "`list_state` int(8) DEFAULT '0' COMMENT '上市状态，详见说明'," + \
+                  "`list_date` date COMMENT '上市日期'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_inners` (`inners`)," + \
+                  "UNIQUE KEY `idx_company` (`company`)," + \
+                  "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, company, market, code, name, category, sector, is_st, list_state, list_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
 class DataMaker_TingPaiStock():
     def __init__(self, parent = None):
@@ -1260,82 +1099,47 @@ class DataMaker_TingPaiStock():
 
     def SaveData_TingPaiStock(self, dbm, table_name, save_path):
         total_record_num = len(self.ting_pai_stock_list)
-        
-        if dbm != None:
-            sql = "SHOW TABLES"
-            result = dbm.QueryAllSql(sql)
-            data_tables = list(result)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            if table_name in have_tables:
-                sql = "TRUNCATE TABLE %s" % table_name
-                dbm.ExecuteSql(sql)
-            else:
-                sql = "CREATE TABLE `%s` (" % table_name + \
-                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                      "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
-                      "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
-                      "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
-                      "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
-                      "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
-                      "``tp_date` datetime(6) DEFAULT NULL COMMENT '停牌日期'," + \
-                      "``tp_time` varchar(30) DEFAULT '' COMMENT '停牌时间'," + \
-                      "``tp_reason` varchar(110) DEFAULT '' COMMENT '停牌原因'," + \
-                      "``tp_statement` int(8) DEFAULT '0' COMMENT '停牌事项说明，详见说明'," + \
-                      "``tp_term` varchar(60) DEFAULT '' COMMENT '停牌期限'," + \
-                      "``fp_date` datetime(6) DEFAULT NULL COMMENT '复牌日期'," + \
-                      "``fp_time` varchar(30) DEFAULT '' COMMENT '复牌时间'," + \
-                      "``fp_statement` varchar(110) DEFAULT '' COMMENT '复牌事项说明'," + \
-                      "``update_time` datetime(6) DEFAULT NULL COMMENT '更新时间'," + \
-                      "PRIMARY KEY (`id`)," + \
-                      "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
-                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-                dbm.ExecuteSql(sql)
-            values = []
-            save_record_failed = 0
-            save_record_success = 0
-            save_index_from = 0 #
-            sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, tp_date, tp_time, tp_reason, tp_statement, tp_term, fp_date, fp_time, fp_statement, update_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            for i in range(save_index_from, total_record_num):
-                str_date_tp = self.ting_pai_stock_list[i].tp_date.strftime("%Y-%m-%d")
-                str_date_fp = self.ting_pai_stock_list[i].fp_date.strftime("%Y-%m-%d")
-                str_date_up = self.ting_pai_stock_list[i].update_time.strftime("%Y-%m-%d")
-                values.append((self.ting_pai_stock_list[i].inners, self.ting_pai_stock_list[i].market, self.ting_pai_stock_list[i].code, self.ting_pai_stock_list[i].name, self.ting_pai_stock_list[i].category, 
-                               str_date_tp, self.ting_pai_stock_list[i].tp_time, self.ting_pai_stock_list[i].tp_reason, self.ting_pai_stock_list[i].tp_statement, self.ting_pai_stock_list[i].tp_term, 
-                               str_date_fp, self.ting_pai_stock_list[i].fp_time, self.ting_pai_stock_list[i].fp_statement, str_date_up))
-                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                    if len(values) > 0: # 有记录需要保存
-                        if dbm.ExecuteManySql(sql, values) == False:
-                            save_record_failed += len(values)
-                        else:
-                            save_record_success += len(values)
-                        #print("保存：", len(values))
-                        values = [] #
-            if len(values) > 0: # 有记录需要保存
-                if dbm.ExecuteManySql(sql, values) == False:
-                    save_record_failed += len(values)
-                else:
-                    save_record_success += len(values)
-                #print("保存：", len(values))
-            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
-        
-        values = []
+        values_list = []
         for i in range(total_record_num):
             str_date_tp = self.ting_pai_stock_list[i].tp_date.strftime("%Y-%m-%d")
             str_date_fp = self.ting_pai_stock_list[i].fp_date.strftime("%Y-%m-%d")
             str_date_up = self.ting_pai_stock_list[i].update_time.strftime("%Y-%m-%d")
-            values.append((self.ting_pai_stock_list[i].inners, self.ting_pai_stock_list[i].market, self.ting_pai_stock_list[i].code, self.ting_pai_stock_list[i].name, self.ting_pai_stock_list[i].category, 
+            values_list.append((self.ting_pai_stock_list[i].inners, self.ting_pai_stock_list[i].market, self.ting_pai_stock_list[i].code, self.ting_pai_stock_list[i].name, self.ting_pai_stock_list[i].category, 
                            str_date_tp, self.ting_pai_stock_list[i].tp_time, self.ting_pai_stock_list[i].tp_reason, self.ting_pai_stock_list[i].tp_statement, self.ting_pai_stock_list[i].tp_term, 
                            str_date_fp, self.ting_pai_stock_list[i].fp_time, self.ting_pai_stock_list[i].fp_statement, str_date_up))
         columns = ["inners", "market", "code", "name", "category", "tp_date", "tp_time", "tp_reason", "tp_statement", "tp_term", "fp_date", "fp_time", "fp_statement", "update_time"]
         result = pd.DataFrame(columns = columns) # 空
-        if len(values) > 0:
-            result = pd.DataFrame(data = values, columns = columns)
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
         #print(result)
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
+                  "``tp_date` datetime(6) DEFAULT NULL COMMENT '停牌日期'," + \
+                  "``tp_time` varchar(30) DEFAULT '' COMMENT '停牌时间'," + \
+                  "``tp_reason` varchar(110) DEFAULT '' COMMENT '停牌原因'," + \
+                  "``tp_statement` int(8) DEFAULT '0' COMMENT '停牌事项说明，详见说明'," + \
+                  "``tp_term` varchar(60) DEFAULT '' COMMENT '停牌期限'," + \
+                  "``fp_date` datetime(6) DEFAULT NULL COMMENT '复牌日期'," + \
+                  "``fp_time` varchar(30) DEFAULT '' COMMENT '复牌时间'," + \
+                  "``fp_statement` varchar(110) DEFAULT '' COMMENT '复牌事项说明'," + \
+                  "``update_time` datetime(6) DEFAULT NULL COMMENT '更新时间'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, tp_date, tp_time, tp_reason, tp_statement, tp_term, fp_date, fp_time, fp_statement, update_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
 class DataMaker_TradingDay():
     def __init__(self, parent = None):
@@ -1375,67 +1179,36 @@ class DataMaker_TradingDay():
 
     def SaveData_TradingDay(self, dbm, table_name, save_path):
         total_record_num = len(self.trading_day_list)
-        
-        if dbm != None:
-            sql = "SHOW TABLES"
-            result = dbm.QueryAllSql(sql)
-            data_tables = list(result)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            if table_name in have_tables:
-                sql = "TRUNCATE TABLE %s" % table_name
-                dbm.ExecuteSql(sql)
-            else:
-                sql = "CREATE TABLE `%s` (" % table_name + \
-                      "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
-                      "``natural_date` date NOT NULL COMMENT '日期'," + \
-                      "``market` int(4) unsigned NOT NULL DEFAULT '0' COMMENT '证券市场，72、83、89'," + \
-                      "`trading_day` int(1) DEFAULT '0' COMMENT '是否交易'," + \
-                      "``week_end` int(1) DEFAULT '0' COMMENT '是否周末'," + \
-                      "``month_end` int(1) DEFAULT '0' COMMENT '是否月末'," + \
-                      "``quarter_end` int(1) DEFAULT '0' COMMENT '是否季末'," + \
-                      "``year_end` int(1) DEFAULT '0' COMMENT '是否年末'," + \
-                      "PRIMARY KEY (`id`)," + \
-                      "UNIQUE KEY `idx_natural_date_market` (`natural_date`,`market`)" + \
-                      ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
-                dbm.ExecuteSql(sql)
-            values = []
-            save_record_failed = 0
-            save_record_success = 0
-            save_index_from = 0 #
-            sql = "INSERT INTO %s" % table_name + "(natural_date, market, trading_day, week_end, month_end, quarter_end, year_end) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            for i in range(save_index_from, total_record_num):
-                str_date = common.TransDateIntToStr(self.trading_day_list[i].natural_date)
-                values.append((str_date, self.trading_day_list[i].market, self.trading_day_list[i].trading_day, self.trading_day_list[i].week_end, self.trading_day_list[i].month_end, self.trading_day_list[i].quarter_end, self.trading_day_list[i].year_end))
-                if (i - save_index_from + 1) % 3000 == 0: # 自定义每批次保存条数
-                    if len(values) > 0: # 有记录需要保存
-                        if dbm.ExecuteManySql(sql, values) == False:
-                            save_record_failed += len(values)
-                        else:
-                            save_record_success += len(values)
-                        #print("保存：", len(values))
-                        values = [] #
-            if len(values) > 0: # 有记录需要保存
-                if dbm.ExecuteManySql(sql, values) == False:
-                    save_record_failed += len(values)
-                else:
-                    save_record_success += len(values)
-                #print("保存：", len(values))
-            self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
-        
-        values = []
+        values_list = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(self.trading_day_list[i].natural_date)
-            values.append((str_date, self.trading_day_list[i].market, self.trading_day_list[i].trading_day, self.trading_day_list[i].week_end, self.trading_day_list[i].month_end, self.trading_day_list[i].quarter_end, self.trading_day_list[i].year_end))
+            values_list.append((str_date, self.trading_day_list[i].market, self.trading_day_list[i].trading_day, self.trading_day_list[i].week_end, self.trading_day_list[i].month_end, self.trading_day_list[i].quarter_end, self.trading_day_list[i].year_end))
         columns = ["natural_date", "market", "trading_day", "week_end", "month_end", "quarter_end", "year_end"]
         result = pd.DataFrame(columns = columns) # 空
-        if len(values) > 0:
-            result = pd.DataFrame(data = values, columns = columns)
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
         #print(result)
         result.to_pickle(save_path)
         self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "``natural_date` date NOT NULL COMMENT '日期'," + \
+                  "``market` int(4) unsigned NOT NULL DEFAULT '0' COMMENT '证券市场，72、83、89'," + \
+                  "`trading_day` int(1) DEFAULT '0' COMMENT '是否交易'," + \
+                  "``week_end` int(1) DEFAULT '0' COMMENT '是否周末'," + \
+                  "``month_end` int(1) DEFAULT '0' COMMENT '是否月末'," + \
+                  "``quarter_end` int(1) DEFAULT '0' COMMENT '是否季末'," + \
+                  "``year_end` int(1) DEFAULT '0' COMMENT '是否年末'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_natural_date_market` (`natural_date`,`market`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(natural_date, market, trading_day, week_end, month_end, quarter_end, year_end) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
 class BasicDataMaker(QDialog):
     def __init__(self, **kwargs):
