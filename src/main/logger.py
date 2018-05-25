@@ -239,14 +239,17 @@ class Logger(common.Singleton):
                     self.SendDataAll(log_data)
 
     def TrySaveSendData(self): # 定时保存
-        now_time = int(datetime.now().strftime("%H%M"))
-        if now_time == self.db_init_time and self.db_init_flag == False:
-            self.db_init_flag = True
-            self.InitDataBase()
-        if now_time == 2300:
-            self.db_init_flag = False
-        
-        self.PutTbData_Logger()
+        try:
+            now_time = int(datetime.now().strftime("%H%M"))
+            if now_time == self.db_init_time and self.db_init_flag == False:
+                self.db_init_flag = True
+                self.InitDataBase()
+            if now_time == 2300:
+                self.db_init_flag = False
+            
+            self.PutTbData_Logger()
+        except Exception as e:
+            print("TrySaveSendData 发生异常！%s" % e)
 
 ####################################################################################################
 

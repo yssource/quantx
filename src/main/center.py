@@ -333,7 +333,7 @@ class Center(common.Singleton):
                     quote_func(self.DataMsg(src_data))
                 self.quote_sub_locker_future_np.release()
         except Exception as e:
-            print("UpdateSnapshot Error:", e)
+            print("UpdateSnapshot 发生异常！%s" % e)
             traceback.print_exc()
             info = sys.exc_info()
-            print("UpdateSnapshot Error:", info[0], info[1])
+            print("UpdateSnapshot 发生异常！%s %s" % (info[0], info[1]))

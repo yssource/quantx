@@ -1304,16 +1304,20 @@ class BasicDataMaker(QDialog):
             if self.dbm_jydb.Start() == True:
                 self.SendMessage("数据库 jydb 连接完成。")
             else:
+                self.dbm_jydb = None
                 self.SendMessage("数据库 jydb 连接失败！")
             if self.flag_use_database == True:
                 self.dbm_financial = dbm_mysql.DBM_MySQL(host = self.mysql_host, port = self.mysql_port, user = self.mysql_user, passwd = self.mysql_passwd, db = self.mysql_db, charset = self.mysql_charset)
                 if self.dbm_financial.Connect() == True:
                     self.SendMessage("数据库 financial 连接完成。")
                 else:
+                    self.dbm_financial = None
                     self.SendMessage("数据库 financial 连接失败！")
             else:
                 self.SendMessage("不使用数据库 financial 保存基础数据。")
         except Exception as e:
+            self.dbm_jydb = None
+            self.dbm_financial = None
             self.SendMessage("建立数据库连接发生异常！%s" % e)
 
     def DisconnectDB(self):
