@@ -129,6 +129,8 @@ class SimulateTrader(QDialog):
             print("数据库连接失败！")
         
         self.InitUserInterface()
+        
+        self.MakeSimulateTrade() #
 
     def __del__(self):
         pass
@@ -241,21 +243,7 @@ class SimulateTrader(QDialog):
         
         self.button_place_order.clicked.connect(self.OnButtonPlaceOrder)
 
-    def OnChangeBuySell(self, exch_side):
-        if exch_side == 1: # buy
-            self.line_edit_symbol.setStyleSheet("color:red")
-            self.line_edit_name.setStyleSheet("background-color:rgb(240,240,240);color:red")
-            self.spin_box_price.setStyleSheet("color:red")
-            self.spin_box_volume.setStyleSheet("color:red")
-            self.button_place_order.setStyleSheet("font:bold;color:red")
-        if exch_side == 2: # sell
-            self.line_edit_symbol.setStyleSheet("color:green")
-            self.line_edit_name.setStyleSheet("background-color:rgb(240,240,240);color:green")
-            self.spin_box_price.setStyleSheet("color:green")
-            self.spin_box_volume.setStyleSheet("color:green")
-            self.button_place_order.setStyleSheet("font:bold;color:green")
-
-    def OnButtonPlaceOrder(self):
+    def MakeSimulateTrade(self):
         stock_count = len(self.stock_list)
         if stock_count > 0:
             min_index = 0
@@ -264,7 +252,6 @@ class SimulateTrader(QDialog):
             stock_index = random.randint(min_index, max_index)
             stock = self.stock_list[stock_index]
             print(stock.ToString())
-            
             self.line_edit_symbol.setText(stock.code)
             self.line_edit_name.setText(stock.name)
             if stock.market == "SH":
@@ -283,12 +270,41 @@ class SimulateTrader(QDialog):
                 self.radio_button_buy.setChecked(False)
                 self.radio_button_sell.setChecked(True)
             self.OnChangeBuySell(exch_side)
-            
+        else:
+            print("证券列表为空！")
+
+    def OnChangeBuySell(self, exch_side):
+        if exch_side == 1: # buy
+            self.line_edit_symbol.setStyleSheet("color:red")
+            self.line_edit_name.setStyleSheet("background-color:rgb(240,240,240);color:red")
+            self.spin_box_price.setStyleSheet("color:red")
+            self.spin_box_volume.setStyleSheet("color:red")
+            self.button_place_order.setStyleSheet("font:bold;color:red")
+        if exch_side == 2: # sell
+            self.line_edit_symbol.setStyleSheet("color:green")
+            self.line_edit_name.setStyleSheet("background-color:rgb(240,240,240);color:green")
+            self.spin_box_price.setStyleSheet("color:green")
+            self.spin_box_volume.setStyleSheet("color:green")
+            self.button_place_order.setStyleSheet("font:bold;color:green")
+
+    def OnButtonPlaceOrder(self):
+        code = self.line_edit_symbol.text()
+        if code != "":
+            market = "SH"
+            if self.combo_box_exchange.currentIndex() == 1:
+                market = "SZ"
+            name = self.line_edit_name.text()
+            exch_side = 1
+            if self.radio_button_sell.isChecked():
+                exch_side = 2
+            volume = self.spin_box_volume.value()
+            close = self.spin_box_price.value()
+            print("委托：", market, code, name, exch_side, volume, close)
             if self.dbm_clearx.Connect() == True:
                 self.trans_id += 1
                 dbm = self.dbm_clearx
                 sql = "INSERT INTO %s (trade_time, account_id, trans_id, market, symbol, name, direction, amount, price) VALUES ('%s', '%s', '%d', '%s', '%s', '%s', %d, %d, %f)" \
-                      % (self.tb_account_trade, datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"), self.account_id, self.trans_id, stock.market, stock.code, stock.name, exch_side, volume, stock.close)
+                      % (self.tb_account_trade, datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"), self.account_id, self.trans_id, market, code, name, exch_side, volume, close)
                 if dbm.ExecuteSql(sql) == True:
                     print("增加交易记录成功。")
                 else:
@@ -296,7 +312,9 @@ class SimulateTrader(QDialog):
             else:
                 print("数据库尚未连接！")
         else:
-            print("证券列表为空！")
+            print("模拟交易信息为空！")
+        
+        self.MakeSimulateTrade() #
 
     def GetSecurityInfo(self):
         self.security = {}
