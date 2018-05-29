@@ -30,8 +30,8 @@ from datetime import datetime, date
 
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import QAbstractTableModel, QDateTime, QEvent, Qt
-from PyQt5.QtWidgets import QAbstractItemView, QApplication, QCheckBox, QComboBox, QDateTimeEdit, QDialog, QFileDialog, QLabel, QLineEdit, QHeaderView
-from PyQt5.QtWidgets import QMessageBox, QProgressBar, QPushButton, QRadioButton, QTableView, QTextEdit, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QAbstractItemView, QApplication, QCheckBox, QComboBox, QDateTimeEdit, QDialog, QDoubleSpinBox, QFileDialog, QGroupBox, QLabel
+from PyQt5.QtWidgets import QLineEdit, QHeaderView, QMessageBox, QProgressBar, QPushButton, QRadioButton, QTableView, QTextEdit, QHBoxLayout, QVBoxLayout
 
 import config
 import define
@@ -476,8 +476,139 @@ class AnalysisPanel(QDialog):
         self.button_get_symbol_list.clicked.connect(self.OnClickButtonGetSymbolList)
         self.button_save_panel_config.clicked.connect(self.OnClickButtonSavePanelConfig)
         
-        self.edits_fees_setting = QTextEdit(self)
-        self.edits_fees_setting.setMinimumWidth(50)
+        self.label_stock_commission = QLabel("个股佣金费率:")
+        self.label_stock_commission.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.label_stock_commission_bid = QLabel("买")
+        self.label_stock_commission_bid.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.label_stock_commission_ask = QLabel("卖")
+        self.label_stock_commission_ask.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.spin_stock_commission_bid = QDoubleSpinBox()
+        self.spin_stock_commission_bid.setDecimals(4)
+        self.spin_stock_commission_bid.setMinimum(0.0)
+        self.spin_stock_commission_bid.setMaximum(1.0)
+        self.spin_stock_commission_bid.setSingleStep(0.0001)
+        self.spin_stock_commission_bid.setValue(self.config.cfg_anal.stock_commission_bid)
+        self.spin_stock_commission_bid.setMinimumWidth(65)
+        self.spin_stock_commission_bid.setMaximumWidth(65)
+        self.spin_stock_commission_bid.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.spin_stock_commission_bid.setToolTip("个股佣金费率-买入")
+        self.spin_stock_commission_ask = QDoubleSpinBox()
+        self.spin_stock_commission_ask.setDecimals(4)
+        self.spin_stock_commission_ask.setMinimum(0.0)
+        self.spin_stock_commission_ask.setMaximum(1.0)
+        self.spin_stock_commission_ask.setSingleStep(0.0001)
+        self.spin_stock_commission_ask.setValue(self.config.cfg_anal.stock_commission_ask)
+        self.spin_stock_commission_ask.setMinimumWidth(65)
+        self.spin_stock_commission_ask.setMaximumWidth(65)
+        self.spin_stock_commission_ask.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.spin_stock_commission_ask.setToolTip("个股佣金费率-卖出")
+        
+        self.label_stock_stamp_tax = QLabel("个股印花税率:")
+        self.label_stock_stamp_tax.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.label_stock_stamp_tax_bid = QLabel("买")
+        self.label_stock_stamp_tax_bid.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.label_stock_stamp_tax_ask = QLabel("卖")
+        self.label_stock_stamp_tax_ask.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.spin_stock_stamp_tax_bid = QDoubleSpinBox()
+        self.spin_stock_stamp_tax_bid.setDecimals(4)
+        self.spin_stock_stamp_tax_bid.setMinimum(0.0)
+        self.spin_stock_stamp_tax_bid.setMaximum(1.0)
+        self.spin_stock_stamp_tax_bid.setSingleStep(0.0001)
+        self.spin_stock_stamp_tax_bid.setValue(self.config.cfg_anal.stock_stamp_tax_bid)
+        self.spin_stock_stamp_tax_bid.setMinimumWidth(65)
+        self.spin_stock_stamp_tax_bid.setMaximumWidth(65)
+        self.spin_stock_stamp_tax_bid.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.spin_stock_stamp_tax_bid.setToolTip("个股印花税率-买入")
+        self.spin_stock_stamp_tax_ask = QDoubleSpinBox()
+        self.spin_stock_stamp_tax_ask.setDecimals(4)
+        self.spin_stock_stamp_tax_ask.setMinimum(0.0)
+        self.spin_stock_stamp_tax_ask.setMaximum(1.0)
+        self.spin_stock_stamp_tax_ask.setSingleStep(0.0001)
+        self.spin_stock_stamp_tax_ask.setValue(self.config.cfg_anal.stock_stamp_tax_ask)
+        self.spin_stock_stamp_tax_ask.setMinimumWidth(65)
+        self.spin_stock_stamp_tax_ask.setMaximumWidth(65)
+        self.spin_stock_stamp_tax_ask.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.spin_stock_stamp_tax_ask.setToolTip("个股印花税率-卖出")
+        
+        self.label_stock_transfer_fee = QLabel("个股过户费率:")
+        self.label_stock_transfer_fee.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.label_stock_transfer_fee_bid = QLabel("买")
+        self.label_stock_transfer_fee_bid.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.label_stock_transfer_fee_ask = QLabel("卖")
+        self.label_stock_transfer_fee_ask.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.spin_stock_transfer_fee_bid = QDoubleSpinBox()
+        self.spin_stock_transfer_fee_bid.setDecimals(4)
+        self.spin_stock_transfer_fee_bid.setMinimum(0.0)
+        self.spin_stock_transfer_fee_bid.setMaximum(1.0)
+        self.spin_stock_transfer_fee_bid.setSingleStep(0.0001)
+        self.spin_stock_transfer_fee_bid.setValue(self.config.cfg_anal.stock_transfer_fee_bid)
+        self.spin_stock_transfer_fee_bid.setMinimumWidth(65)
+        self.spin_stock_transfer_fee_bid.setMaximumWidth(65)
+        self.spin_stock_transfer_fee_bid.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.spin_stock_transfer_fee_bid.setToolTip("个股过户费率-买入")
+        self.spin_stock_transfer_fee_ask = QDoubleSpinBox()
+        self.spin_stock_transfer_fee_ask.setDecimals(4)
+        self.spin_stock_transfer_fee_ask.setMinimum(0.0)
+        self.spin_stock_transfer_fee_ask.setMaximum(1.0)
+        self.spin_stock_transfer_fee_ask.setSingleStep(0.0001)
+        self.spin_stock_transfer_fee_ask.setValue(self.config.cfg_anal.stock_transfer_fee_ask)
+        self.spin_stock_transfer_fee_ask.setMinimumWidth(65)
+        self.spin_stock_transfer_fee_ask.setMaximumWidth(65)
+        self.spin_stock_transfer_fee_ask.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.spin_stock_transfer_fee_ask.setToolTip("个股过户费率-卖出")
+        
+        self.h_box_stock_commission = QHBoxLayout()
+        self.h_box_stock_commission.setContentsMargins(0, 0, 0, 0)
+        self.h_box_stock_commission.addWidget(self.label_stock_commission)
+        self.h_box_stock_commission.addWidget(self.label_stock_commission_bid)
+        self.h_box_stock_commission.addWidget(self.spin_stock_commission_bid)
+        self.h_box_stock_commission.addWidget(self.label_stock_commission_ask)
+        self.h_box_stock_commission.addWidget(self.spin_stock_commission_ask)
+        self.h_box_stock_commission.addStretch(1)
+        
+        self.h_box_stock_stamp_tax = QHBoxLayout()
+        self.h_box_stock_stamp_tax.setContentsMargins(0, 0, 0, 0)
+        self.h_box_stock_stamp_tax.addWidget(self.label_stock_stamp_tax)
+        self.h_box_stock_stamp_tax.addWidget(self.label_stock_stamp_tax_bid)
+        self.h_box_stock_stamp_tax.addWidget(self.spin_stock_stamp_tax_bid)
+        self.h_box_stock_stamp_tax.addWidget(self.label_stock_stamp_tax_ask)
+        self.h_box_stock_stamp_tax.addWidget(self.spin_stock_stamp_tax_ask)
+        self.h_box_stock_stamp_tax.addStretch(1)
+        
+        self.h_box_stock_transfer_fee = QHBoxLayout()
+        self.h_box_stock_transfer_fee.setContentsMargins(0, 0, 0, 0)
+        self.h_box_stock_transfer_fee.addWidget(self.label_stock_transfer_fee)
+        self.h_box_stock_transfer_fee.addWidget(self.label_stock_transfer_fee_bid)
+        self.h_box_stock_transfer_fee.addWidget(self.spin_stock_transfer_fee_bid)
+        self.h_box_stock_transfer_fee.addWidget(self.label_stock_transfer_fee_ask)
+        self.h_box_stock_transfer_fee.addWidget(self.spin_stock_transfer_fee_ask)
+        self.h_box_stock_transfer_fee.addStretch(1)
+        
+        self.h_box_fees_1 = QHBoxLayout()
+        self.h_box_fees_1.setContentsMargins(0, 0, 0, 0)
+        self.h_box_fees_1.addLayout(self.h_box_stock_commission)
+        self.h_box_fees_1.addStretch(1)
+        
+        self.h_box_fees_2 = QHBoxLayout()
+        self.h_box_fees_2.setContentsMargins(0, 0, 0, 0)
+        self.h_box_fees_2.addLayout(self.h_box_stock_stamp_tax)
+        self.h_box_fees_2.addStretch(1)
+        
+        self.h_box_fees_3 = QHBoxLayout()
+        self.h_box_fees_3.setContentsMargins(0, 0, 0, 0)
+        self.h_box_fees_3.addLayout(self.h_box_stock_transfer_fee)
+        self.h_box_fees_3.addStretch(1)
+        
+        self.v_box_fees_setting = QVBoxLayout()
+        self.v_box_fees_setting.setContentsMargins(0, 0, 0, 0)
+        self.v_box_fees_setting.addLayout(self.h_box_fees_1)
+        self.v_box_fees_setting.addLayout(self.h_box_fees_2)
+        self.v_box_fees_setting.addLayout(self.h_box_fees_3)
+        self.v_box_fees_setting.addStretch(1)
+        
+        self.group_box_fees_setting = QGroupBox()
+        self.group_box_fees_setting.setMinimumWidth(520)
+        self.group_box_fees_setting.setLayout(self.v_box_fees_setting)
         
         self.label_name = QLabel()
         self.label_name.setText("名称:")
@@ -720,10 +851,6 @@ class AnalysisPanel(QDialog):
         self.h_box_security_setting_3.addWidget(self.button_save_panel_config)
         self.h_box_security_setting_3.addStretch(1)
         
-        self.v_box_fees_setting = QVBoxLayout()
-        self.v_box_fees_setting.setContentsMargins(0, 0, 0, 0)
-        self.v_box_fees_setting.addWidget(self.edits_fees_setting)
-        
         self.h_box_analysis_name = QHBoxLayout()
         self.h_box_analysis_name.setContentsMargins(0, 0, 0, 0)
         self.h_box_analysis_name.addWidget(self.label_name)
@@ -758,15 +885,15 @@ class AnalysisPanel(QDialog):
         self.h_box_analysis_date.addWidget(self.radio_button_analysis_date_kline_1_m)
         self.h_box_analysis_date.addStretch(1)
         
-        self.h_box_analysis_info = QVBoxLayout()
-        self.h_box_analysis_info.setContentsMargins(0, 0, 0, 0)
-        self.h_box_analysis_info.addLayout(self.h_box_analysis_name)
-        self.h_box_analysis_info.addLayout(self.h_box_analysis_type)
-        self.h_box_analysis_info.addLayout(self.h_box_analysis_path)
-        self.h_box_analysis_info.addWidget(self.edits_info)
-        self.h_box_analysis_info.addLayout(self.h_box_ignore_infos)
-        self.h_box_analysis_info.addLayout(self.h_box_analysis_date)
-        self.h_box_analysis_info.addWidget(self.progress_bar_analysis)
+        self.v_box_analysis_info = QVBoxLayout()
+        self.v_box_analysis_info.setContentsMargins(0, 0, 0, 0)
+        self.v_box_analysis_info.addLayout(self.h_box_analysis_name)
+        self.v_box_analysis_info.addLayout(self.h_box_analysis_type)
+        self.v_box_analysis_info.addLayout(self.h_box_analysis_path)
+        self.v_box_analysis_info.addWidget(self.edits_info)
+        self.v_box_analysis_info.addLayout(self.h_box_ignore_infos)
+        self.v_box_analysis_info.addLayout(self.h_box_analysis_date)
+        self.v_box_analysis_info.addWidget(self.progress_bar_analysis)
         
         self.h_box_analysis_ctrl = QHBoxLayout()
         self.h_box_analysis_ctrl.setContentsMargins(0, 0, 0, 0)
@@ -784,12 +911,12 @@ class AnalysisPanel(QDialog):
         
         self.v_box_analysis = QVBoxLayout()
         self.v_box_analysis.setContentsMargins(0, 0, 0, 0)
-        self.v_box_analysis.addLayout(self.h_box_analysis_info)
+        self.v_box_analysis.addLayout(self.v_box_analysis_info)
         self.v_box_analysis.addLayout(self.h_box_analysis_ctrl)
         
         self.h_box_operate = QHBoxLayout()
         self.h_box_operate.setContentsMargins(0, 0, 0, 0)
-        self.h_box_operate.addLayout(self.v_box_fees_setting)
+        self.h_box_operate.addWidget(self.group_box_fees_setting)
         self.h_box_operate.addLayout(self.v_box_analysis)
         
         self.h_box_get_data = QHBoxLayout()
@@ -907,6 +1034,12 @@ class AnalysisPanel(QDialog):
         self.config.cfg_anal.ignore_local_data_imperfect = self.check_box_ignore_local_data_imperfect.isChecked()
         str_trading_day_s = str(self.combo_box_analysis_date_s.currentText())
         str_trading_day_e = str(self.combo_box_analysis_date_e.currentText())
+        self.config.cfg_anal.stock_commission_bid = self.spin_stock_commission_bid.value()
+        self.config.cfg_anal.stock_commission_ask = self.spin_stock_commission_ask.value()
+        self.config.cfg_anal.stock_stamp_tax_bid = self.spin_stock_stamp_tax_bid.value()
+        self.config.cfg_anal.stock_stamp_tax_ask = self.spin_stock_stamp_tax_ask.value()
+        self.config.cfg_anal.stock_transfer_fee_bid = self.spin_stock_transfer_fee_bid.value()
+        self.config.cfg_anal.stock_transfer_fee_ask = self.spin_stock_transfer_fee_ask.value()
         if str_trading_day_s != "" and str_trading_day_e != "":
             self.config.cfg_anal.date_analysis_test_s = str_trading_day_s.replace("-", "")
             self.config.cfg_anal.date_analysis_test_e = str_trading_day_e.replace("-", "")
@@ -1006,6 +1139,14 @@ class AnalysisPanel(QDialog):
                                 if pos_trading_day_s <= pos_trading_day_e:
                                     trading_day_list = self.analysis_trading_day_list[pos_trading_day_s : pos_trading_day_e + 1]
                             self.analys.SetTradingDayList(trading_day_list) # 必须
+                            
+                            trade_fees = analys.TradeFees(stock_commission_bid = self.spin_stock_commission_bid.value(), 
+                                                          stock_commission_ask = self.spin_stock_commission_ask.value(), 
+                                                          stock_stamp_tax_bid = self.spin_stock_stamp_tax_bid.value(), 
+                                                          stock_stamp_tax_ask = self.spin_stock_stamp_tax_ask.value(), 
+                                                          stock_transfer_fee_bid = self.spin_stock_transfer_fee_bid.value(), 
+                                                          stock_transfer_fee_ask = self.spin_stock_transfer_fee_ask.value())
+                            self.analys.SetTradeFees(trade_fees) # 必须
                         
                         self.analys.OnChangeAnalysisState(analysis_info, str_type)
                     self.HandleButtonState(str_type)

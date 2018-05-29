@@ -139,14 +139,14 @@ class AnalysisBase(threading.Thread):
 
     def ThreadBackTest(self):
         try:
-            self.OnBackTest(self.analys.symbol_list, self.analys.trading_day_list)
+            self.OnBackTest(self.analys.symbol_list, self.analys.trading_day_list, self.analys.trade_fees)
         except Exception as e:
             traceback.print_exc() #
             QApplication.postEvent(self.analysis_panel, QEvent(define.DEF_EVENT_SET_ANALYSIS_PROGRESS_ERROR))
             self.log_text = "回测 %s %s 计算发生异常！%s" % (self.analysis, self.analysis_name, e)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
-    def OnBackTest(self, symbol_list, trading_day_list): # 供具体回测继承调用，实现回测计算处理
+    def OnBackTest(self, symbol_list, trading_day_list, trade_fees): # 供具体回测继承调用，实现回测计算处理
         pass
 
     def IsModelError(self): # 供具体回测继承调用，判断模型是否异常 # 如果继承后仍然 pass 则函数返回会被视为 None，既非 True 也非 False

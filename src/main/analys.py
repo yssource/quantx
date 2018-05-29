@@ -33,12 +33,22 @@ import common
 import logger
 import center
 
+class TradeFees(object):
+    def __init__(self, **kwargs):
+        self.stock_commission_bid = kwargs.get("stock_commission_bid", 0.0)
+        self.stock_commission_ask = kwargs.get("stock_commission_ask", 0.0)
+        self.stock_stamp_tax_bid = kwargs.get("stock_stamp_tax_bid", 0.0)
+        self.stock_stamp_tax_ask = kwargs.get("stock_stamp_tax_ask", 0.0)
+        self.stock_transfer_fee_bid = kwargs.get("stock_transfer_fee_bid", 0.0)
+        self.stock_transfer_fee_ask = kwargs.get("stock_transfer_fee_ask", 0.0)
+
 class Analys(common.Singleton):
     def __init__(self):
         self.log_text = ""
         self.log_cate = "Analys"
         self.symbol_list = []
         self.trading_day_list = []
+        self.trade_fees = TradeFees()
         self.analysis_info = None
         self.config = config.Config()
         self.logger = logger.Logger()
@@ -54,6 +64,9 @@ class Analys(common.Singleton):
 
     def SetTradingDayList(self, trading_day_list):
         self.trading_day_list = trading_day_list
+
+    def SetTradeFees(self, trade_fees):
+        self.trade_fees = trade_fees
 
     def OnChangeAnalysisState(self, analysis_info, str_type):
         if str_type == "运行":

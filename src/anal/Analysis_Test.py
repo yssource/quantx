@@ -53,7 +53,7 @@ class Analysis_Test(analysis_base.AnalysisBase):
         self.testing = False
         self.suspend = False
 
-    def OnBackTest(self, symbol_list, trading_day_list):
+    def OnBackTest(self, symbol_list, trading_day_list, trade_fees):
         self.total_task = 100
         self.finish_task = 0
         self.logger.SendMessage("I", 1, self.log_cate, "开始数据分析...", "A")

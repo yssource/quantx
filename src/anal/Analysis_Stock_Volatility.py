@@ -53,7 +53,7 @@ class Analysis_Stock_Volatility(analysis_base.AnalysisBase):
         self.testing = False
         self.suspend = False
 
-    def OnBackTest(self, symbol_list, trading_day_list):
+    def OnBackTest(self, symbol_list, trading_day_list, trade_fees):
         self.columns = ["market", "symbol", "swing"]
         self.result = pd.DataFrame(columns = self.columns) # 空
         self.log_text = "回测 %s %s 开始 ..." % (self.analysis, self.analysis_introduction)

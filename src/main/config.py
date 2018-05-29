@@ -238,6 +238,12 @@ class CfgAnal(object):
         self.ignore_ex_rights_data_loss = 1
         self.ignore_local_data_imperfect = 1
         
+        self.stock_commission_bid = 0.0
+        self.stock_commission_ask = 0.0
+        self.stock_stamp_tax_bid = 0.0
+        self.stock_stamp_tax_ask = 0.0
+        self.stock_transfer_fee_bid = 0.0
+        self.stock_transfer_fee_ask = 0.0
         self.date_analysis_test_s = 20180101
         self.date_analysis_test_e = 0
         
@@ -285,6 +291,12 @@ class CfgAnal(object):
         self.ignore_ex_rights_data_loss = int(config["ignore"]["ignore_ex_rights_data_loss"])
         self.ignore_local_data_imperfect = int(config["ignore"]["ignore_local_data_imperfect"])
         
+        self.stock_commission_bid = float(config["analysis"]["stock_commission_bid"])
+        self.stock_commission_ask = float(config["analysis"]["stock_commission_ask"])
+        self.stock_stamp_tax_bid = float(config["analysis"]["stock_stamp_tax_bid"])
+        self.stock_stamp_tax_ask = float(config["analysis"]["stock_stamp_tax_ask"])
+        self.stock_transfer_fee_bid = float(config["analysis"]["stock_transfer_fee_bid"])
+        self.stock_transfer_fee_ask = float(config["analysis"]["stock_transfer_fee_ask"])
         self.date_analysis_test_s = config["analysis"]["date_analysis_test_s"]
         self.date_analysis_test_e = config["analysis"]["date_analysis_test_e"]
         
@@ -332,6 +344,12 @@ class CfgAnal(object):
         config["ignore"]["ignore_ex_rights_data_loss"] = int(self.ignore_ex_rights_data_loss)
         config["ignore"]["ignore_local_data_imperfect"] = int(self.ignore_local_data_imperfect)
         
+        config["analysis"]["stock_commission_bid"] = float(self.stock_commission_bid)
+        config["analysis"]["stock_commission_ask"] = float(self.stock_commission_ask)
+        config["analysis"]["stock_stamp_tax_bid"] = float(self.stock_stamp_tax_bid)
+        config["analysis"]["stock_stamp_tax_ask"] = float(self.stock_stamp_tax_ask)
+        config["analysis"]["stock_transfer_fee_bid"] = float(self.stock_transfer_fee_bid)
+        config["analysis"]["stock_transfer_fee_ask"] = float(self.stock_transfer_fee_ask)
         config["analysis"]["date_analysis_test_s"] = self.date_analysis_test_s
         config["analysis"]["date_analysis_test_e"] = self.date_analysis_test_e
         
