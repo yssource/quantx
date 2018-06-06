@@ -201,7 +201,7 @@ class QuoteX():
             msg_type = "0"
             msg_code = "0"
             tmp_size = 0
-            msg_head = self.sock.recv(8)
+            msg_head = bytearray(self.sock.recv(8))
             while len(msg_head) < 8:
                 msg_head.extend(self.sock.recv(8 - len(msg_head)))
             msg_head = msg_head.decode()
@@ -210,9 +210,9 @@ class QuoteX():
                 msg_code = msg_head[1]
                 tmp_size = msg_head[2:]
                 msg_size = int(tmp_size, 16)
-                msg_recv = self.sock.recv(msg_size)
+                msg_recv = bytearray(self.sock.recv(msg_size))
                 while len(msg_recv) < msg_size:
-                    msg_recv = "".join([msg_recv, self.sock.recv(msg_size - len(msg_recv))])
+                    msg_recv.extend(self.sock.recv(msg_size - len(msg_recv)))
                 if msg_code == "2": # NW_MSG_CODE_JSON # 应答消息
                     msg_data = json.loads(msg_recv.decode("gbk")) # 含中文
                     self.OnReplyMsg(int(msg_data["ret_func"]), msg_data)
