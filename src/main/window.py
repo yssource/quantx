@@ -51,15 +51,11 @@ import strate
 
 import basic_data_maker
 
+import ultimate
 import strategy_base # 只是为了打包时能被编译到
 import analysis_base # 只是为了打包时能被编译到
 import panel_trader_stk_ape # 只是为了打包时能被编译到
 import panel_trader_fue_ctp # 只是为了打包时能被编译到
-
-try:
-    import panel_basket_stk_ape # 只是为了打包时能被编译到
-    import panel_spread_fue_ctp # 只是为了打包时能被编译到
-except: pass
 
 class MainWindow(QMainWindow):
     def __init__(self):
