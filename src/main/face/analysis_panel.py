@@ -40,302 +40,7 @@ import logger
 import analys
 import basicx
 import assess
-
-class DataTableModel(QAbstractTableModel): # 第一列为选择框控件
-    def __init__(self, parent):
-        QAbstractTableModel.__init__(self, parent)
-        self.parent = parent
-        self.head_list = []
-        self.data_list = []
-        self.data_dict = {} # 按索引保存所在行
-        self.index_column = 0
-
-    def setHeadList(self, head_list):
-        self.head_list = head_list
-
-    def setDataList(self, data_list):
-        self.data_list = data_list
-        self.layoutAboutToBeChanged.emit()
-        self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.rowCount(None), self.columnCount(None)))
-        self.layoutChanged.emit()
-        self.data_dict = {} #
-        for i in range(len(self.data_list)):
-            self.data_dict[self.data_list[i][self.index_column]] = i
-
-    def setIndexColumn(self, col):
-        self.index_column = col
-
-    def rowCount(self, parent):
-        return len(self.data_list)
-
-    def columnCount(self, parent):
-        return len(self.head_list)
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        value = None
-        if index.column() == 0:
-            value = self.data_list[index.row()][index.column()].text()
-        else:
-            value = self.data_list[index.row()][index.column()]
-        if role == Qt.EditRole:
-            return value
-        elif role == Qt.DisplayRole:
-            return value
-        elif role == Qt.CheckStateRole:
-            if index.column() == 0:
-                if self.data_list[index.row()][index.column()].isChecked():
-                    return Qt.Checked
-                else:
-                    return Qt.Unchecked
-        elif role == Qt.FontRole:
-            pass
-        elif role == Qt.TextAlignmentRole: # 显示布局
-            if -1 == self.parent.data_align[index.column()]:
-                return Qt.AlignVCenter | Qt.AlignLeft
-            elif 1 == self.parent.data_align[index.column()]:
-                return Qt.AlignVCenter | Qt.AlignRight
-            else:
-                return Qt.AlignVCenter | Qt.AlignHCenter
-        elif role == Qt.BackgroundRole:
-            pass
-        elif role == Qt.BackgroundColorRole:
-            pass
-        elif role == Qt.ForegroundRole:
-            pass
-        elif role == Qt.TextColorRole:
-            pass
-        elif role == Qt.CheckStateRole:
-            pass
-        elif role == Qt.InitialSortOrderRole:
-            pass
-
-    def headerData(self, col, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.head_list[col]
-        if orientation == Qt.Vertical and role == Qt.DisplayRole:
-            return col + 1
-        return None
-
-    def sort(self, col, order):
-        if col != 0:
-            self.layoutAboutToBeChanged.emit()
-            self.data_list = sorted(self.data_list, key = operator.itemgetter(col))
-            if order == Qt.DescendingOrder:
-                self.data_list.reverse()
-            self.layoutChanged.emit()
-            self.data_dict = {} #
-            for i in range(len(self.data_list)):
-                self.data_dict[self.data_list[i][self.index_column]] = i
-
-    def flags(self, index):
-        if not index.isValid():
-            return None
-        if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsUserCheckable
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-
-    def setData(self, index, value, role):
-        if not index.isValid():
-            return False
-        if role == Qt.CheckStateRole and index.column() == 0:
-            if value == Qt.Checked:
-                self.data_list[index.row()][index.column()].setChecked(True)
-            else:
-                self.data_list[index.row()][index.column()].setChecked(False)
-        self.dataChanged.emit(index, index)
-        return True
-
-    def getRowIndex(self, key):
-        if key in self.data_dict.keys():
-            return self.data_dict[key]
-        else:
-            return -1
-
-    def setCellText(self, key, col, text):
-        if key in self.data_dict.keys() and col < len(self.head_list):
-            self.setData(self.createIndex(self.data_dict[key], col), text, Qt.DisplayRole)
-
-    def getCellText(self, row, col):
-        if row < len(self.data_list) and col < len(self.head_list):
-            return self.data(self.createIndex(row, col), Qt.DisplayRole)
-        return ""
-
-    def setAllCheck(self, check):
-        for item in self.data_list:
-            item[0].setChecked(check)
-        self.layoutAboutToBeChanged.emit()
-        self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.rowCount(None), self.columnCount(None)))
-        self.layoutChanged.emit()
-
-    def getAllCheck(self):
-        return filter(lambda x: x[0].isChecked() == True, self.data_list)
-
-class DataLister(QTableView):
-    def __init__(self, parent):
-        super(DataLister, self).__init__(parent)
-        self.parent = parent
-        self.basicx = basicx.BasicX()
-        self.data_list = []
-        self.data_align = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # 必须 # 左：-1，中：0，右：1
-        self.head_list = ["", "市场", "代码", "名称", "类别", "板块", "ST股", "状态", "上市", "1_D", "1_M"]
-        self.head_index_code = 2
-        
-        self.InitUserInterface()
-
-    def InitUserInterface(self):
-        self.setFont(QFont("SimSun", 9))
-        self.setShowGrid(False)
-        self.setSortingEnabled(True) # 设置表头排序
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers) # 禁止编辑
-        self.setSelectionBehavior(QAbstractItemView.SelectRows) # 选中整行
-        self.setSelectionMode(QAbstractItemView.SingleSelection) # 选择方式 # 只允许选单行
-        self.setAlternatingRowColors(True) # 隔行变色
-        self.setContextMenuPolicy(Qt.CustomContextMenu) # 右键菜单
-        self.customContextMenuRequested.connect(self.OnContextMenu) # 菜单触发
-        self.vertical_header = self.verticalHeader() # 垂直表头
-        self.vertical_header.setDefaultAlignment(Qt.AlignCenter) # 显示居中
-        self.vertical_header.setVisible(True)
-        self.vertical_header.setDefaultSectionSize(17)
-        self.vertical_header.setSectionResizeMode(QHeaderView.Fixed) # 固定行高
-        self.horizontal_header = self.horizontalHeader() # 水平表头
-        self.horizontal_header.setDefaultAlignment(Qt.AlignCenter) # 显示居中
-        self.data_list_model = DataTableModel(self)
-        self.data_list_model.setHeadList(self.head_list)
-        self.data_list_model.setIndexColumn(self.head_index_code) # 根据 code 索引
-        self.setModel(self.data_list_model)
-        #self.clicked.connect(self.OnClicked)
-        self.resizeColumnsToContents()
-
-    def OnClicked(self, item):
-        print("row：%d" % item.row())
-        content = item.data()
-        print(content, "clicked：{}".format(content))
-
-    def mouseDoubleClickEvent(self, event):
-        QTableView.mouseDoubleClickEvent(self, event)
-        pos = event.pos()
-        item = self.indexAt(pos)
-        if item and item.row() >= 0:
-            code = self.data_list_model.getCellText(item.row(), self.head_index_code)
-            print(code)
-
-    def OnContextMenu(self, pos):
-        index = self.indexAt(pos)
-        if index and index.row() >= 0:
-            self.parent.ShowContextMenu(index)
-        else:
-            self.parent.ShowContextMenu(None)
-
-    def ClearListItems(self):
-        self.data_list = []
-        self.data_list_model.setDataList(self.data_list)
-
-    def GetRowIndex(self, key):
-        return self.data_list_model.getRowIndex(key)
-
-    def SetCellText(self, key, col, text):
-        self.data_list_model.setCellText(key, col, text)
-
-    def GetCellText(self, row, col):
-        return self.data_list_model.getCellText(row, col)
-
-    def SetAllCheck(self, check):
-        self.data_list_model.setAllCheck(check)
-
-    def GetAllCheck(self):
-        return self.data_list_model.getAllCheck()
-
-    def OnActionRefresh(self):
-        self.ClearListItems()
-        self.OnReloadSecurityInfo()
-
-    def OnReloadSecurityInfo(self):
-        self.table_dict_daily = {}
-        result_table_daily = self.basicx.GetTables_Stock_Daily()
-        if not result_table_daily.empty:
-            for index, row in result_table_daily.iterrows():
-                self.table_dict_daily[row["table"]] = row["table"]
-        self.table_dict_kline_1_m = {}
-        result_table_kline_1_m = self.basicx.GetTables_Stock_Kline_1_M()
-        if not result_table_kline_1_m.empty:
-            for index, row in result_table_kline_1_m.iterrows():
-                self.table_dict_kline_1_m[row["table"]] = row["table"]
-        result = self.basicx.GetSecurityInfo()
-        if not result.empty:
-            for index, row in result.iterrows():
-                if self.parent.check_box_security_category_0.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_0: # 未知
-                    continue
-                if self.parent.check_box_security_category_1.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_1: # 沪A主板
-                    continue
-                if self.parent.check_box_security_category_2.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_2: # 深A主板
-                    continue
-                if self.parent.check_box_security_category_3.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_3: # 深A中小板
-                    continue
-                if self.parent.check_box_security_category_4.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_4: # 深A创业板
-                    continue
-                if self.parent.check_box_security_category_5.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_5: # 沪ETF基金
-                    continue
-                if self.parent.check_box_security_category_6.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_6: # 深ETF基金
-                    continue
-                if self.parent.check_box_security_category_7.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_7: # 沪LOF基金
-                    continue
-                if self.parent.check_box_security_category_8.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_8: # 深LOF基金
-                    continue
-                if self.parent.check_box_security_category_9.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_9: # 沪分级子基金
-                    continue
-                if self.parent.check_box_security_category_10.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_10: # 深分级子基金
-                    continue
-                if self.parent.check_box_security_category_11.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_11: # 沪封闭式基金
-                    continue
-                if self.parent.check_box_security_category_12.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_12: # 深封闭式基金
-                    continue
-                if self.parent.check_box_security_list_state_1.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_1: # 上市
-                    continue
-                if self.parent.check_box_security_list_state_2.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_2: # 暂停
-                    continue
-                if self.parent.check_box_security_list_state_3.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_3: # 终止
-                    continue
-                if self.parent.check_box_security_list_state_4.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_4: # 其他
-                    continue
-                if self.parent.check_box_security_list_state_5.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_5: # 交易
-                    continue
-                if self.parent.check_box_security_list_state_6.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_6: # 停牌
-                    continue
-                if self.parent.check_box_security_list_state_7.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_7: # 摘牌
-                    continue
-                if self.parent.check_box_security_st_non.isChecked() == True and row["is_st"] == define.DEF_SECURITY_INFO_ST_NON: # 非ST股
-                    continue
-                if self.parent.check_box_security_st_use.isChecked() == True and row["is_st"] == define.DEF_SECURITY_INFO_ST_USE: # 仅ST股
-                    continue
-                exist_data_table_daily = False
-                exist_data_table_kline_1_m = False
-                exist_data_table_flag_daily = "-"
-                exist_data_table_flag_kline_1_m = "-"
-                table_name_daily = "stock_daily_%s_%s" % (row["market"].lower(), row["code"])
-                table_name_kline_1_m = "stock_kline_1_m_%s_%s" % (row["market"].lower(), row["code"])
-                if table_name_daily in self.table_dict_daily.keys():
-                    exist_data_table_daily = True
-                    exist_data_table_flag_daily = "Y"
-                if table_name_kline_1_m in self.table_dict_kline_1_m.keys():
-                    exist_data_table_kline_1_m = True
-                    exist_data_table_flag_kline_1_m = "Y"
-                if self.parent.check_box_security_data_daily.isChecked() == True and exist_data_table_daily == False: # 日线
-                    continue
-                if self.parent.check_box_security_data_kline_1_m.isChecked() == True and exist_data_table_kline_1_m == False: # 1分钟线
-                    continue
-                check_box = QCheckBox("")
-                check_box.setChecked(True)
-                self.data_list.append([check_box, row["market"], row["code"], row["name"], 
-                                      common.TransSecurityCategory(row["category"]), common.TransSecuritySector(row["sector"]), 
-                                      common.TransSecurityST(row["is_st"]), common.TransSecurityListState(row["list_state"]), 
-                                      str(row["list_date"]), exist_data_table_flag_daily, exist_data_table_flag_kline_1_m])
-            self.data_list_model.setDataList(self.data_list)
-            self.resizeColumnsToContents()
-            self.setColumnWidth(0, 20) # 选择列宽度
-            self.sortByColumn(self.head_index_code, Qt.AscendingOrder) # 按照 code 排序
+import table_stock_list
 
 class AnalysisPanel(QDialog):
     def __init__(self, parent):
@@ -346,6 +51,11 @@ class AnalysisPanel(QDialog):
         self.config = config.Config()
         self.logger = logger.Logger()
         self.basicx = basicx.BasicX()
+        
+        self.data_align = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] # 左：-1，中：0，右：1
+        self.head_list = ["", "市场", "代码", "名称", "类别", "板块", "ST股", "状态", "上市", "1_D", "1_M"]
+        self.head_index_code = 2
+        
         self.analysis_progress = 0
         self.get_quote_data_progress = 0
         self.getting = False
@@ -361,7 +71,7 @@ class AnalysisPanel(QDialog):
         pass
 
     def InitUserInterface(self):
-        self.data_lister = DataLister(self)
+        self.data_lister = table_stock_list.DataLister(self, self.data_align, self.head_list, self.head_index_code)
         self.data_lister.setMinimumWidth(500)
         
         self.check_box_security_check_all = QCheckBox()
@@ -978,7 +688,7 @@ class AnalysisPanel(QDialog):
 
     def ShowContextMenu(self, index):
         if index != None: # 选中行
-            print(self.data_lister.GetCellText(index.row(), self.data_lister.head_index_code))
+            print(self.data_lister.GetCellText(index.row(), self.head_index_code))
         else: # 未选中
             pass
 
@@ -997,7 +707,90 @@ class AnalysisPanel(QDialog):
         self.data_lister.SetAllCheck(self.check_box_security_check_all.isChecked())
 
     def OnClickButtonGetSymbolList(self):
-        self.data_lister.OnActionRefresh()
+        self.data_lister.ClearListItems()
+        table_dict_daily = {}
+        result_table_daily = self.basicx.GetTables_Stock_Daily()
+        if not result_table_daily.empty:
+            for index, row in result_table_daily.iterrows():
+                table_dict_daily[row["table"]] = row["table"]
+        table_dict_kline_1_m = {}
+        result_table_kline_1_m = self.basicx.GetTables_Stock_Kline_1_M()
+        if not result_table_kline_1_m.empty:
+            for index, row in result_table_kline_1_m.iterrows():
+                table_dict_kline_1_m[row["table"]] = row["table"]
+        result = self.basicx.GetSecurityInfo()
+        if not result.empty:
+            for index, row in result.iterrows():
+                if self.check_box_security_category_0.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_0: # 未知
+                    continue
+                if self.check_box_security_category_1.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_1: # 沪A主板
+                    continue
+                if self.check_box_security_category_2.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_2: # 深A主板
+                    continue
+                if self.check_box_security_category_3.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_3: # 深A中小板
+                    continue
+                if self.check_box_security_category_4.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_4: # 深A创业板
+                    continue
+                if self.check_box_security_category_5.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_5: # 沪ETF基金
+                    continue
+                if self.check_box_security_category_6.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_6: # 深ETF基金
+                    continue
+                if self.check_box_security_category_7.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_7: # 沪LOF基金
+                    continue
+                if self.check_box_security_category_8.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_8: # 深LOF基金
+                    continue
+                if self.check_box_security_category_9.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_9: # 沪分级子基金
+                    continue
+                if self.check_box_security_category_10.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_10: # 深分级子基金
+                    continue
+                if self.check_box_security_category_11.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_11: # 沪封闭式基金
+                    continue
+                if self.check_box_security_category_12.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_12: # 深封闭式基金
+                    continue
+                if self.check_box_security_list_state_1.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_1: # 上市
+                    continue
+                if self.check_box_security_list_state_2.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_2: # 暂停
+                    continue
+                if self.check_box_security_list_state_3.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_3: # 终止
+                    continue
+                if self.check_box_security_list_state_4.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_4: # 其他
+                    continue
+                if self.check_box_security_list_state_5.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_5: # 交易
+                    continue
+                if self.check_box_security_list_state_6.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_6: # 停牌
+                    continue
+                if self.check_box_security_list_state_7.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_7: # 摘牌
+                    continue
+                if self.check_box_security_st_non.isChecked() == True and row["is_st"] == define.DEF_SECURITY_INFO_ST_NON: # 非ST股
+                    continue
+                if self.check_box_security_st_use.isChecked() == True and row["is_st"] == define.DEF_SECURITY_INFO_ST_USE: # 仅ST股
+                    continue
+                exist_data_table_daily = False
+                exist_data_table_kline_1_m = False
+                exist_data_table_flag_daily = "-"
+                exist_data_table_flag_kline_1_m = "-"
+                table_name_daily = "stock_daily_%s_%s" % (row["market"].lower(), row["code"])
+                table_name_kline_1_m = "stock_kline_1_m_%s_%s" % (row["market"].lower(), row["code"])
+                if table_name_daily in table_dict_daily.keys():
+                    exist_data_table_daily = True
+                    exist_data_table_flag_daily = "Y"
+                if table_name_kline_1_m in table_dict_kline_1_m.keys():
+                    exist_data_table_kline_1_m = True
+                    exist_data_table_flag_kline_1_m = "Y"
+                if self.check_box_security_data_daily.isChecked() == True and exist_data_table_daily == False: # 日线
+                    continue
+                if self.check_box_security_data_kline_1_m.isChecked() == True and exist_data_table_kline_1_m == False: # 1分钟线
+                    continue
+                check_box = QCheckBox("")
+                check_box.setChecked(True)
+                self.data_lister.data_list.append([check_box, row["market"], row["code"], row["name"], 
+                                                   common.TransSecurityCategory(row["category"]), common.TransSecuritySector(row["sector"]), 
+                                                   common.TransSecurityST(row["is_st"]), common.TransSecurityListState(row["list_state"]), 
+                                                   str(row["list_date"]), exist_data_table_flag_daily, exist_data_table_flag_kline_1_m])
+            self.data_lister.data_list_model.setDataList(self.data_lister.data_list)
+            self.data_lister.resizeColumnsToContents()
+            self.data_lister.setColumnWidth(0, 20) # 选择列宽度
+            self.data_lister.sortByColumn(self.head_index_code, Qt.AscendingOrder) # 按照 code 排序
         self.check_box_security_check_all.setChecked(True) # 刷新后默认全选
 
     def OnClickButtonSavePanelConfig(self):

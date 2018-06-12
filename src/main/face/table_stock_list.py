@@ -234,7 +234,3 @@ class DataLister(QTableView):
 
     def GetAllCheck(self):
         return self.data_list_model.getAllCheck()
-
-    def OnActionRefresh(self):
-        self.ClearListItems()
-        self.OnReloadSecurityInfo()
