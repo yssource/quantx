@@ -233,6 +233,7 @@ class TradeX_Stk_Sy():
             self.query_results = [] # 查询结果数据
             self.batch = None # 批量合约，BatchInfo，股票类特有
             self.event_task_finish = threading.Event()
+            self.event_recv_answer = threading.Event() # 用于标记已收到报单应答或报单回报或成交回报，保证获得 order_id 用于撤单
 
         def ToString(self):
             return "task_id：%d, " % self.task_id + \
@@ -535,6 +536,8 @@ class TradeX_Stk_Sy():
                     # 委托交易结束：非法委托、全部成交、部成部撤、全部撤单
                     if order_reply.status == 3 or order_reply.status == 6 or order_reply.status == 7 or order_reply.status == 8: # 因为撤单回报独立，估计不会有 7：部成部撤，甚至可能不会有 8：全部撤单
                         task_item.event_task_finish.set()
+                    if task_item.order.order_id != "":
+                        task_item.event_recv_answer.set()
                 elif task_item.batch != None:
                     pass
             if ret_func == define.trade_cancelreply_s_func: # 股票撤单回报，接口 APE 撤单回报只有一个
@@ -547,6 +550,8 @@ class TradeX_Stk_Sy():
                     # 委托交易结束：非法委托、全部成交、部成部撤、全部撤单
                     if order_reply.status == 3 or order_reply.status == 6 or order_reply.status == 7 or order_reply.status == 8: # 撤单回报估计不会有 3：非法委托
                         task_item.event_task_finish.set()
+                    if task_item.order.order_id != "":
+                        task_item.event_recv_answer.set()
                 elif task_item.batch != None:
                     pass
             if ret_func == define.trade_transreply_s_func: # 股票成交回报，接口 APE 成交回报会有多个
@@ -558,6 +563,8 @@ class TradeX_Stk_Sy():
                     if task_item.order.fill_qty >= task_item.order.amount: # 全部成交
                         task_item.order.status = 6 # 全部成交
                         task_item.event_task_finish.set()
+                    if task_item.order.order_id != "":
+                        task_item.event_recv_answer.set()
                 elif task_item.batch != None:
                     pass
             
@@ -565,6 +572,7 @@ class TradeX_Stk_Sy():
             if ret_func == define.trade_placeorder_s_func: # 股票单个证券委托下单
                 if task_item.status == define.TASK_STATUS_FAIL: # 这里只关注失败的，成功的根据成交回报处理
                     task_item.event_task_finish.set() # 标记 下单 事务结束
+                    task_item.event_recv_answer.set() # 因为需要 order_id 所以这里只在下单失败时才设置，下单成功的需要继续等待交易所报单回报获得 order_id 后才设置
             if ret_func == define.trade_cancelorder_s_func: # 股票单个证券委托撤单
                 task_item.event_task_finish.set() # 标记 撤单 事务结束
             if ret_func == define.trade_placeorderbatch_s_func: # 股票批量证券委托下单
@@ -1413,6 +1421,7 @@ class TradeX_Stk_Sy():
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
                 return [True, task_item_place.order]
         else: # 等待超时
+            task_item_place.event_recv_answer.wait(30) # 等待交易所报单回报，保证获得 order_id 用于撤单
             if task_item_place.order.order_id != "":
                 self.log_text = "%s: 委托 %s %s 准备撤单。 委托： %s， 超时： %d" % (strategy, label, order.symbol, task_item_place.order.order_id, trade_wait)
                 self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
