@@ -53,15 +53,15 @@ class DBM_MsSQL():
 
     def Start(self):
         if not self.database:
-            self.SendMessage("E", 4, self.log_cate, "数据库设置为空！", "A")
+            self.SendMessage("E", 4, self.log_cate, "数据库设置为空！", "S")
             return False
         self.connect = pymssql.connect(host = self.host, port = self.port, user = self.user, password = self.password, database = self.database, charset = self.charset)
         if not self.connect:
-            self.SendMessage("E", 4, self.log_cate, "数据库连接失败！", "A")
+            self.SendMessage("E", 4, self.log_cate, "数据库连接失败！", "S")
             return False
         self.cursor = self.connect.cursor()
         if not self.cursor:
-            self.SendMessage("E", 4, self.log_cate, "数据库获取失败！", "A")
+            self.SendMessage("E", 4, self.log_cate, "数据库获取失败！", "S")
             return False
         return True
 
@@ -77,7 +77,7 @@ class DBM_MsSQL():
             return self.cursor.fetchall()
         else:
             self.log_text = "数据库查询失败！%s" % sql
-            self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             return None
 
     def ExecNonQuery(self, sql): # 执行非查询语句 # msSQL.ExecNonQuery("INSERT INTO WeiBoUser VALUES('2', '3')")
@@ -87,5 +87,5 @@ class DBM_MsSQL():
             return True
         else:
             self.log_text = "数据库执行失败！%s" % sql
-            self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             return False

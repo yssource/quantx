@@ -191,17 +191,33 @@ class BasicX(Singleton):
         self.dbm_financial = None
         self.dbm_quotedata = None
         if self.flag_use_database == True:
-            self.dbm_financial = dbm_mysql.DBM_MySQL(host = self.host, port = self.port, user = self.user, passwd = self.passwd, db = self.db_financial, charset = self.charset) # db_financial
-            self.dbm_quotedata = dbm_mysql.DBM_MySQL(host = self.host, port = self.port, user = self.user, passwd = self.passwd, db = self.db_quotedata, charset = self.charset) # db_quotedata
-            if self.dbm_financial.Connect() == True:
-                #self.InitTables_Financial() # 慢一点
-                self.InitTables_Financial_DB() # 快一点
-            if self.dbm_quotedata.Connect() == True:
-                #self.InitTables_QuoteData() # 慢一点
-                self.InitTables_QuoteData_DB() # 快一点
+            thread_init_dbm_connect = threading.Thread(target = self.InitDbmConnect)
+            thread_init_dbm_connect.start()
         
         self.security_dict = None # 首次计算除权时缓存一份证券信息
         self.exrights_dict = None # 首次计算除权时缓存一份除权数据
+
+    def InitDbmConnect(self): # 避免数据库连接超时前，主界面启动只有白框
+        self.log_text = "等待 金融类 和 行情类 数据库连接 ..."
+        self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+        self.dbm_financial = dbm_mysql.DBM_MySQL(host = self.host, port = self.port, user = self.user, passwd = self.passwd, db = self.db_financial, charset = self.charset) # db_financial
+        self.dbm_quotedata = dbm_mysql.DBM_MySQL(host = self.host, port = self.port, user = self.user, passwd = self.passwd, db = self.db_quotedata, charset = self.charset) # db_quotedata
+        if self.dbm_financial.Connect() == True:
+            self.log_text = "金融类 数据库连接完成。"
+            self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+            #self.InitTables_Financial() # 慢一点
+            self.InitTables_Financial_DB() # 快一点
+        else:
+            self.log_text = "金融类 数据库连接失败！"
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+        if self.dbm_quotedata.Connect() == True:
+            self.log_text = "行情类 数据库连接完成。"
+            self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+            #self.InitTables_QuoteData() # 慢一点
+            self.InitTables_QuoteData_DB() # 快一点
+        else:
+            self.log_text = "行情类 数据库连接失败！"
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
     def InitCacheData(self, **kwargs): # 目前先独立配置
         self.mongo_host = kwargs.get("host", "0.0.0.0")
@@ -292,26 +308,29 @@ class BasicX(Singleton):
               "FROM information_schema.TABLES " + \
               "WHERE TABLE_SCHEMA = '%s' AND information_schema.TABLES.TABLE_NAME = '%s'" % (db_name, tb_name)
         rows = dbm.QueryAllSql(sql)
-        if len(rows) == 1: # 数据表存在
-            create_time_db = rows[0][0]
-            modify_time_db = rows[0][1]
-            if create_time_db != None:
-                modify_time = create_time_db # 先赋创建时间
-            if modify_time_db != None:
-                modify_time = modify_time_db # 再赋更新时间
+        if rows != None:
+            if len(rows) == 1: # 数据表存在
+                create_time_db = rows[0][0]
+                modify_time_db = rows[0][1]
+                if create_time_db != None:
+                    modify_time = create_time_db # 先赋创建时间
+                if modify_time_db != None:
+                    modify_time = modify_time_db # 再赋更新时间
         return modify_time
 
     def InitTables_Financial(self): # 慢一点
         dbm = self.dbm_financial
         sql = "SHOW TABLES"
-        data_tables = [dbm.QueryAllSql(sql)]
-        #print(data_tables)
-        have_tables = re.findall("(\'.*?\')", str(data_tables))
-        have_tables = [re.sub("'", "", table) for table in have_tables]
-        #print(have_tables)
-        for table in have_tables:
-            self.tables_financial[table] = table
-        self.df_tables_financial = pd.DataFrame(data = sorted(self.tables_financial.values()), columns = ["table"])
+        rows = dbm.QueryAllSql(sql)
+        if rows != None:
+            data_tables = list(rows)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            for table in have_tables:
+                self.tables_financial[table] = table
+            self.df_tables_financial = pd.DataFrame(data = sorted(self.tables_financial.values()), columns = ["table"])
 
     def InitTables_Financial_DB(self): # 快一点
         dbm = self.dbm_financial
@@ -319,10 +338,11 @@ class BasicX(Singleton):
               "FROM information_schema.TABLES " + \
               "WHERE TABLE_SCHEMA = '%s'" % self.db_financial
         rows = dbm.QueryAllSql(sql)
-        for (table_name,) in rows:
-            #print(table_name)
-            self.tables_financial[table_name] = table_name
-        self.df_tables_financial = pd.DataFrame(data = sorted(self.tables_financial.values()), columns = ["table"])
+        if rows != None:
+            for (table_name,) in rows:
+                #print(table_name)
+                self.tables_financial[table_name] = table_name
+            self.df_tables_financial = pd.DataFrame(data = sorted(self.tables_financial.values()), columns = ["table"])
 
     def GetTables_Financial(self):
         return self.df_tables_financial
@@ -364,10 +384,11 @@ class BasicX(Singleton):
                       "WHERE market = 83 AND natural_date >= '2010-01-01' AND natural_date < '2020-01-01'" + \
                       "ORDER BY natural_date ASC, market ASC"
                 rows = dbm.QueryAllSql(sql)
-                if len(rows) > 0:
-                    result = pd.DataFrame(data = list(rows), columns = columns)
-                    if save_path != "": # 保存到文件
-                        result.to_pickle(save_path)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
         if result.empty:
             self.log_text = "获取的 交易日期 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
@@ -411,10 +432,11 @@ class BasicX(Singleton):
                       "FROM %s " % self.tb_industry_data + \
                       "ORDER BY standard ASC, industry_code_1 ASC, industry_code_2 ASC, industry_code_3 ASC, industry_code_4 ASC, market ASC, code ASC"
                 rows = dbm.QueryAllSql(sql)
-                if len(rows) > 0:
-                    result = pd.DataFrame(data = list(rows), columns = columns)
-                    if save_path != "": # 保存到文件
-                        result.to_pickle(save_path)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
         if result.empty:
             self.log_text = "获取的 行业划分 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
@@ -456,10 +478,11 @@ class BasicX(Singleton):
                       "FROM %s " % self.tb_security_info + \
                       "ORDER BY market ASC, code ASC"
                 rows = dbm.QueryAllSql(sql)
-                if len(rows) > 0:
-                    result = pd.DataFrame(data = list(rows), columns = columns)
-                    if save_path != "": # 保存到文件
-                        result.to_pickle(save_path)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
         if result.empty:
             self.log_text = "获取的 证券信息 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
@@ -511,10 +534,11 @@ class BasicX(Singleton):
                       "FROM %s " % self.tb_capital_data + \
                       "ORDER BY market ASC, code ASC"
                 rows = dbm.QueryAllSql(sql)
-                if len(rows) > 0:
-                    result = pd.DataFrame(data = list(rows), columns = columns)
-                    if save_path != "": # 保存到文件
-                        result.to_pickle(save_path)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
         if result.empty:
             self.log_text = "获取的 股本结构 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
@@ -556,10 +580,11 @@ class BasicX(Singleton):
                       "FROM %s " % self.tb_ex_rights_data + \
                       "ORDER BY market ASC, code ASC, date ASC"
                 rows = dbm.QueryAllSql(sql)
-                if len(rows) > 0:
-                    result = pd.DataFrame(data = list(rows), columns = columns)
-                    if save_path != "": # 保存到文件
-                        result.to_pickle(save_path)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
         if result.empty:
             self.log_text = "获取的 除权数据 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
@@ -616,10 +641,11 @@ class BasicX(Singleton):
                       "FROM %s " % self.tb_ting_pai_stock + \
                       "ORDER BY market ASC, code ASC"
                 rows = dbm.QueryAllSql(sql)
-                if len(rows) > 0:
-                    result = pd.DataFrame(data = list(rows), columns = columns)
-                    if save_path != "": # 保存到文件
-                        result.to_pickle(save_path)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
         if result.empty:
             self.log_text = "获取的 当日停牌证券 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
@@ -628,19 +654,21 @@ class BasicX(Singleton):
     def InitTables_QuoteData(self): # 慢一点
         dbm = self.dbm_quotedata
         sql = "SHOW TABLES"
-        data_tables = [dbm.QueryAllSql(sql)]
-        #print(data_tables)
-        have_tables = re.findall("(\'.*?\')", str(data_tables))
-        have_tables = [re.sub("'", "", table) for table in have_tables]
-        #print(have_tables)
-        for table in have_tables:
-            key = table[-9:] # sh_600000、sz_000001
-            if table[0:11] == "stock_daily":
-                self.tables_stock_daily[key] = table
-            elif table[0:15] == "stock_kline_1_m":
-                self.tables_stock_kline_1_m[key] = table
-        self.df_tables_stock_daily = pd.DataFrame(data = sorted(self.tables_stock_daily.values()), columns = ["table"])
-        self.df_tables_stock_kline_1_m = pd.DataFrame(data = sorted(self.tables_stock_kline_1_m.values()), columns = ["table"])
+        rows = dbm.QueryAllSql(sql)
+        if rows != None:
+            data_tables = list(rows)
+            #print(data_tables)
+            have_tables = re.findall("(\'.*?\')", str(data_tables))
+            have_tables = [re.sub("'", "", table) for table in have_tables]
+            #print(have_tables)
+            for table in have_tables:
+                key = table[-9:] # sh_600000、sz_000001
+                if table[0:11] == "stock_daily":
+                    self.tables_stock_daily[key] = table
+                elif table[0:15] == "stock_kline_1_m":
+                    self.tables_stock_kline_1_m[key] = table
+            self.df_tables_stock_daily = pd.DataFrame(data = sorted(self.tables_stock_daily.values()), columns = ["table"])
+            self.df_tables_stock_kline_1_m = pd.DataFrame(data = sorted(self.tables_stock_kline_1_m.values()), columns = ["table"])
 
     def InitTables_QuoteData_DB(self): # 快一点
         dbm = self.dbm_quotedata
@@ -648,15 +676,16 @@ class BasicX(Singleton):
               "FROM information_schema.TABLES " + \
               "WHERE TABLE_SCHEMA = '%s'" % self.db_quotedata
         rows = dbm.QueryAllSql(sql)
-        for (table_name,) in rows:
-            #print(table_name)
-            key = table_name[-9:] # sh_600000、sz_000001
-            if table_name[0:11] == "stock_daily":
-                self.tables_stock_daily[key] = table_name
-            elif table_name[0:15] == "stock_kline_1_m":
-                self.tables_stock_kline_1_m[key] = table_name
-        self.df_tables_stock_daily = pd.DataFrame(data = sorted(self.tables_stock_daily.values()), columns = ["table"])
-        self.df_tables_stock_kline_1_m = pd.DataFrame(data = sorted(self.tables_stock_kline_1_m.values()), columns = ["table"])
+        if rows != None:
+            for (table_name,) in rows:
+                #print(table_name)
+                key = table_name[-9:] # sh_600000、sz_000001
+                if table_name[0:11] == "stock_daily":
+                    self.tables_stock_daily[key] = table_name
+                elif table_name[0:15] == "stock_kline_1_m":
+                    self.tables_stock_kline_1_m[key] = table_name
+            self.df_tables_stock_daily = pd.DataFrame(data = sorted(self.tables_stock_daily.values()), columns = ["table"])
+            self.df_tables_stock_kline_1_m = pd.DataFrame(data = sorted(self.tables_stock_kline_1_m.values()), columns = ["table"])
 
     def GetTables_Stock_Daily(self):
         return self.df_tables_stock_daily
@@ -759,27 +788,28 @@ class BasicX(Singleton):
                             if sql_from_where != "":
                                 sql = "SELECT date, open, high, low, close, volume, turnover " + sql_from_where + "ORDER BY date ASC"
                                 rows = dbm.QueryAllSql(sql)
-                                supply = pd.DataFrame(data = list(rows), columns = columns)
-                                # 返回的结果
-                                result = usable.append(supply, ignore_index = True)
-                                if date_file_date_s > date_user_date_e: # 去掉空隙部分
-                                    result = result.ix[result.date <= date_user_date_e, :]
-                                if date_user_date_s > date_file_date_e: # 去掉空隙部分
-                                    result = result.ix[result.date >= date_user_date_s, :]
-                                result = result.sort_values(by = ["date"], ascending = True).reset_index(drop = True)
-                                # 提示一下以期减少查询提高效率
-                                date_result_date_s = result["date"].min()
-                                date_result_date_e = result["date"].max()
-                                if date_user_date_s < date_result_date_s or date_user_date_e > date_result_date_e:
-                                    if False == self.ignore_user_tips:
-                                        self.log_text = "建议将 %s %s 的 Daily 请求日期设为 %s 到 %s 以提高效率。" % \
-                                              (market, code, date_result_date_s.strftime("%Y%m%d"), date_result_date_e.strftime("%Y%m%d"))
-                                        self.SendMessage("H", 2, self.log_cate, self.log_text, "A")
-                                # 更新的缓存
-                                locals = locals.append(supply, ignore_index = True)
-                                locals = locals.sort_values(by = ["date"], ascending = True).reset_index(drop = True)
-                                if save_path != "": # 保存到文件
-                                    locals.to_pickle(save_path)
+                                if rows != None:
+                                    supply = pd.DataFrame(data = list(rows), columns = columns)
+                                    # 返回的结果
+                                    result = usable.append(supply, ignore_index = True)
+                                    if date_file_date_s > date_user_date_e: # 去掉空隙部分
+                                        result = result.ix[result.date <= date_user_date_e, :]
+                                    if date_user_date_s > date_file_date_e: # 去掉空隙部分
+                                        result = result.ix[result.date >= date_user_date_s, :]
+                                    result = result.sort_values(by = ["date"], ascending = True).reset_index(drop = True)
+                                    # 提示一下以期减少查询提高效率
+                                    date_result_date_s = result["date"].min()
+                                    date_result_date_e = result["date"].max()
+                                    if date_user_date_s < date_result_date_s or date_user_date_e > date_result_date_e:
+                                        if False == self.ignore_user_tips:
+                                            self.log_text = "建议将 %s %s 的 Daily 请求日期设为 %s 到 %s 以提高效率。" % \
+                                                  (market, code, date_result_date_s.strftime("%Y%m%d"), date_result_date_e.strftime("%Y%m%d"))
+                                            self.SendMessage("H", 2, self.log_cate, self.log_text, "A")
+                                    # 更新的缓存
+                                    locals = locals.append(supply, ignore_index = True)
+                                    locals = locals.sort_values(by = ["date"], ascending = True).reset_index(drop = True)
+                                    if save_path != "": # 保存到文件
+                                        locals.to_pickle(save_path)
                 if need_query_all == True: # 所有都要查询
                     #print("数据需要全部查询")
                     sql = "SELECT date, open, high, low, close, volume, turnover " + \
@@ -787,10 +817,11 @@ class BasicX(Singleton):
                           "WHERE (date >= '%s' AND date <= '%s') " % (str_user_date_s, str_user_date_e) + \
                           "ORDER BY date ASC"
                     rows = dbm.QueryAllSql(sql)
-                    if len(rows) > 0:
-                        result = pd.DataFrame(data = list(rows), columns = columns)
-                        if save_path != "": # 保存到文件
-                            result.to_pickle(save_path)
+                    if rows != None:
+                        if len(rows) > 0:
+                            result = pd.DataFrame(data = list(rows), columns = columns)
+                            if save_path != "": # 保存到文件
+                                result.to_pickle(save_path)
                     if result.empty:
                         self.log_text = "获取 %s %s 的 %s ~ %s 的 Daily 数据为空！" % (market, code, str_user_date_s, str_user_date_e)
                         self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
@@ -894,27 +925,28 @@ class BasicX(Singleton):
                             if sql_from_where != "":
                                 sql = "SELECT date, time, open, high, low, close, volume, turnover " + sql_from_where + "ORDER BY date ASC, time ASC"
                                 rows = dbm.QueryAllSql(sql)
-                                supply = pd.DataFrame(data = list(rows), columns = columns)
-                                # 返回的结果
-                                result = usable.append(supply, ignore_index = True)
-                                if date_file_date_s > date_user_date_e: # 去掉空隙部分
-                                    result = result.ix[result.date <= date_user_date_e, :]
-                                if date_user_date_s > date_file_date_e: # 去掉空隙部分
-                                    result = result.ix[result.date >= date_user_date_s, :]
-                                result = result.sort_values(by = ["date", "time"], ascending = True).reset_index(drop = True)
-                                # 提示一下以期减少查询提高效率
-                                date_result_date_s = result["date"].min()
-                                date_result_date_e = result["date"].max()
-                                if date_user_date_s < date_result_date_s or date_user_date_e > date_result_date_e:
-                                    if False == self.ignore_user_tips:
-                                        self.log_text = "建议将 %s %s 的 Kline_1_M 请求日期设为 %s 到 %s 以提高效率。" % \
-                                              (market, code, date_result_date_s.strftime("%Y%m%d"), date_result_date_e.strftime("%Y%m%d"))
-                                        self.SendMessage("H", 2, self.log_cate, self.log_text, "A")
-                                # 更新的缓存
-                                locals = locals.append(supply, ignore_index = True)
-                                locals = locals.sort_values(by = ["date", "time"], ascending = True).reset_index(drop = True)
-                                if save_path != "": # 保存到文件
-                                    locals.to_pickle(save_path)
+                                if rows != None:
+                                    supply = pd.DataFrame(data = list(rows), columns = columns)
+                                    # 返回的结果
+                                    result = usable.append(supply, ignore_index = True)
+                                    if date_file_date_s > date_user_date_e: # 去掉空隙部分
+                                        result = result.ix[result.date <= date_user_date_e, :]
+                                    if date_user_date_s > date_file_date_e: # 去掉空隙部分
+                                        result = result.ix[result.date >= date_user_date_s, :]
+                                    result = result.sort_values(by = ["date", "time"], ascending = True).reset_index(drop = True)
+                                    # 提示一下以期减少查询提高效率
+                                    date_result_date_s = result["date"].min()
+                                    date_result_date_e = result["date"].max()
+                                    if date_user_date_s < date_result_date_s or date_user_date_e > date_result_date_e:
+                                        if False == self.ignore_user_tips:
+                                            self.log_text = "建议将 %s %s 的 Kline_1_M 请求日期设为 %s 到 %s 以提高效率。" % \
+                                                  (market, code, date_result_date_s.strftime("%Y%m%d"), date_result_date_e.strftime("%Y%m%d"))
+                                            self.SendMessage("H", 2, self.log_cate, self.log_text, "A")
+                                    # 更新的缓存
+                                    locals = locals.append(supply, ignore_index = True)
+                                    locals = locals.sort_values(by = ["date", "time"], ascending = True).reset_index(drop = True)
+                                    if save_path != "": # 保存到文件
+                                        locals.to_pickle(save_path)
                 if need_query_all == True: # 所有都要查询
                     #print("数据需要全部查询")
                     sql = "SELECT date, time, open, high, low, close, volume, turnover " + \
@@ -922,10 +954,11 @@ class BasicX(Singleton):
                           "WHERE (date >= '%s' AND date <= '%s') " % (str_user_date_s, str_user_date_e) + \
                           "ORDER BY date ASC, time ASC"
                     rows = dbm.QueryAllSql(sql)
-                    if len(rows) > 0:
-                        result = pd.DataFrame(data = list(rows), columns = columns)
-                        if save_path != "": # 保存到文件
-                            result.to_pickle(save_path)
+                    if rows != None:
+                        if len(rows) > 0:
+                            result = pd.DataFrame(data = list(rows), columns = columns)
+                            if save_path != "": # 保存到文件
+                                result.to_pickle(save_path)
                     if result.empty:
                         self.log_text = "获取 %s %s 的 %s ~ %s 的 Kline_1_M 数据为空！" % (market, code, str_user_date_s, str_user_date_e)
                         self.SendMessage("W", 3, self.log_cate, self.log_text, "A")

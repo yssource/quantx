@@ -63,7 +63,7 @@ class DBM_Mongo():
             self.db = None
             self.cc = None
             self.log_text = "连接异常：%s，%s" % (Exception, e)
-            self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
         return False
 
     def Query(self, exp, sort = None, projection = None):

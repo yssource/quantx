@@ -292,7 +292,7 @@ class TradeX_Stk_Sy():
         task_item.strategy = strategy # 策略标识
         task_item.function = function # 功能编号
         task_item.status = define.TASK_STATUS_EXEC # 任务状态
-        task_item.messages.append("开始执行任务....") # 任务信息
+        task_item.messages.append("开始执行任务 ...") # 任务信息
         #task_item.order = None # 单个合约
         #task_item.order_replies = [] # 单个合约委托回报
         #task_item.trans_replies = [] # 单个合约成交回报

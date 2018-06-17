@@ -67,11 +67,11 @@ class DBM_MySQL():
         except pymysql.Warning as w:
             self.connect = None
             self.log_text = "连接警告：%s" % str(w)
-            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
         except pymysql.Error as e:
             self.connect = None
             self.log_text = "连接错误：%s" % str(e)
-            self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
         return False
 
     def Disconnect(self):
@@ -88,22 +88,22 @@ class DBM_MySQL():
                 not_connect = False # 说明连接正常
             except Exception as e:
                 self.log_text = "检测到数据库连接已断开！%s" % e
-                self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+                self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
                 if self.Connect() == True: # 重连成功
                     not_connect = False # 连接已经正常
                     self.log_text = "数据库重连成功。"
-                    self.SendMessage("I", 1, self.log_cate, self.log_text, "A")
+                    self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
                     break
                 else:
                     try_times += 1
                     self.log_text = "数据库重连失败！%d" % try_times
-                    self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+                    self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
                     time.sleep(5) # 等待重试
 
     def ExecuteSql(self, sql):
         if self.connect == None:
             self.log_text = "执行(单)错误：数据库尚未连接！"
-            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
             return False
         else:
             try:
@@ -115,16 +115,16 @@ class DBM_MySQL():
                 return True
             except pymysql.Warning as w:
                 self.log_text = "执行(单)警告：%s" % str(w)
-                self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+                self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
             except pymysql.Error as e:
                 self.log_text = "执行(单)错误：%s" % str(e)
-                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             return False
 
     def ExecuteManySql(self, sql, values):
         if self.connect == None:
             self.log_text = "执行(多)错误：数据库尚未连接！"
-            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
             return False
         else:
             try:
@@ -136,16 +136,16 @@ class DBM_MySQL():
                 return True
             except pymysql.Warning as w:
                 self.log_text = "执行(多)警告：%s" % str(w)
-                self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+                self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
             except pymysql.Error as e:
                 self.log_text = "执行(多)错误：%s" % str(e)
-                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             return False
 
     def QueryAllSql(self, sql):
         if self.connect == None:
             self.log_text = "查询(全)错误：数据库尚未连接！"
-            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
             return None
         else:
             try:
@@ -157,10 +157,10 @@ class DBM_MySQL():
                 return result
             except pymysql.Warning as w:
                 self.log_text = "查询(全)警告：%s" % str(w)
-                self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+                self.SendMessage("W", 3, self.log_cate, self.log_text, "S")
             except pymysql.Error as e:
                 self.log_text = "查询(全)错误：%s" % str(e)
-                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
             return None
 
     def TruncateOrCreateTable(self, table_name, sql_create):
@@ -178,7 +178,7 @@ class DBM_MySQL():
             else:
                 return self.ExecuteSql(sql_create)
         else:
-            self.SendMessage("E", 4, self.log_cate, "查询数据库表列表失败！", "A")
+            self.SendMessage("E", 4, self.log_cate, "查询数据库表列表失败！", "S")
         return False
 
     def BatchInsert(self, values_list, sql_insert):
