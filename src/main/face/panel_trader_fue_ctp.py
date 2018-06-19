@@ -83,9 +83,9 @@ class Panel(QDialog):
 
     def OnQuoteFuture(self, msg): # 行情触发
         try:
-            str_code = str(msg.data[0])
+            str_code = msg.data[0].decode()
             if str_code == self.contract:
-                self.quote_data = msg
+                self.quote_data = msg.data
                 QApplication.postEvent(self, QEvent(define.DEF_EVENT_TRADER_FUE_CTP_UPDATE_QUOTE)) # postEvent异步，sendEvent同步
         except Exception as e:
             self.log_text = "%s：函数 OnQuoteFuture 异常！%s" % (self.strategy, e)
@@ -541,33 +541,33 @@ class Panel(QDialog):
             self.button_place_order.setStyleSheet("font:bold;color:green")
             self.check_box_close_today.setEnabled(True)
 
-    def OnUpdateQuote(self, msg, price_round):
-        self.exchange = msg[3] # 证券市场
-        self.label_ask_price_5.setText(round(str(msg[13][4]), price_round))
-        self.label_ask_price_4.setText(round(str(msg[13][3]), price_round))
-        self.label_ask_price_3.setText(round(str(msg[13][2]), price_round))
-        self.label_ask_price_2.setText(round(str(msg[13][1]), price_round))
-        self.label_ask_price_1.setText(round(str(msg[13][0]), price_round))
-        self.label_ask_volume_5.setText(str(msg[14][4]))
-        self.label_ask_volume_4.setText(str(msg[14][3]))
-        self.label_ask_volume_3.setText(str(msg[14][2]))
-        self.label_ask_volume_2.setText(str(msg[14][1]))
-        self.label_ask_volume_1.setText(str(msg[14][0]))
-        self.label_bid_price_1.setText(round(str(msg[15][0]), price_round))
-        self.label_bid_price_2.setText(round(str(msg[15][1]), price_round))
-        self.label_bid_price_3.setText(round(str(msg[15][2]), price_round))
-        self.label_bid_price_4.setText(round(str(msg[15][3]), price_round))
-        self.label_bid_price_5.setText(round(str(msg[15][4]), price_round))
-        self.label_bid_volume_1.setText(str(msg[16][0]))
-        self.label_bid_volume_2.setText(str(msg[16][1]))
-        self.label_bid_volume_3.setText(str(msg[16][2]))
-        self.label_bid_volume_4.setText(str(msg[16][3]))
-        self.label_bid_volume_5.setText(str(msg[16][4]))
-        self.label_high_limit_price.setText(round(str(msg[17]), price_round)) # 涨停价
-        self.label_low_limit_price.setText(round(str(msg[18]), price_round)) # 跌停价
-        self.label_last_price.setText(round(str(msg[5]), price_round)) # 最新价
-        if msg[20] > 0.0: # 昨日结算价
-            f_last_up_down = (msg[5] / msg[20]) - 1.0
+    def OnUpdateQuote(self, data, price_round):
+        self.exchange = data[3].decode() # 证券市场
+        self.label_ask_price_5.setText(str(round(data[13][4], price_round)))
+        self.label_ask_price_4.setText(str(round(data[13][3], price_round)))
+        self.label_ask_price_3.setText(str(round(data[13][2], price_round)))
+        self.label_ask_price_2.setText(str(round(data[13][1], price_round)))
+        self.label_ask_price_1.setText(str(round(data[13][0], price_round)))
+        self.label_ask_volume_5.setText(str(data[14][4]))
+        self.label_ask_volume_4.setText(str(data[14][3]))
+        self.label_ask_volume_3.setText(str(data[14][2]))
+        self.label_ask_volume_2.setText(str(data[14][1]))
+        self.label_ask_volume_1.setText(str(data[14][0]))
+        self.label_bid_price_1.setText(str(round(data[15][0], price_round)))
+        self.label_bid_price_2.setText(str(round(data[15][1], price_round)))
+        self.label_bid_price_3.setText(str(round(data[15][2], price_round)))
+        self.label_bid_price_4.setText(str(round(data[15][3], price_round)))
+        self.label_bid_price_5.setText(str(round(data[15][4], price_round)))
+        self.label_bid_volume_1.setText(str(data[16][0]))
+        self.label_bid_volume_2.setText(str(data[16][1]))
+        self.label_bid_volume_3.setText(str(data[16][2]))
+        self.label_bid_volume_4.setText(str(data[16][3]))
+        self.label_bid_volume_5.setText(str(data[16][4]))
+        self.label_high_limit_price.setText(str(round(data[17], price_round))) # 涨停价
+        self.label_low_limit_price.setText(str(round(data[18], price_round))) # 跌停价
+        self.label_last_price.setText(str(round(data[5], price_round))) # 最新价
+        if data[20] > 0.0: # 昨日结算价
+            f_last_up_down = (data[5] / data[20]) - 1.0
             self.label_last_up_down.setText(("%.2f%%" % (f_last_up_down * 100.0)))
             if f_last_up_down > 0.0:
                 self.label_last_up_down.setPalette(self.color_red)

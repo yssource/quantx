@@ -84,10 +84,10 @@ class Panel(QDialog):
 
     def OnQuoteStock(self, msg): # 行情触发
         try:
-            str_code = str(msg[0])
+            str_code = msg.data[0].decode()
             if str_code == self.symbol:
                 if "60" == str_code[0:2] or "000" == str_code[0:3] or "001" == str_code[0:3] or "002" == str_code[0:3] or "300" == str_code[0:3]:
-                    self.quote_data = msg
+                    self.quote_data = msg.data
                     QApplication.postEvent(self, QEvent(define.DEF_EVENT_TRADER_STK_APE_UPDATE_QUOTE)) # postEvent异步，sendEvent同步
         except Exception as e:
             self.log_text = "%s：函数 OnQuoteStock 异常！%s" % (self.strategy, e)
@@ -468,35 +468,35 @@ class Panel(QDialog):
             self.spin_volume.setStyleSheet("color:green")
             self.button_place_order.setStyleSheet("font:bold;color:green")
 
-    def OnUpdateQuote(self, msg, price_round):
+    def OnUpdateQuote(self, data, price_round):
         try:
-            self.exchange = msg[3] # 证券市场
-            self.line_edit_name.setText(str(msg[1])) # 证券名称 #QString.fromLocal8Bit(msg[1])
-            self.label_ask_price_5.setText(str(round(msg[13][4], price_round)))
-            self.label_ask_price_4.setText(str(round(msg[13][3], price_round)))
-            self.label_ask_price_3.setText(str(round(msg[13][2], price_round)))
-            self.label_ask_price_2.setText(str(round(msg[13][1], price_round)))
-            self.label_ask_price_1.setText(str(round(msg[13][0], price_round)))
-            self.label_ask_volume_5.setText(str(msg[14][4]))
-            self.label_ask_volume_4.setText(str(msg[14][3]))
-            self.label_ask_volume_3.setText(str(msg[14][2]))
-            self.label_ask_volume_2.setText(str(msg[14][1]))
-            self.label_ask_volume_1.setText(str(msg[14][0]))
-            self.label_bid_price_1.setText(str(round(msg[15][0], price_round)))
-            self.label_bid_price_2.setText(str(round(msg[15][1], price_round)))
-            self.label_bid_price_3.setText(str(round(msg[15][2], price_round)))
-            self.label_bid_price_4.setText(str(round(msg[15][3], price_round)))
-            self.label_bid_price_5.setText(str(round(msg[15][4], price_round)))
-            self.label_bid_volume_1.setText(str(msg[16][0]))
-            self.label_bid_volume_2.setText(str(msg[16][1]))
-            self.label_bid_volume_3.setText(str(msg[16][2]))
-            self.label_bid_volume_4.setText(str(msg[16][3]))
-            self.label_bid_volume_5.setText(str(msg[16][4]))
-            self.label_high_limit_price.setText(str(round(msg[17], price_round))) # 涨停价
-            self.label_low_limit_price.setText(str(round(msg[18], price_round))) # 跌停价
-            self.label_last_price.setText(str(round(msg[5], price_round))) # 最新价
-            if msg[10] > 0.0: # 昨收价
-                f_last_up_down = (msg[5] / msg[10]) - 1.0
+            self.exchange = data[3].decode() # 证券市场
+            self.line_edit_name.setText(str(data[1].decode("gbk"))) # 证券名称 #QString.fromLocal8Bit(data[1].decode("gbk")) # 含中文
+            self.label_ask_price_5.setText(str(round(data[13][4], price_round)))
+            self.label_ask_price_4.setText(str(round(data[13][3], price_round)))
+            self.label_ask_price_3.setText(str(round(data[13][2], price_round)))
+            self.label_ask_price_2.setText(str(round(data[13][1], price_round)))
+            self.label_ask_price_1.setText(str(round(data[13][0], price_round)))
+            self.label_ask_volume_5.setText(str(data[14][4]))
+            self.label_ask_volume_4.setText(str(data[14][3]))
+            self.label_ask_volume_3.setText(str(data[14][2]))
+            self.label_ask_volume_2.setText(str(data[14][1]))
+            self.label_ask_volume_1.setText(str(data[14][0]))
+            self.label_bid_price_1.setText(str(round(data[15][0], price_round)))
+            self.label_bid_price_2.setText(str(round(data[15][1], price_round)))
+            self.label_bid_price_3.setText(str(round(data[15][2], price_round)))
+            self.label_bid_price_4.setText(str(round(data[15][3], price_round)))
+            self.label_bid_price_5.setText(str(round(data[15][4], price_round)))
+            self.label_bid_volume_1.setText(str(data[16][0]))
+            self.label_bid_volume_2.setText(str(data[16][1]))
+            self.label_bid_volume_3.setText(str(data[16][2]))
+            self.label_bid_volume_4.setText(str(data[16][3]))
+            self.label_bid_volume_5.setText(str(data[16][4]))
+            self.label_high_limit_price.setText(str(round(data[17], price_round))) # 涨停价
+            self.label_low_limit_price.setText(str(round(data[18], price_round))) # 跌停价
+            self.label_last_price.setText(str(round(data[5], price_round))) # 最新价
+            if data[10] > 0.0: # 昨收价
+                f_last_up_down = (data[5] / data[10]) - 1.0
                 self.label_last_up_down.setText(("%.2f%%" % (f_last_up_down * 100.0)))
                 if f_last_up_down > 0.0:
                     self.label_last_up_down.setPalette(self.color_red)
