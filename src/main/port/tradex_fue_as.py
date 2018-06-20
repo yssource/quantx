@@ -55,6 +55,7 @@ class TradeX_Fue_As():
             self.status = 0 # 委托状态
             self.status_msg = "" # 状态信息
             self.combin_flag = 0 # 在 PlaceCombinOrder() 中置为 1
+            self.trade_error = False # 交易异常标记
 
         def ToString(self):
             return "order_id：%s, " % self.order_id + \

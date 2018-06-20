@@ -54,6 +54,7 @@ class TradeX_Stk_Sy():
             self.status = 0 # 申报结果
             self.status_msg = "" # 申报说明
             self.brow_index = "" # 增量查询索引值
+            self.trade_error = False # 交易异常标记
 
         def ToString(self):
             return "order_id：%d, " % self.order_id + \
