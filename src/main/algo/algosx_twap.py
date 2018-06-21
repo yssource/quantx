@@ -1,38 +1,31 @@
 
 # -*- coding: utf-8 -*-
 
+# Copyright (c) 2018-2018 the QuantX authors
+# All rights reserved.
+#
+# The project sponsor and lead author is Xu Rendong.
+# E-mail: xrd@ustc.edu, QQ: 277195007, WeChat: ustc_xrd
+# You can get more information at https://xurendong.github.io
+# For names of other contributors see the contributors file.
+#
+# Commercial use of this code in source and binary forms is
+# governed by a LGPL v3 license. You may get a copy from the
+# root directory. Or else you should get a specific written 
+# permission from the project author.
+#
+# Individual and educational use of this code in source and
+# binary forms is governed by a 3-clause BSD license. You may
+# get a copy from the root directory. Certainly welcome you
+# to contribute code of all sorts.
+#
+# Be sure to retain the above copyright notice and conditions.
+
 import random
 import threading
 
 import define
 import logger
-
-class OriginalOrder(object):
-    def __init__(self, **kwargs):
-        self.symbol = kwargs.get("symbol", "") # 证券代码
-        self.exchange = kwargs.get("exchange", "") # 交易所，SH：上交所，SZ：深交所
-        self.entr_type = kwargs.get("entr_type", 0) # 委托方式，1：限价，2：市价
-        self.exch_side = kwargs.get("exch_side", 0) # 交易类型，1：买入，2：卖出
-        self.price = kwargs.get("price", 0.0) # 委托价格
-        self.amount = kwargs.get("amount", 0) # 委托数量
-        
-        self.need_trade = False
-        self.position_total = 0
-        self.position_can_sell = 0
-        
-        self.filled_qty = 0 # 成交数量
-        self.cancel_qty = 0 # 撤单数量
-        self.order_status = 0 # 委托状态
-
-    def ToString(self):
-        return "symbol：%s, " % self.symbol + \
-               "exchange：%s, " % self.exchange + \
-               "entr_type：%d, " % self.entr_type + \
-               "exch_side：%d, " % self.exch_side + \
-               "price：%f, " % self.price + \
-               "amount：%d, " % self.amount + \
-               "position_total：%d, " % self.position_total + \
-               "position_can_sell：%d" % self.position_can_sell
 
 class TWAP():
     def __init__(self, **kwargs):
@@ -53,9 +46,6 @@ class TWAP():
         self.DEF_TRADE_STATUS_FINISH  = 4
         self.DEF_TRADE_STATUS_ERROR   = 5
         self.trade_status = self.DEF_TRADE_STATUS_INITIAL
-        
-        self.original_order_list = []
-        self.original_order_dict = {}
 
     def __del__(self):
         pass
