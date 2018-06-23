@@ -38,19 +38,8 @@ class TWAP():
         
         self.quote_data_dict = {}
         self.quote_data_locker = threading.Lock()
-        
-        self.DEF_TRADE_STATUS_INITIAL = 0
-        self.DEF_TRADE_STATUS_RUNNING = 1
-        self.DEF_TRADE_STATUS_SUSPEND = 2
-        self.DEF_TRADE_STATUS_STOPPED = 3
-        self.DEF_TRADE_STATUS_FINISH  = 4
-        self.DEF_TRADE_STATUS_ERROR   = 5
-        self.trade_status = self.DEF_TRADE_STATUS_INITIAL
 
     def __del__(self):
-        pass
-
-    def PrintTradeParameters(self):
         pass
 
     def OnQuoteStock(self, msg): # 行情触发 # 目前只订阅个股行情，不会有指数干扰
