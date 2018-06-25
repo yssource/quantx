@@ -28,7 +28,8 @@ import define
 import logger
 
 class TWAP():
-    def __init__(self, **kwargs):
+    def __init__(self, parent, **kwargs):
+        self.parent = parent
         self.trader = kwargs.get("trader", None)
         self.strategy = kwargs.get("strategy", "")
         self.log_type = kwargs.get("log_type", "")
