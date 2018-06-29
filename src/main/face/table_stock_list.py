@@ -40,8 +40,10 @@ class DataTableModel(QAbstractTableModel): # 第一列为选择框控件
         self.head_list = head_list
 
     def setDataList(self, data_list):
-        self.data_list = data_list
-        self.layoutAboutToBeChanged.emit()
+        # 需要在 emit() 之后再为 self.data_list 列表赋值，否则可能导致程序崩溃
+        # 尤其是在已经单击选中一行数据再清空列表赋 [] 给 self.data_list 时
+        self.layoutAboutToBeChanged.emit() # 先
+        self.data_list = data_list # 后
         self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.rowCount(None), self.columnCount(None)))
         self.layoutChanged.emit()
         self.data_dict = {} #
