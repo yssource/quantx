@@ -164,9 +164,10 @@ class DataTableModel(QAbstractTableModel): # 第一列为选择框控件
         return filter(lambda x: x[0].isChecked() == True, self.data_list)
 
 class DataLister(QTableView):
-    def __init__(self, parent, data_align, head_list, index_column):
+    def __init__(self, parent, list_id, data_align, head_list, index_column):
         super(DataLister, self).__init__(parent)
         self.parent = parent
+        self.list_id = list_id
         self.data_list = []
         self.data_align = data_align # 左：-1，中：0，右：1
         self.head_list = head_list
@@ -214,9 +215,9 @@ class DataLister(QTableView):
     def OnContextMenu(self, pos):
         index = self.indexAt(pos)
         if index and index.row() >= 0:
-            self.parent.ShowContextMenu(index)
+            self.parent.ShowContextMenu(self.list_id, index)
         else:
-            self.parent.ShowContextMenu(None)
+            self.parent.ShowContextMenu(self.list_id, None)
 
     def ClearListItems(self):
         self.data_list = []

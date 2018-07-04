@@ -71,7 +71,7 @@ class AnalysisPanel(QDialog):
         pass
 
     def InitUserInterface(self):
-        self.data_lister = table_stock_list.DataLister(self, self.data_align, self.head_list, self.head_index_code)
+        self.data_lister = table_stock_list.DataLister(self, 0, self.data_align, self.head_list, self.head_index_code)
         self.data_lister.setMinimumWidth(500)
         
         self.check_box_security_check_all = QCheckBox()
@@ -686,7 +686,7 @@ class AnalysisPanel(QDialog):
         
         self.HandleButtonState("卸载")
 
-    def ShowContextMenu(self, index):
+    def ShowContextMenu(self, list_id, index):
         if index != None: # 选中行
             print(self.data_lister.GetCellText(index.row(), self.head_index_code))
         else: # 未选中
