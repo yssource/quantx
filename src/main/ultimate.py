@@ -25,4 +25,5 @@ try:
     import panel_basket_stk_ape # 只是为了打包时能被编译到
     import panel_spread_fue_ctp # 只是为了打包时能被编译到
     import panel_algorithm_stk_ape # 只是为了打包时能被编译到
+    import panel_synchrony_stk_ape # 只是为了打包时能被编译到
 except: pass
