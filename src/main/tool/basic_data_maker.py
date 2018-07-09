@@ -155,6 +155,10 @@ class SecurityInfoItem(object):
     # 10：深分级子基金
     # 11：沪封闭式基金
     # 12：深封闭式基金
+    # 13：沪ST股
+    # 14：深ST股
+    # 15：沪固收基金
+    # 16：深固收基金
 
     def SetFlag_LB(self, category, market, symbol, sector): # 证券类别
         if market == 83: # 上海，SH
@@ -163,7 +167,10 @@ class SecurityInfoItem(object):
                     self.category = 1 # 沪A主板
             elif category == 8: # 开放式基金
                 if symbol[0:2] == "51": # ETF基金
-                    self.category = 5 # 沪ETF基金
+                    if symbol[0:3] == "511": # 固收基金
+                        self.category = 15 # 沪固收基金
+                    else: # 512XXX、513XXX、518XXX
+                        self.category = 5 # 沪ETF基金
                 elif symbol[0:2] == "50": # LOF基金(普通开放式) # 其501和502中的502为分级母基金
                     self.category = 7 # 沪LOF基金
             elif category == 13: # 投资基金
@@ -183,7 +190,10 @@ class SecurityInfoItem(object):
                     self.category = 4 # 深A创业板
             elif category == 8: # 开放式基金
                 if symbol[0:3] == "159": # ETF基金
-                    self.category = 6 # 深ETF基金
+                    if symbol[0:4] == "1590": # 固收基金
+                        self.category = 16 # 深固收基金
+                    else: # 1599XX
+                        self.category = 6 # 深ETF基金
                 elif symbol[0:2] == "16": # LOF基金(普通开放式) # 含分级母基金
                     self.category = 8 # 深LOF基金
             elif category == 13: # 投资基金
