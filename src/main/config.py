@@ -218,6 +218,10 @@ class CfgAnal(object):
         self.filter_security_category_10 = 0
         self.filter_security_category_11 = 0
         self.filter_security_category_12 = 0
+        self.filter_security_category_13 = 0
+        self.filter_security_category_14 = 0
+        self.filter_security_category_15 = 0
+        self.filter_security_category_16 = 0
         self.filter_security_list_state_1 = 1
         self.filter_security_list_state_2 = 0
         self.filter_security_list_state_3 = 0
@@ -271,6 +275,10 @@ class CfgAnal(object):
         self.filter_security_category_10 = int(config["filter"]["filter_security_category_10"])
         self.filter_security_category_11 = int(config["filter"]["filter_security_category_11"])
         self.filter_security_category_12 = int(config["filter"]["filter_security_category_12"])
+        self.filter_security_category_13 = int(config["filter"]["filter_security_category_13"])
+        self.filter_security_category_14 = int(config["filter"]["filter_security_category_14"])
+        self.filter_security_category_15 = int(config["filter"]["filter_security_category_15"])
+        self.filter_security_category_16 = int(config["filter"]["filter_security_category_16"])
         self.filter_security_list_state_1 = int(config["filter"]["filter_security_list_state_1"])
         self.filter_security_list_state_2 = int(config["filter"]["filter_security_list_state_2"])
         self.filter_security_list_state_3 = int(config["filter"]["filter_security_list_state_3"])
@@ -324,6 +332,10 @@ class CfgAnal(object):
         config["filter"]["filter_security_category_10"] = int(self.filter_security_category_10)
         config["filter"]["filter_security_category_11"] = int(self.filter_security_category_11)
         config["filter"]["filter_security_category_12"] = int(self.filter_security_category_12)
+        config["filter"]["filter_security_category_13"] = int(self.filter_security_category_13)
+        config["filter"]["filter_security_category_14"] = int(self.filter_security_category_14)
+        config["filter"]["filter_security_category_15"] = int(self.filter_security_category_15)
+        config["filter"]["filter_security_category_16"] = int(self.filter_security_category_16)
         config["filter"]["filter_security_list_state_1"] = int(self.filter_security_list_state_1)
         config["filter"]["filter_security_list_state_2"] = int(self.filter_security_list_state_2)
         config["filter"]["filter_security_list_state_3"] = int(self.filter_security_list_state_3)

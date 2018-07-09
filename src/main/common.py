@@ -353,6 +353,11 @@ def TransSecurityCategory(category): #
         return "沪封闭式基金"
     elif category == 12:
         return "深封闭式基金"
+    # 13, 14
+    elif category == 15:
+        return "沪固收基金"
+    elif category == 16:
+        return "深固收基金"
     else:
         return "？？？"
 

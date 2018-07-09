@@ -130,6 +130,22 @@ class AnalysisPanel(QDialog):
         self.check_box_security_category_12.setText("深封闭式基金")
         self.check_box_security_category_12.setChecked(self.config.cfg_anal.filter_security_category_12)
         
+        #self.check_box_security_category_13 = QCheckBox()
+        #self.check_box_security_category_13.setText("沪ST股")
+        #self.check_box_security_category_13.setChecked(self.config.cfg_anal.filter_security_category_13)
+        
+        #self.check_box_security_category_14 = QCheckBox()
+        #self.check_box_security_category_14.setText("深ST股")
+        #self.check_box_security_category_14.setChecked(self.config.cfg_anal.filter_security_category_14)
+        
+        self.check_box_security_category_15 = QCheckBox()
+        self.check_box_security_category_15.setText("沪固收基金")
+        self.check_box_security_category_15.setChecked(self.config.cfg_anal.filter_security_category_15)
+        
+        self.check_box_security_category_16 = QCheckBox()
+        self.check_box_security_category_16.setText("深固收基金")
+        self.check_box_security_category_16.setChecked(self.config.cfg_anal.filter_security_category_16)
+        
         self.check_box_security_list_state_1 = QCheckBox()
         self.check_box_security_list_state_1.setText("上市")
         self.check_box_security_list_state_1.setChecked(self.config.cfg_anal.filter_security_list_state_1)
@@ -527,18 +543,23 @@ class AnalysisPanel(QDialog):
         self.h_box_security_setting_1.addWidget(self.check_box_security_category_4)
         self.h_box_security_setting_1.addWidget(self.check_box_security_category_5)
         self.h_box_security_setting_1.addWidget(self.check_box_security_category_6)
+        self.h_box_security_setting_1.addWidget(self.check_box_security_category_7)
+        self.h_box_security_setting_1.addWidget(self.check_box_security_category_8)
         self.h_box_security_setting_1.addStretch(1)
         
         self.h_box_security_setting_2 = QHBoxLayout()
         self.h_box_security_setting_2.setContentsMargins(0, 0, 0, 0)
         self.h_box_security_setting_2.addWidget(self.check_box_security_category_0)
         self.h_box_security_setting_2.addWidget(QLabel("| "))
-        self.h_box_security_setting_2.addWidget(self.check_box_security_category_7)
-        self.h_box_security_setting_2.addWidget(self.check_box_security_category_8)
+
         self.h_box_security_setting_2.addWidget(self.check_box_security_category_9)
         self.h_box_security_setting_2.addWidget(self.check_box_security_category_10)
         self.h_box_security_setting_2.addWidget(self.check_box_security_category_11)
         self.h_box_security_setting_2.addWidget(self.check_box_security_category_12)
+        #self.h_box_security_setting_2.addWidget(self.check_box_security_category_13)
+        #self.h_box_security_setting_2.addWidget(self.check_box_security_category_14)
+        self.h_box_security_setting_2.addWidget(self.check_box_security_category_15)
+        self.h_box_security_setting_2.addWidget(self.check_box_security_category_16)
         self.h_box_security_setting_2.addStretch(1)
         
         self.h_box_security_setting_3 = QHBoxLayout()
@@ -747,6 +768,14 @@ class AnalysisPanel(QDialog):
                     continue
                 if self.check_box_security_category_12.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_12: # 深封闭式基金
                     continue
+                #if self.check_box_security_category_13.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_13: # 沪ST股
+                #    continue
+                #if self.check_box_security_category_14.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_14: # 深ST股
+                #    continue
+                if self.check_box_security_category_15.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_15: # 沪固收基金
+                    continue
+                if self.check_box_security_category_16.isChecked() == False and row["category"] == define.DEF_SECURITY_INFO_CATEGORY_16: # 深固收基金
+                    continue
                 if self.check_box_security_list_state_1.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_1: # 上市
                     continue
                 if self.check_box_security_list_state_2.isChecked() == False and row["list_state"] == define.DEF_SECURITY_INFO_LIST_STATE_2: # 暂停
@@ -808,6 +837,10 @@ class AnalysisPanel(QDialog):
         self.config.cfg_anal.filter_security_category_10 = self.check_box_security_category_10.isChecked()
         self.config.cfg_anal.filter_security_category_11 = self.check_box_security_category_11.isChecked()
         self.config.cfg_anal.filter_security_category_12 = self.check_box_security_category_12.isChecked()
+        #self.config.cfg_anal.filter_security_category_13 = self.check_box_security_category_13.isChecked()
+        #self.config.cfg_anal.filter_security_category_14 = self.check_box_security_category_14.isChecked()
+        self.config.cfg_anal.filter_security_category_15 = self.check_box_security_category_15.isChecked()
+        self.config.cfg_anal.filter_security_category_16 = self.check_box_security_category_16.isChecked()
         self.config.cfg_anal.filter_security_list_state_1 = self.check_box_security_list_state_1.isChecked()
         self.config.cfg_anal.filter_security_list_state_2 = self.check_box_security_list_state_2.isChecked()
         self.config.cfg_anal.filter_security_list_state_3 = self.check_box_security_list_state_3.isChecked()

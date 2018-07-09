@@ -902,6 +902,9 @@ class DataMaker_SecurityInfo():
         self.count_lb_10 = 0
         self.count_lb_11 = 0
         self.count_lb_12 = 0
+        # 13, 14
+        self.count_lb_15 = 0
+        self.count_lb_16 = 0
         self.count_bk_1 = 0
         self.count_bk_2 = 0
         self.count_bk_3 = 0
@@ -944,6 +947,11 @@ class DataMaker_SecurityInfo():
                 self.count_lb_11 += 1
             elif item.category == 12:
                 self.count_lb_12 += 1
+            # 13, 14
+            elif item.category == 15:
+                self.count_lb_15 += 1
+            elif item.category == 16:
+                self.count_lb_16 += 1
             else:
                 self.SendMessage("分类异常：%s %s %s" % (item.market, item.code, item.name))
             if item.sector == 1:
@@ -973,6 +981,9 @@ class DataMaker_SecurityInfo():
         self.SendMessage("深分级子基金：%d" % self.count_lb_10)
         self.SendMessage("沪封闭式基金：%d" % self.count_lb_11)
         self.SendMessage("深封闭式基金：%d" % self.count_lb_12)
+        # 13, 14
+        self.SendMessage("沪固收基金：%d" % self.count_lb_15)
+        self.SendMessage("深固收基金：%d" % self.count_lb_16)
         self.SendMessage("主板板块：%d" % self.count_bk_1)
         self.SendMessage("中小板块：%d" % self.count_bk_2)
         self.SendMessage("创业板块：%d" % self.count_bk_3)
