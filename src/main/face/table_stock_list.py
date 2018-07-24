@@ -23,7 +23,7 @@
 
 import operator
 
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QBrush, QColor, QFont
 from PyQt5.QtCore import QAbstractTableModel, Qt
 from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableView
 
@@ -86,15 +86,15 @@ class DataTableModel(QAbstractTableModel): # 第一列为选择框控件
                 return Qt.AlignVCenter | Qt.AlignRight
             else:
                 return Qt.AlignVCenter | Qt.AlignHCenter
-        elif role == Qt.BackgroundRole:
+        elif role == Qt.BackgroundRole: # 每行背景颜色
+            #return QBrush(QColor(0, 128, 255))
             pass
         elif role == Qt.BackgroundColorRole:
             pass
-        elif role == Qt.ForegroundRole:
+        elif role == Qt.ForegroundRole: # 每行文字颜色
+            #return QBrush(QColor(255, 0, 255))
             pass
         elif role == Qt.TextColorRole:
-            pass
-        elif role == Qt.CheckStateRole:
             pass
         elif role == Qt.InitialSortOrderRole:
             pass
