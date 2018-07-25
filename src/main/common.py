@@ -422,3 +422,17 @@ def TransOrderStatus_STK(order_status): #
         return "人工申报"
     else:
         return "？？？"
+
+def TransTradeStage_STK(trade_stage): #
+    if trade_stage == 0:
+        return "初始化"
+    elif trade_stage == 1:
+        return "交易中"
+    elif trade_stage == 2:
+        return "撤单中"
+    elif trade_stage == 3:
+        return "已完成"
+    elif trade_stage == 4:
+        return "有异常"
+    else:
+        return "-"
