@@ -433,5 +433,7 @@ def TransTradeStage_STK(trade_stage): #
         return "已完成"
     elif trade_stage == 4:
         return "有异常"
+    elif trade_stage == 5:
+        return "等资金"
     else:
         return "-"
