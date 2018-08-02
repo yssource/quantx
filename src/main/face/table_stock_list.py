@@ -23,7 +23,7 @@
 import operator
 
 from PyQt5.QtGui import QBrush, QColor, QFont
-from PyQt5.QtCore import QAbstractTableModel, Qt
+from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PyQt5.QtWidgets import QAbstractItemView, QHeaderView, QTableView
 
 class DataTableModel(QAbstractTableModel): # 第一列为选择框控件
@@ -39,10 +39,13 @@ class DataTableModel(QAbstractTableModel): # 第一列为选择框控件
         self.head_list = head_list
 
     def setDataList(self, data_list):
-        # 需要在 emit() 之后再为 self.data_list 列表赋值，否则可能导致程序崩溃
-        # 尤其是在已经单击选中一行数据再清空列表赋 [] 给 self.data_list 时
-        self.layoutAboutToBeChanged.emit() # 先
-        self.data_list = data_list # 后
+        # 如果不做 beginRemoveRows 和 endRemoveRows 则在取消一行勾选并且高亮选中后清空列表时可能导致崩溃
+        if self.rowCount(None) > 0:
+            self.beginRemoveRows(QModelIndex(), 0, self.rowCount(None) - 1)
+            self.data_list = []
+            self.endRemoveRows()
+        self.data_list = data_list
+        self.layoutAboutToBeChanged.emit()
         self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(self.rowCount(None), self.columnCount(None)))
         self.layoutChanged.emit()
         self.data_dict = {} #
