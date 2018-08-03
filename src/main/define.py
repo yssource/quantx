@@ -408,8 +408,8 @@ stock_ltb_market_s_type = numpy.dtype([
                       ("WeightedAvgOfferPrice", numpy.uint32), # 申卖加权均价 //10000
                       ("AltWeightedAvgBidPrice", numpy.uint32), # 债券申买加权均价 //10000
                       ("AltWeightedAvgOfferPrice", numpy.uint32), # 债券申卖加权均价 //10000
-                      ("TradingPhase", (numpy.str_, 2)), # 交易阶段
-                      ("OpenRestriction", (numpy.str_, 2)), # 开仓限制
+                      ("TradingPhase", "S2"), # 交易阶段 # gbk
+                      ("OpenRestriction", "S2"), # 开仓限制 # gbk
                       ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
                       ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
                       ("LocalIndex", numpy.uint32)]) # 本地序号
@@ -446,8 +446,8 @@ stock_ltb_market_s_type_src = numpy.dtype([
                       ("WeightedAvgOfferPrice", numpy.float64), # 申卖加权均价 //10000
                       ("AltWeightedAvgBidPrice", numpy.float64), # 债券申买加权均价 //10000
                       ("AltWeightedAvgOfferPrice", numpy.float64), # 债券申卖加权均价 //10000
-                      ("TradingPhase", (numpy.str_, 2)), # 交易阶段
-                      ("OpenRestriction", (numpy.str_, 2)), # 开仓限制
+                      ("TradingPhase", "S2"), # 交易阶段 # gbk
+                      ("OpenRestriction", "S2"), # 开仓限制 # gbk
                       ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：毫秒
                       ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
                       ("LocalIndex", numpy.uint32)]) # 本地序号
@@ -503,8 +503,8 @@ stock_ltb_market_t_type = numpy.dtype([
                       ("TradeGroupID", numpy.int32), # 成交组
                       ("BuyIndex", numpy.int32), # 买方委托序号
                       ("SellIndex", numpy.int32), # 卖方委托序号
-                      ("OrderKind", (numpy.str_, 2)), # 报单类型
-                      ("FunctionCode", (numpy.str_, 2)), # 功能码
+                      ("OrderKind", "S2"), # 报单类型 # gbk
+                      ("FunctionCode", "S2"), # 功能码 # gbk
                       ("TransTime", numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
                       ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
                       ("LocalIndex", numpy.uint32)]) # 本地序号
@@ -520,8 +520,8 @@ stock_ltb_market_t_type_src = numpy.dtype([
                       ("TradeGroupID", numpy.int32), # 成交组
                       ("BuyIndex", numpy.int32), # 买方委托序号
                       ("SellIndex", numpy.int32), # 卖方委托序号
-                      ("OrderKind", (numpy.str_, 2)), # 报单类型
-                      ("FunctionCode", (numpy.str_, 2)), # 功能码
+                      ("OrderKind", "S2"), # 报单类型 # gbk
+                      ("FunctionCode", "S2"), # 功能码 # gbk
                       ("TransTime", numpy.int32), # 成交时间 # HHMMSSmmm 精度：毫秒
                       ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
                       ("LocalIndex", numpy.uint32)]) # 本地序号
