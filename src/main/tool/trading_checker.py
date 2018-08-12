@@ -22,15 +22,16 @@
 
 import os
 import xlrd
+import dbfread
 
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QCheckBox, QDialog, QFileDialog, QLabel, QLineEdit, QMessageBox, QPushButton, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QCheckBox, QDialog, QFileDialog, QLabel, QLineEdit, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QHBoxLayout, QVBoxLayout
 
 import define
 import table_stock_list
 
-class BatchOrderItem(object): # 批量委托成分股信息
+class OrderItem(object): # 委托个股信息
     def __init__(self, **kwargs):
         self.symbol = kwargs.get("symbol", "") # 证券代码
         self.exchange = kwargs.get("exchange", "") # 交易所，SH：上交所，SZ：深交所
@@ -39,14 +40,36 @@ class BatchOrderItem(object): # 批量委托成分股信息
         self.price = kwargs.get("price", 0.0) # 委托价格
         self.amount = kwargs.get("amount", 0) # 委托数量
         self.fill_qty = 0
-        self.position_total = 0
-        self.position_can_sell = 0
+        self.need_qty = 0
+
+    def ToString(self):
+        return "symbol：%s, " % self.symbol + \
+               "exchange：%s, " % self.exchange + \
+               "entr_type：%d, " % self.entr_type + \
+               "exch_side：%d, " % self.exch_side + \
+               "price：%f, " % self.price + \
+               "amount：%d, " % self.amount + \
+               "fill_qty：%d, " % self.fill_qty + \
+               "need_qty：%d" % self.need_qty
+
+class PositionItem(object): # 持仓个股信息
+    def __init__(self, **kwargs):
+        self.symbol = kwargs.get("symbol", "") # 证券代码
+        self.name = kwargs.get("name", "") # 证券名称
+        self.position_total = kwargs.get("position_total", 0) # 今余额
+        self.position_can_sell = kwargs.get("position_can_sell", 0) # 可卖量
+
+    def ToString(self):
+        return "symbol：%s, " % self.symbol + \
+               "name：%s, " % self.name + \
+               "position_total：%d, " % self.position_total + \
+               "position_can_sell：%d" % self.position_can_sell
 
 class Panel(QDialog):
     def __init__(self, **kwargs):
         super(Panel, self).__init__()
-        self.data_align = [0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1] # 左：-1，中：0，右：1
-        self.head_list = ["", "代码", "市场", "委托", "方向", "价格", "数量", "行情", "持仓", "可卖", "单号", "已成", "未成"]
+        self.data_align = [0, 0, 0, 0, 0, 1, 1, 1, 1] # 左：-1，中：0，右：1
+        self.head_list = ["", "代码", "市场", "委托", "方向", "价格", "数量", "已成", "未成"]
         self.head_index_symbol = 1
         self.head_index_quote = 7
         self.head_index_pos_total = 8
@@ -59,11 +82,18 @@ class Panel(QDialog):
         
         self.order_list_folder = ""
         self.position_list_folder = ""
+        self.export_file_b = ""
+        self.export_file_s = ""
         
-        self.batch_order_list_b = []
-        self.batch_order_dict_b = {}
-        self.batch_order_list_s = []
-        self.batch_order_dict_s = {}
+        self.order_list_b = []
+        self.order_dict_b = {}
+        self.order_list_s = []
+        self.order_dict_s = {}
+        
+        self.position_list_a = []
+        self.position_dict_a = {}
+        self.position_list_z = []
+        self.position_dict_z = {}
         
         self.InitUserInterface()
 
@@ -72,16 +102,18 @@ class Panel(QDialog):
 
     def InitUserInterface(self):
         self.setWindowTitle("成交校验面板")
-        self.resize(827, 672)
+        self.resize(1250, 520)
         self.setFont(QFont("SimSun", 9))
+        
+        self.spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
         
         self.data_lister_b = table_stock_list.DataLister(self, self.list_id_b, self.data_align, self.head_list, self.head_index_symbol)
         self.data_lister_b.setMinimumWidth(625)
-        self.data_lister_b.setMinimumHeight(300)
+        self.data_lister_b.setMinimumHeight(400)
         
         self.data_lister_s = table_stock_list.DataLister(self, self.list_id_s, self.data_align, self.head_list, self.head_index_symbol)
         self.data_lister_s.setMinimumWidth(625)
-        self.data_lister_s.setMinimumHeight(300)
+        self.data_lister_s.setMinimumHeight(400)
         
         self.label_order_list_file_b = QLabel()
         self.label_order_list_file_b.setText("买入清单:")
@@ -214,8 +246,11 @@ class Panel(QDialog):
         
         self.h_box_layout_order_ctrl = QHBoxLayout()
         self.h_box_layout_order_ctrl.setContentsMargins(0, 0, 0, 0)
+        self.h_box_layout_order_ctrl.addStretch(1)
         self.h_box_layout_order_ctrl.addWidget(self.button_load_orders)
+        self.h_box_layout_order_ctrl.addItem(self.spacer)
         self.h_box_layout_order_ctrl.addWidget(self.button_clear_order_list)
+        self.h_box_layout_order_ctrl.addItem(self.spacer)
         self.h_box_layout_order_ctrl.addWidget(self.button_export_orders)
         self.h_box_layout_order_ctrl.addStretch(1)
         
@@ -232,26 +267,24 @@ class Panel(QDialog):
     def ShowContextMenu(self, list_id, index):
         pass
 
-    def HandleLoadOrders(self, data_lister, batch_order_list):
+    def HandleLoadOrders(self, data_lister, order_list):
         try:
             data_lister.ClearListItems()
-            for batch_order_item in batch_order_list:
+            for order_item in order_list:
                 text_entr_type = "-"
                 text_exch_side = "-"
-                text_check_quote = "-"
-                if 1 == batch_order_item.entr_type:
+                if 1 == order_item.entr_type:
                     text_entr_type = "限价"
-                elif 2 == batch_order_item.entr_type:
+                elif 2 == order_item.entr_type:
                     text_entr_type = "市价"
-                if 1 == batch_order_item.exch_side:
+                if 1 == order_item.exch_side:
                     text_exch_side = "买入"
-                elif 2 == batch_order_item.exch_side:
+                elif 2 == order_item.exch_side:
                     text_exch_side = "卖出"
                 check_box = QCheckBox("")
                 check_box.setCheckable(True)
-                data_lister.data_list.append([check_box, batch_order_item.symbol, batch_order_item.exchange, text_entr_type, text_exch_side, 
-                                                   batch_order_item.price, batch_order_item.amount, text_check_quote, batch_order_item.position_total, 
-                                                   batch_order_item.position_can_sell, "-", 0, batch_order_item.amount])
+                data_lister.data_list.append([check_box, order_item.symbol, order_item.exchange, text_entr_type, text_exch_side, 
+                                                   order_item.price, order_item.amount, order_item.fill_qty, order_item.need_qty])
             data_lister.data_list_model.setDataList(data_lister.data_list)
             data_lister.resizeColumnsToContents()
             data_lister.setColumnWidth(0, 20) # 选择列宽度
@@ -260,8 +293,8 @@ class Panel(QDialog):
             print("HandleLoadOrders：", e)
 
     def ReadOrderListFile(self, exch_side_should, file_path):
-        batch_order_list = []
-        batch_order_dict = {}
+        order_list = []
+        order_dict = {}
         if file_path != "":
             xls_file = xlrd.open_workbook(file_path)
             xls_sheet = xls_file.sheet_by_name("Sheet1")
@@ -277,24 +310,44 @@ class Panel(QDialog):
                 if i > 0:
                     symbol = str(xls_sheet.row(i)[0].value) # 避免代码变成数字
                     exchange = str(xls_sheet.row(i)[1].value)
-                    entr_type = xls_sheet.row(i)[2].value
-                    exch_side = xls_sheet.row(i)[3].value
-                    price = xls_sheet.row(i)[4].value
-                    amount = xls_sheet.row(i)[5].value
-                    if symbol in batch_order_dict.keys():
+                    entr_type = int(xls_sheet.row(i)[2].value)
+                    exch_side = int(xls_sheet.row(i)[3].value)
+                    price = float(xls_sheet.row(i)[4].value)
+                    amount = int(xls_sheet.row(i)[5].value)
+                    if symbol in order_dict.keys():
                         print("读取批量委托证券列表文件时 %s 已经存在！" % symbol)
                     elif exch_side != exch_side_should:
                         print("读取批量委托证券列表文件时 %s 买卖方向错误！" % symbol)
                     else:
-                        batch_order_item = BatchOrderItem(exchange = exchange, symbol = symbol, entr_type = entr_type, exch_side = exch_side, price = price, amount = amount)
-                        batch_order_list.append(batch_order_item)
-                        batch_order_dict[symbol] = len(batch_order_list) - 1 # 下标索引
-            #for item in batch_order_list:
+                        order_item = OrderItem(symbol = symbol, exchange = exchange, entr_type = entr_type, exch_side = exch_side, price = price, amount = amount)
+                        order_list.append(order_item)
+                        order_dict[symbol] = len(order_list) - 1 # 下标索引
+            #for item in order_list:
             #    print(item.ToString())
-            print("导入批量委托证券 %d 个。%s" % (len(batch_order_list), file_path))
+            print("导入批量委托证券 %d 个。%s" % (len(order_list), file_path))
         else:
             print("读取批量委托证券列表文件时路径为空！")
-        return batch_order_list, batch_order_dict
+        return order_list, order_dict
+
+    def ReadPositionListFile(self, file_path):
+        position_list = []
+        position_dict = {}
+        if file_path != "":
+            table = dbfread.DBF(file_path, load = True, encoding = "GBK") # GBK
+            for record in table: # table.deleted 为加了删除标志的记录
+                symbol = str(record["证券代码"]) # 避免代码变成数字
+                name = str(record["证券名称"])
+                position_total = int(record["今余额"])
+                position_can_sell = int(record["可卖量"])
+                position_item = PositionItem(symbol = symbol, name = name, position_total = position_total, position_can_sell = position_can_sell)
+                position_list.append(position_item)
+                position_dict[symbol] = len(position_list) - 1 # 下标索引
+            #for item in position_list:
+            #    print(item.ToString())
+            print("导入持仓 %d 个。%s" % (len(position_list), file_path))
+        else:
+            print("读取持仓列表文件时路径为空！")
+        return position_list, position_dict
 
     def OnButtonChooseOrderListFile(self, exch_side):
         dlg_file = QFileDialog.getOpenFileName(None, caption = "选择委托列表文件...", directory = self.order_list_folder, filter = "Order List Files(*.xls*)")
@@ -305,8 +358,10 @@ class Panel(QDialog):
                 if file_name != "":
                     self.order_list_folder = os.path.dirname(file_path)
                     if exch_side == define.DEF_EXCHSIDE_BUY:
+                        self.export_file_b = file_name.split(".")[0] + "_export.xls"
                         self.edits_order_list_file_b.setText(file_path)
                     if exch_side == define.DEF_EXCHSIDE_SELL:
+                        self.export_file_s = file_name.split(".")[0] + "_export.xls"
                         self.edits_order_list_file_s.setText(file_path)
 
     def OnButtonChoosePositionListFile(self, file_type):
@@ -322,25 +377,60 @@ class Panel(QDialog):
                     if file_type == "z":
                         self.edits_position_list_file_z.setText(file_path)
 
+    def CalcFillQty(self, symbol):
+        src_pos = 0
+        ret_pos = 0
+        if symbol in self.position_dict_a.keys():
+            position_item = self.position_list_a[self.position_dict_a[symbol]]
+            src_pos = position_item.position_total
+        if symbol in self.position_dict_z.keys():
+            position_item = self.position_list_z[self.position_dict_z[symbol]]
+            ret_pos = position_item.position_total
+        return ret_pos - src_pos
+
     def OnButtonLoadOrders(self):
-        self.batch_order_list_b = []
-        self.batch_order_dict_b = {}
-        self.batch_order_list_s = []
-        self.batch_order_dict_s = {}
-        file_path_b = self.edits_order_list_file_b.text()
-        file_path_s = self.edits_order_list_file_s.text()
-        self.batch_order_list_b, self.batch_order_dict_b = self.ReadOrderListFile(define.DEF_EXCHSIDE_BUY, file_path_b)
-        self.batch_order_list_s, self.batch_order_dict_s = self.ReadOrderListFile(define.DEF_EXCHSIDE_SELL, file_path_s)
-        self.HandleLoadOrders(self.data_lister_b, self.batch_order_list_b)
-        self.HandleLoadOrders(self.data_lister_s, self.batch_order_list_s)
+        self.order_list_b = []
+        self.order_list_s = []
+        self.order_dict_b = {}
+        self.order_dict_s = {}
+        self.position_list_a = []
+        self.position_list_z = []
+        self.position_dict_a = {}
+        self.position_dict_z = {}
+        file_path_order_b = self.edits_order_list_file_b.text()
+        file_path_order_s = self.edits_order_list_file_s.text()
+        file_path_position_a = self.edits_position_list_file_a.text()
+        file_path_position_z = self.edits_position_list_file_z.text()
+        self.order_list_b, self.order_dict_b = self.ReadOrderListFile(define.DEF_EXCHSIDE_BUY, file_path_order_b)
+        self.order_list_s, self.order_dict_s = self.ReadOrderListFile(define.DEF_EXCHSIDE_SELL, file_path_order_s)
+        self.position_list_a, self.position_dict_a = self.ReadPositionListFile(file_path_position_a)
+        self.position_list_z, self.position_dict_z = self.ReadPositionListFile(file_path_position_z)
+        #for position_item in self.position_list_a: # 全部卖出仍会存在
+        #    if not position_item.symbol in self.position_dict_z.keys():
+        #        print("期初 持仓 %s 不在 期末 持仓中！" % position_item.symbol)
+        #for position_item in self.position_list_z: # 可能是新买入的
+        #    if not position_item.symbol in self.position_dict_a.keys():
+        #        print("期末 持仓 %s 不在 期初 持仓中！" % position_item.symbol)
+        for order_item in self.order_list_b: # 买入委托
+            order_item.fill_qty = self.CalcFillQty(order_item.symbol) # 期末 - 期初
+            order_item.need_qty = order_item.amount - order_item.fill_qty
+        for order_item in self.order_list_s: # 卖出委托
+            order_item.fill_qty = -self.CalcFillQty(order_item.symbol) # -(期末 - 期初)
+            order_item.need_qty = order_item.amount - order_item.fill_qty
+        self.HandleLoadOrders(self.data_lister_b, self.order_list_b)
+        self.HandleLoadOrders(self.data_lister_s, self.order_list_s)
 
     def OnButtonClearOrderList(self):
         reply = QMessageBox.question(self, "询问", "清空委托列表？", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            self.batch_order_list_b = []
-            self.batch_order_list_s = []
-            self.batch_order_dict_b = {}
-            self.batch_order_dict_s = {}
+            self.order_list_b = []
+            self.order_list_s = []
+            self.order_dict_b = {}
+            self.order_dict_s = {}
+            self.position_list_a = []
+            self.position_list_z = []
+            self.position_dict_a = {}
+            self.position_dict_z = {}
             self.data_lister_b.ClearListItems()
             self.data_lister_s.ClearListItems()
             self.edits_order_list_file_b.setText("")
