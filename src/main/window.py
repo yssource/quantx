@@ -49,6 +49,7 @@ import trader
 import strate
 
 import basic_data_maker
+import trading_checker
 
 import ultimate
 import strategy_base # 只是为了打包时能被编译到
@@ -98,6 +99,7 @@ class MainWindow(QMainWindow):
         self.is_not_first_run = False
         self.current_main_tab_index = 0
         self.basic_data_maker = None
+        self.trading_checker = None
         
         self.setWindowTitle(define.APP_TITLE_EN + " " + define.APP_VERSION)
         self.resize(define.DEF_MAIN_WINDOW_W, define.DEF_MAIN_WINDOW_H)
@@ -206,12 +208,18 @@ class MainWindow(QMainWindow):
         self.action_basic_data_maker.setShortcut("Ctrl+B")
         self.action_basic_data_maker.setStatusTip("基础数据生成工具")
         self.action_basic_data_maker.triggered.connect(self.OnActionBasicDataMaker)
+        
+        self.action_trading_checker = QAction(QIcon(define.DEF_ICON_ACTION_ABOUT), "成交校验(&T)", self)
+        self.action_trading_checker.setShortcut("Ctrl+T")
+        self.action_trading_checker.setStatusTip("委托成交校验工具")
+        self.action_trading_checker.triggered.connect(self.OnActionTradingChecker)
 
     def CreateMenuBar(self):
         self.menu_file = self.menuBar().addMenu("文件(&F)")
         self.menu_file.addAction(self.action_exit)
         self.menu_tool = self.menuBar().addMenu("工具(&T)")
         self.menu_tool.addAction(self.action_basic_data_maker)
+        self.menu_tool.addAction(self.action_trading_checker)
         self.menu_view = self.menuBar().addMenu("视图(&V)")
         self.menu_view_tooler = self.menu_view.addMenu(QIcon(define.DEF_ICON_MENU_VIEW_TOOLER), "工具条(&T)")
         self.menu_view_docker = self.menu_view.addMenu(QIcon(define.DEF_ICON_MENU_VIEW_DOCKER), "停靠栏(&D)")
@@ -664,3 +672,8 @@ class MainWindow(QMainWindow):
                                                user = self.config.cfg_main.data_db_user, passwd = self.config.cfg_main.data_db_pass, 
                                                db = self.config.cfg_main.data_db_name_financial, charset = self.config.cfg_main.data_db_charset)
         self.basic_data_maker.show()
+
+    def OnActionTradingChecker(self):
+        if self.trading_checker == None:
+            self.trading_checker = trading_checker.Panel()
+        self.trading_checker.show()

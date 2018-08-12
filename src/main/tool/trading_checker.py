@@ -22,6 +22,7 @@
 
 import os
 import xlrd
+import xlwt
 import dbfread
 
 from PyQt5.QtGui import QFont
@@ -82,8 +83,6 @@ class Panel(QDialog):
         
         self.order_list_folder = ""
         self.position_list_folder = ""
-        self.export_file_b = ""
-        self.export_file_s = ""
         
         self.order_list_b = []
         self.order_dict_b = {}
@@ -358,10 +357,8 @@ class Panel(QDialog):
                 if file_name != "":
                     self.order_list_folder = os.path.dirname(file_path)
                     if exch_side == define.DEF_EXCHSIDE_BUY:
-                        self.export_file_b = file_name.split(".")[0] + "_export.xls"
                         self.edits_order_list_file_b.setText(file_path)
                     if exch_side == define.DEF_EXCHSIDE_SELL:
-                        self.export_file_s = file_name.split(".")[0] + "_export.xls"
                         self.edits_order_list_file_s.setText(file_path)
 
     def OnButtonChoosePositionListFile(self, file_type):
@@ -439,7 +436,31 @@ class Panel(QDialog):
             self.edits_position_list_file_z.setText("")
 
     def OnButtonExportOrders(self):
-        print("OnButtonExportOrders")
+        if self.order_list_folder != "":
+            self.HandleExportOrders(self.order_list_b, self.order_list_folder + "/export_buy_list.xls")
+            self.HandleExportOrders(self.order_list_s, self.order_list_folder + "/export_sell_list.xls")
+
+    def HandleExportOrders(self, order_list, file_path):
+        xls_file = xlwt.Workbook()
+        xls_sheet = xls_file.add_sheet("Sheet1")
+        xls_sheet.write(0, 0, "symbol")
+        xls_sheet.write(0, 1, "exchange")
+        xls_sheet.write(0, 2, "entr_type")
+        xls_sheet.write(0, 3, "exch_side")
+        xls_sheet.write(0, 4, "price")
+        xls_sheet.write(0, 5, "amount")
+        row_count = 0
+        for order_item in order_list:
+            if order_item.need_qty > 0:
+                row_count += 1
+                xls_sheet.write(row_count, 0, order_item.symbol)
+                xls_sheet.write(row_count, 1, order_item.exchange)
+                xls_sheet.write(row_count, 2, order_item.entr_type)
+                xls_sheet.write(row_count, 3, order_item.exch_side)
+                xls_sheet.write(row_count, 4, order_item.price)
+                xls_sheet.write(row_count, 5, order_item.need_qty)
+        xls_file.save(file_path)
+        print("导出批量委托结果 %d 个。%s" % (row_count, file_path))
 
 ####################################################################################################
 
