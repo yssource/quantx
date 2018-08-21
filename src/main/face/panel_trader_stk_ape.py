@@ -198,7 +198,7 @@ class Panel(QDialog):
         self.radio_button_sell.setStyleSheet("color:green")
         self.radio_button_sell.setFont(QFont("SimSun", 9))
         self.radio_button_sell.setFixedWidth(70)
-        self.button_place_order = QPushButton("下 单")
+        self.button_place_order = QPushButton("买 入") # 初始买入
         self.button_place_order.setFont(QFont("SimSun", 9))
         self.button_place_order.setStyleSheet("font:bold;color:red") # 初始红色
         self.button_place_order.setFixedWidth(70)
@@ -460,12 +460,14 @@ class Panel(QDialog):
             self.spin_price.setStyleSheet("color:red")
             self.spin_volume.setStyleSheet("color:red")
             self.button_place_order.setStyleSheet("font:bold;color:red")
+            self.button_place_order.setText("买 入")
         if self.radio_button_sell.isChecked():
             self.line_edit_symbol.setStyleSheet("color:green")
             self.line_edit_name.setStyleSheet("background-color:rgb(240,240,240);color:green")
             self.spin_price.setStyleSheet("color:green")
             self.spin_volume.setStyleSheet("color:green")
             self.button_place_order.setStyleSheet("font:bold;color:green")
+            self.button_place_order.setText("卖 出")
 
     def OnUpdateQuote(self, data, price_round):
         try:
