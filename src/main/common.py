@@ -277,6 +277,42 @@ def PreTransTransLtpMarket(tmp_data): # LTP逐笔成交预处理 //与 preTransT
     except Exception as e:
         print("PreTransTransLtpMarket error:", e)
 
+def PreTransStockHgtSgtMarket(tmp_data): # HGT/SGT个股快照预处理
+    try:
+        src_data = tmp_data.astype(define.stock_hgt_sgt_market_s_type_src)
+        src_data[5] = round(src_data[5] * 0.0001, 5) # Last uint32 最新价 /10000
+        src_data[6] = round(src_data[6] * 0.0001, 5) # Open uint32 开盘价 /10000
+        src_data[7] = round(src_data[7] * 0.0001, 5) # High uint32 最高价 /10000
+        src_data[8] = round(src_data[8] * 0.0001, 5) # Low uint32 最低价 /10000
+        src_data[9] = round(src_data[9] * 0.0001, 5) # Close uint32 收盘价 /10000
+        src_data[10] = round(src_data[10] * 0.0001, 5) # PreClose uint32 昨收价 /10000
+        src_data[12] = round(src_data[12] * 0.0001, 5) # Turnover int64 成交额 /10000
+        src_data[13][0] = round(src_data[13][0] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][1] = round(src_data[13][1] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][2] = round(src_data[13][2] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][3] = round(src_data[13][3] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][4] = round(src_data[13][4] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][5] = round(src_data[13][5] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][6] = round(src_data[13][6] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][7] = round(src_data[13][7] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][8] = round(src_data[13][8] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[13][9] = round(src_data[13][9] * 0.0001, 5) # AskPrice[10] uint32 申卖价 /10000
+        src_data[15][0] = round(src_data[15][0] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][1] = round(src_data[15][1] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][2] = round(src_data[15][2] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][3] = round(src_data[15][3] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][4] = round(src_data[15][4] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][5] = round(src_data[15][5] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][6] = round(src_data[15][6] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][7] = round(src_data[15][7] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][8] = round(src_data[15][8] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[15][9] = round(src_data[15][9] * 0.0001, 5) # BidPrice[10] uint32 申买价 /10000
+        src_data[17] = round(src_data[17] * 0.0001, 5) # HighLimit uint32 涨停价 /10000
+        src_data[18] = round(src_data[18] * 0.0001, 5) # LowLimit uint32 跌停价 /10000
+        return src_data
+    except Exception as e:
+        print("PreTransStockHgtSgtMarket error:", e)
+
 def PreTransFutureMarket(tmp_data): # 期货内盘快照预处理
     try:
         src_data = tmp_data.astype(define.future_np_market_type_src)

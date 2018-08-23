@@ -71,6 +71,20 @@ class Trader(common.Singleton):
             quoter = quotex.QuoteX(self, "股票类TDF行情", self.config.cfg_main.quote_stock_tdf_addr, self.config.cfg_main.quote_stock_tdf_port, quote_subs) # 股票类TDF快照
             self.quoter_dict[self.config.cfg_main.quote_stock_tdf_flag] = quoter
         
+        if self.config.cfg_main.quote_stock_hgt_need == 1:
+            self.log_text = "正在加载 股票类HGT行情数据 服务..."
+            self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+            quote_subs = {define.stock_hgt_market_s_func : (define.stock_hgt_market_s_func, define.stock_hgt_sgt_market_s_type, "")}
+            quoter = quotex.QuoteX(self, "股票类HGT行情", self.config.cfg_main.quote_stock_hgt_addr, self.config.cfg_main.quote_stock_hgt_port, quote_subs) # 股票类HGT快照
+            self.quoter_dict[self.config.cfg_main.quote_stock_hgt_flag] = quoter
+        
+        if self.config.cfg_main.quote_stock_sgt_need == 1:
+            self.log_text = "正在加载 股票类SGT行情数据 服务..."
+            self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+            quote_subs = {define.stock_sgt_market_s_func : (define.stock_sgt_market_s_func, define.stock_hgt_sgt_market_s_type, "")}
+            quoter = quotex.QuoteX(self, "股票类SGT行情", self.config.cfg_main.quote_stock_sgt_addr, self.config.cfg_main.quote_stock_sgt_port, quote_subs) # 股票类SGT快照
+            self.quoter_dict[self.config.cfg_main.quote_stock_sgt_flag] = quoter
+        
         if self.config.cfg_main.quote_future_np_need == 1:
             self.log_text = "正在加载 期货类内盘行情数据 服务..."
             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")

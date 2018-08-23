@@ -24,7 +24,7 @@ import numpy
 
 APP_TITLE_EN = "QuantX" # 英文名称
 APP_TITLE_CN = "量 化 交 易 客 户 端" # 中文名称
-APP_VERSION = "V0.1.0-Beta Build 20180529" # 版本信息
+APP_VERSION = "V0.1.0-Beta Build 20180823" # 版本信息
 APP_DEVELOPER = "Developed by the X-Lab." # 开发者声明
 APP_COMPANY = "X-Lab (Shanghai) Co., Ltd." # 公司声明
 APP_COPYRIGHT = "Copyright 2018-2018 X-Lab All Rights Reserved." # 版权声明
@@ -128,6 +128,8 @@ stock_ltb_market_t_func = 910008 # LTB 逐笔成交
 stock_ltp_market_s_func = 910011 # LTP 个股快照
 stock_ltp_market_i_func = 910012 # LTP 指数快照
 stock_ltp_market_t_func = 910013 # LTP 逐笔成交
+stock_hgt_market_s_func = 910016 # HGT 个股快照
+stock_sgt_market_s_func = 910017 # SGT 个股快照
 future_np_market_func = 920001 # 内盘 期货快照
 
 trade_userlogin_s_func = 110001 # 股票用户登录
@@ -540,6 +542,61 @@ stock_ltp_market_i_type_src = stock_tdf_market_i_type_src # 相同
 stock_ltp_market_t_size = stock_tdf_market_t_size # 相同
 stock_ltp_market_t_type = stock_tdf_market_t_type # 相同
 stock_ltp_market_t_type_src = stock_tdf_market_t_type_src # 相同
+
+# 股票类：沪港通深港通个股快照 # 字节：287
+stock_hgt_sgt_market_s_size = 287
+stock_hgt_sgt_market_s_type = numpy.dtype([
+                      ("Code", "S8"), # 证券代码 # gbk
+                      ("Name", "S33"), # 证券名称 # gbk 中文
+                      ("Type", "S6"), # 证券类型 # gbk
+                      ("Market", "S6"), # 证券市场 # gbk
+                      ("Status", "S2"), # 证券状态 # gbk
+                      ("Last", numpy.uint32), # 最新价 //10000
+                      ("Open", numpy.uint32), # 开盘价 //10000 // 无
+                      ("High", numpy.uint32), # 最高价 //10000
+                      ("Low", numpy.uint32), # 最低价 //10000
+                      ("Close", numpy.uint32), # 收盘价 //10000 // 按盘价
+                      ("PreClose", numpy.uint32), # 昨收价 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.int64), # 成交额 //10000
+                      ("AskPrice", numpy.uint32, (10,)), # 申卖价 //10000
+                      ("AskVolume", numpy.int32, (10,)), # 申卖量
+                      ("BidPrice", numpy.uint32, (10,)), # 申买价 //10000
+                      ("BidVolume", numpy.int32, (10,)), # 申买量
+                      ("HighLimit", numpy.uint32), # 涨停价 //10000
+                      ("LowLimit", numpy.uint32), # 跌停价 //10000
+                      ("TradeCount", numpy.int32), # 成交笔数
+                      ("VCMStartTime", numpy.int32), # 市调机制开始时间 //MD404 # HHMMSS000 精度：秒
+                      ("VCMEndTime", numpy.int32), # 市调机制结束时间 //MD404 # HHMMSS000 精度：秒
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
+stock_hgt_sgt_market_s_type_src = numpy.dtype([
+                      ("Code", "S8"), # 证券代码 # gbk
+                      ("Name", "S33"), # 证券名称 # gbk 中文
+                      ("Type", "S6"), # 证券类型 # gbk
+                      ("Market", "S6"), # 证券市场 # gbk
+                      ("Status", "S2"), # 证券状态 # gbk
+                      ("Last", numpy.float64), # 最新价 //10000
+                      ("Open", numpy.float64), # 开盘价 //10000 // 无
+                      ("High", numpy.float64), # 最高价 //10000
+                      ("Low", numpy.float64), # 最低价 //10000
+                      ("Close", numpy.float64), # 收盘价 //10000 // 按盘价
+                      ("PreClose", numpy.float64), # 昨收价 //10000
+                      ("Volume", numpy.int64), # 成交量
+                      ("Turnover", numpy.float64), # 成交额 //10000
+                      ("AskPrice", numpy.float64, (10,)), # 申卖价 //10000
+                      ("AskVolume", numpy.int32, (10,)), # 申卖量
+                      ("BidPrice", numpy.float64, (10,)), # 申买价 //10000
+                      ("BidVolume", numpy.int32, (10,)), # 申买量
+                      ("HighLimit", numpy.float64), # 涨停价 //10000
+                      ("LowLimit", numpy.float64), # 跌停价 //10000
+                      ("TradeCount", numpy.int32), # 成交笔数
+                      ("VCMStartTime", numpy.int32), # 市调机制开始时间 //MD404 # HHMMSS000 精度：秒
+                      ("VCMEndTime", numpy.int32), # 市调机制结束时间 //MD404 # HHMMSS000 精度：秒
+                      ("QuoteTime", numpy.int32), # 行情时间 # HHMMSSmmm 精度：秒
+                      ("LocalTime", numpy.int32), # 本地时间 # HHMMSSmmm 精度：毫秒
+                      ("LocalIndex", numpy.uint32)]) # 本地序号
 
 # 期货类：内盘市场快照 # 字节：208
 future_np_market_size = 208

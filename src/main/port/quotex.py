@@ -281,10 +281,14 @@ if __name__ == "__main__":
     quote_subs_stock_tdf = {define.stock_tdf_market_s_func : (define.stock_tdf_market_s_func, define.stock_tdf_market_s_type, ""),
                          define.stock_tdf_market_i_func : (define.stock_tdf_market_i_func, define.stock_tdf_market_i_type, ""),
                          define.stock_tdf_market_t_func : (define.stock_tdf_market_t_func, define.stock_tdf_market_t_type, "")}
+    quote_subs_stock_hgt = {define.stock_hgt_market_s_func : (define.stock_hgt_market_s_func, define.stock_hgt_sgt_market_s_type, "")}
+    quote_subs_stock_sgt = {define.stock_sgt_market_s_func : (define.stock_sgt_market_s_func, define.stock_hgt_sgt_market_s_type, "")}
     quote_subs_future_np = {define.future_np_market_func : (define.future_np_market_func, define.future_np_market_type, "")}
     #quotex = QuoteX(None, "股票类LTB行情", "10.0.7.80", 8001, quote_subs_stock_ltb) # 股票类LTB快照
     #quotex = QuoteX(None, "股票类LTP行情", "10.0.7.80", 6001, quote_subs_stock_ltp) # 股票类LTP快照
     #quotex = QuoteX(None, "股票类TDF行情", "10.0.7.80", 9001, quote_subs_stock_tdf) # 股票类TDF快照
+    #quotex = QuoteX(None, "股票类HGT行情", "10.0.7.80", 10001, quote_subs_stock_hgt) # 股票类HGT快照
+    #quotex = QuoteX(None, "股票类SGT行情", "10.0.7.80", 11001, quote_subs_stock_sgt) # 股票类SGT快照
     quotex = QuoteX(None, "期货类内盘行情", "10.0.7.80", 7001, quote_subs_future_np) # 期货类内盘快照
     quotex.Start()
     time.sleep(30)

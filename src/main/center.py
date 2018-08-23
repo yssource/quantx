@@ -68,6 +68,8 @@ class DataCenter(object):
         self.stock_snapshot_tdf = {}
         self.index_snapshot_tdf = {}
         self.trans_tdf = {}
+        self.stock_snapshot_hgt = {}
+        self.stock_snapshot_sgt = {}
         self.future_snapshot_np = {}
         
         self.strategies = {}
@@ -91,6 +93,8 @@ class Center(common.Singleton):
         self.quote_sub_locker_stock_tdf = threading.Lock()
         self.quote_sub_locker_index_tdf = threading.Lock()
         self.quote_sub_locker_trans_tdf = threading.Lock()
+        self.quote_sub_locker_stock_hgt = threading.Lock()
+        self.quote_sub_locker_stock_sgt = threading.Lock()
         self.quote_sub_locker_future_np = threading.Lock()
         
         self.quote_sub_dict_stock_ltb = {}
@@ -102,6 +106,8 @@ class Center(common.Singleton):
         self.quote_sub_dict_stock_tdf = {}
         self.quote_sub_dict_index_tdf = {}
         self.quote_sub_dict_trans_tdf = {}
+        self.quote_sub_dict_stock_hgt = {}
+        self.quote_sub_dict_stock_sgt = {}
         self.quote_sub_dict_future_np = {}
         
         self.update_timestamp_stock_ltb = datetime.now() # 股票个股
@@ -113,6 +119,8 @@ class Center(common.Singleton):
         self.update_timestamp_stock_tdf = datetime.now() # 股票个股
         self.update_timestamp_index_tdf = datetime.now() # 股票指数
         self.update_timestamp_trans_tdf = datetime.now() # 股票逐笔
+        self.update_timestamp_stock_hgt = datetime.now() # 股票个股
+        self.update_timestamp_stock_sgt = datetime.now() # 股票个股
         self.update_timestamp_future_np = datetime.now() # 期货内盘
 
     def RegQuoteSub(self, strategy, quote_func, quote_type):
@@ -160,6 +168,16 @@ class Center(common.Singleton):
             self.quote_sub_locker_trans_tdf.acquire()
             self.quote_sub_dict_trans_tdf[strategy] = quote_func
             self.quote_sub_locker_trans_tdf.release()
+            return
+        if quote_type == "stock_hgt":
+            self.quote_sub_locker_stock_hgt.acquire()
+            self.quote_sub_dict_stock_hgt[strategy] = quote_func
+            self.quote_sub_locker_stock_hgt.release()
+            return
+        if quote_type == "stock_sgt":
+            self.quote_sub_locker_stock_sgt.acquire()
+            self.quote_sub_dict_stock_sgt[strategy] = quote_func
+            self.quote_sub_locker_stock_sgt.release()
             return
         if quote_type == "future_np":
             self.quote_sub_locker_future_np.acquire()
@@ -221,6 +239,18 @@ class Center(common.Singleton):
                 self.quote_sub_locker_trans_tdf.acquire()
                 del self.quote_sub_dict_trans_tdf[strategy]
                 self.quote_sub_locker_trans_tdf.release()
+            return
+        if quote_type == "stock_hgt":
+            if strategy in self.quote_sub_dict_stock_hgt.keys():
+                self.quote_sub_locker_stock_hgt.acquire()
+                del self.quote_sub_dict_stock_hgt[strategy]
+                self.quote_sub_locker_stock_hgt.release()
+            return
+        if quote_type == "stock_sgt":
+            if strategy in self.quote_sub_dict_stock_sgt.keys():
+                self.quote_sub_locker_stock_sgt.acquire()
+                del self.quote_sub_dict_stock_sgt[strategy]
+                self.quote_sub_locker_stock_sgt.release()
             return
         if quote_type == "future_np":
             if strategy in self.quote_sub_dict_future_np.keys():
@@ -321,6 +351,26 @@ class Center(common.Singleton):
                 for strategy, quote_func in self.quote_sub_dict_trans_tdf.items():
                     quote_func(self.DataMsg(src_data))
                 self.quote_sub_locker_trans_tdf.release()
+            elif data_type == define.stock_hgt_market_s_func:
+                str_code = tmp_data[0].decode() # 02202, 02318
+                src_data = common.PreTransStockHgtSgtMarket(tmp_data) # 部分数值转换
+                self.data.stock_snapshot_hgt[str_code] = src_data
+                self.update_timestamp_stock_hgt = datetime.now()
+                pub.sendMessage("center.quote.stock_hgt", msg = src_data)
+                self.quote_sub_locker_stock_hgt.acquire()
+                for strategy, quote_func in self.quote_sub_dict_stock_hgt.items():
+                    quote_func(self.DataMsg(src_data))
+                self.quote_sub_locker_stock_hgt.release()
+            elif data_type == define.stock_sgt_market_s_func:
+                str_code = tmp_data[0].decode() # 02202, 02318
+                src_data = common.PreTransStockHgtSgtMarket(tmp_data) # 部分数值转换
+                self.data.stock_snapshot_sgt[str_code] = src_data
+                self.update_timestamp_stock_sgt = datetime.now()
+                pub.sendMessage("center.quote.stock_sgt", msg = src_data)
+                self.quote_sub_locker_stock_sgt.acquire()
+                for strategy, quote_func in self.quote_sub_dict_stock_sgt.items():
+                    quote_func(self.DataMsg(src_data))
+                self.quote_sub_locker_stock_sgt.release()
             elif data_type == define.future_np_market_func:
                 str_code = tmp_data[0].decode() # IF1806, IF1809
                 src_data = common.PreTransFutureMarket(tmp_data) # 部分数值转换

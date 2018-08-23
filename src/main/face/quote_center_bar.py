@@ -106,6 +106,18 @@ class QuoteCenterBar(QToolBar):
             self.addWidget(self.bar_item_stock_tdf.state_label)
             self.addSeparator()
         
+        if self.config.cfg_main.quote_stock_hgt_need == 1:
+            self.bar_item_stock_hgt = QuoteBarItem(self.config.cfg_main.quote_stock_hgt_flag, self.config.cfg_main.quote_stock_hgt_show, self.config.cfg_main.quote_stock_hgt_tips)
+            self.addWidget(self.bar_item_stock_hgt.check_box)
+            self.addWidget(self.bar_item_stock_hgt.state_label)
+            self.addSeparator()
+        
+        if self.config.cfg_main.quote_stock_sgt_need == 1:
+            self.bar_item_stock_sgt = QuoteBarItem(self.config.cfg_main.quote_stock_sgt_flag, self.config.cfg_main.quote_stock_sgt_show, self.config.cfg_main.quote_stock_sgt_tips)
+            self.addWidget(self.bar_item_stock_sgt.check_box)
+            self.addWidget(self.bar_item_stock_sgt.state_label)
+            self.addSeparator()
+        
         if self.config.cfg_main.quote_future_np_need == 1:
             self.bar_item_future_np = QuoteBarItem(self.config.cfg_main.quote_future_np_flag, self.config.cfg_main.quote_future_np_show, self.config.cfg_main.quote_future_np_tips)
             self.addWidget(self.bar_item_future_np.check_box)
@@ -148,6 +160,24 @@ class QuoteCenterBar(QToolBar):
                             self.log_text = "股票类TDF行情 距上次数据更新时间已超过 %f 秒！" % time_span.total_seconds()
                             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "M")
                         # 指数类的目前先不管
+        if self.config.cfg_main.quote_stock_hgt_need == 1:
+            if self.bar_item_stock_hgt.check_box.isChecked() == True:
+                if not (now_week == 7 or now_week == 6):
+                    if (now_time >= 930 and now_time < 1200) or (now_time >= 1300 and now_time < 1600): # 只盘中时间检测
+                        if (timer - self.center.update_timestamp_stock_hgt) > timedelta(seconds = 5):
+                            time_span = timer - self.center.update_timestamp_stock_hgt
+                            self.log_text = "股票类HGT行情 距上次数据更新时间已超过 %f 秒！" % time_span.total_seconds()
+                            self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "M")
+                        # 目前没有指数类的
+        if self.config.cfg_main.quote_stock_sgt_need == 1:
+            if self.bar_item_stock_sgt.check_box.isChecked() == True:
+                if not (now_week == 7 or now_week == 6):
+                    if (now_time >= 930 and now_time < 1200) or (now_time >= 1300 and now_time < 1600): # 只盘中时间检测
+                        if (timer - self.center.update_timestamp_stock_sgt) > timedelta(seconds = 5):
+                            time_span = timer - self.center.update_timestamp_stock_sgt
+                            self.log_text = "股票类SGT行情 距上次数据更新时间已超过 %f 秒！" % time_span.total_seconds()
+                            self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "M")
+                        # 目前没有指数类的
         if self.config.cfg_main.quote_future_np_need == 1:
             if self.bar_item_future_np.check_box.isChecked() == True:
                 if not (now_week == 7 or (now_week == 6 and now_time >= 230)):

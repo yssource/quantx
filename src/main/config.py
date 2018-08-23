@@ -48,6 +48,20 @@ class CfgMain(object):
         self.quote_stock_tdf_show = "show"
         self.quote_stock_tdf_tips = "tips"
         
+        self.quote_stock_hgt_need = 0
+        self.quote_stock_hgt_flag = "flag"
+        self.quote_stock_hgt_addr = "127.0.0.1"
+        self.quote_stock_hgt_port = 9999
+        self.quote_stock_hgt_show = "show"
+        self.quote_stock_hgt_tips = "tips"
+        
+        self.quote_stock_sgt_need = 0
+        self.quote_stock_sgt_flag = "flag"
+        self.quote_stock_sgt_addr = "127.0.0.1"
+        self.quote_stock_sgt_port = 9999
+        self.quote_stock_sgt_show = "show"
+        self.quote_stock_sgt_tips = "tips"
+        
         self.quote_future_np_need = 0
         self.quote_future_np_flag = "flag"
         self.quote_future_np_addr = "127.0.0.1"
@@ -136,6 +150,20 @@ class CfgMain(object):
         self.quote_stock_tdf_port = int(config.get("nets", "quote_stock_tdf_port"))
         self.quote_stock_tdf_show = config.get("nets", "quote_stock_tdf_show")
         self.quote_stock_tdf_tips = config.get("nets", "quote_stock_tdf_tips") # 配置文件格式必须为 UTF8 否则会报异常
+        
+        self.quote_stock_hgt_need = int(config.get("nets", "quote_stock_hgt_need"))
+        self.quote_stock_hgt_flag = config.get("nets", "quote_stock_hgt_flag")
+        self.quote_stock_hgt_addr = config.get("nets", "quote_stock_hgt_addr")
+        self.quote_stock_hgt_port = int(config.get("nets", "quote_stock_hgt_port"))
+        self.quote_stock_hgt_show = config.get("nets", "quote_stock_hgt_show")
+        self.quote_stock_hgt_tips = config.get("nets", "quote_stock_hgt_tips") # 配置文件格式必须为 UTF8 否则会报异常
+        
+        self.quote_stock_sgt_need = int(config.get("nets", "quote_stock_sgt_need"))
+        self.quote_stock_sgt_flag = config.get("nets", "quote_stock_sgt_flag")
+        self.quote_stock_sgt_addr = config.get("nets", "quote_stock_sgt_addr")
+        self.quote_stock_sgt_port = int(config.get("nets", "quote_stock_sgt_port"))
+        self.quote_stock_sgt_show = config.get("nets", "quote_stock_sgt_show")
+        self.quote_stock_sgt_tips = config.get("nets", "quote_stock_sgt_tips") # 配置文件格式必须为 UTF8 否则会报异常
         
         self.quote_future_np_need = int(config.get("nets", "quote_future_np_need"))
         self.quote_future_np_flag = config.get("nets", "quote_future_np_flag")
