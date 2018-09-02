@@ -471,5 +471,11 @@ def TransTradeStage_STK(trade_stage): #
         return "有异常"
     elif trade_stage == 5:
         return "等资金"
+    elif trade_stage == 6:
+        return "等行情"
+    elif trade_stage == 7:
+        return "已涨停"
+    elif trade_stage == 8:
+        return "已跌停"
     else:
         return "-"

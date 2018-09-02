@@ -48,7 +48,7 @@ class TradeX_Stk_Sy():
             self.amount = kwargs.get("amount", 0) # 委托数量
             self.fill_qty = 0 # 总成交数量
             self.cxl_qty = 0 # 撤单数量
-            # 0：未申报，1：正在申报，2：已申报未成交，3：非法委托，4：申请资金授权中，
+            # 0：未申报，1：正在申报，2：已申报未成交，3：非法委托，4：撤单失败/申请资金授权中，
             # 5：部分成交，6：全部成交，7：部成部撤，8：全部撤单，9：撤单未成，10：等待人工申报
             self.status = 0 # 申报结果
             self.status_msg = "" # 申报说明
@@ -531,7 +531,7 @@ class TradeX_Stk_Sy():
                         task_item.order.order_id = order_reply.order_id # 委托编号
                     # 接口 APE 只在委托报入时有一个报单回报，之后是一系列成交回报，或者因为撤单才会有另外的撤单回报，故采用成交回报累加
                     task_item.order.status = order_reply.status # 委托状态
-                    # 0：未申报，1：正在申报，2：已申报未成交，3：非法委托，4：申请资金授权中，
+                    # 0：未申报，1：正在申报，2：已申报未成交，3：非法委托，4：撤单失败/申请资金授权中，
                     # 5：部分成交，6：全部成交，7：部成部撤，8：全部撤单，9：撤单未成，10：等待人工申报
                     # 委托交易结束：非法委托、全部成交、部成部撤、全部撤单
                     if order_reply.status == 3 or order_reply.status == 6 or order_reply.status == 7 or order_reply.status == 8: # 因为撤单回报独立，估计不会有 7：部成部撤，甚至可能不会有 8：全部撤单
