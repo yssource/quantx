@@ -477,5 +477,7 @@ def TransTradeStage_STK(trade_stage): #
         return "已涨停"
     elif trade_stage == 8:
         return "已跌停"
+    elif trade_stage == 9:
+        return "已终止"
     else:
         return "-"
