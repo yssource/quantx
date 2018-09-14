@@ -138,6 +138,7 @@ class SecurityInfoItem(object):
         self.category = kwargs.get("category", 0) # 证券类别
         self.sector = kwargs.get("sector", 0) # 上市板块
         self.is_st = kwargs.get("is_st", 0) # 是否ST股
+        self.trade_unit = kwargs.get("trade_unit", 0) # 买卖单位
         self.list_state = kwargs.get("list_state", 0) # 上市状态
         self.list_date = kwargs.get("list_date", 0) # 上市日期
 
@@ -202,6 +203,19 @@ class SecurityInfoItem(object):
                     self.category = 12 # 深封闭式基金
             elif category == 62: # ETF基金 # 测试显示ETF基金的证券类别全部被标记为 8 而非 62
                 self.category = 6 # 深ETF基金
+        elif market == 72: # 港股，HK
+            if category == 3: # H股
+                self.category = 21 # 港股个股
+            elif category == 4: # 大盘(指数)
+                self.category = 22 # 港股指数
+            elif category == 51: # 港股
+                self.category = 21 # 港股个股
+            elif category == 52: # 合订证券
+                self.category = 21 # 港股个股
+            elif category == 53: # 红筹股
+                self.category = 21 # 港股个股
+            elif category == 62: # ETF基金
+                self.category = 23 # 港股ETF基金
 
     def SetFlag_BK(self, sector): # 上市板块
         if sector == 1: # 主板
@@ -1068,6 +1082,128 @@ class DataMaker_SecurityInfo():
             else:
                 self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
+class DataMaker_SecurityInfo_HK():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.security_dict = {}
+        self.count_lb_21 = 0
+        self.count_lb_22 = 0
+        self.count_lb_23 = 0
+        self.count_bk_1 = 0
+        self.count_bk_2 = 0
+        self.count_bk_3 = 0
+        self.count_ssrq = 0
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def CheckStockList(self):
+        for item in self.security_dict.values():
+            if item.category == 21:
+                self.count_lb_21 += 1
+            elif item.category == 22:
+                self.count_lb_22 += 1
+            elif item.category == 23:
+                self.count_lb_23 += 1
+            else:
+                self.SendMessage("分类异常：%s %s %s" % (item.market, item.code, item.name))
+            if item.sector == 1:
+                self.count_bk_1 += 1
+            elif item.sector == 2:
+                self.count_bk_2 += 1
+            elif item.sector == 3:
+                self.count_bk_3 += 1
+            else:
+                self.SendMessage("板块异常：%s %s %s" % (item.market, item.code, item.name))
+            if item.list_date == 0:
+                self.count_ssrq += 1
+        self.SendMessage("证券总计：%d" % len(self.security_dict))
+        self.SendMessage("港股个股：%d" % self.count_lb_21)
+        self.SendMessage("港股指数：%d" % self.count_lb_22)
+        self.SendMessage("港股ETF基金：%d" % self.count_lb_23)
+        self.SendMessage("主板板块：%d" % self.count_bk_1)
+        self.SendMessage("中小板块：%d" % self.count_bk_2)
+        self.SendMessage("创业板块：%d" % self.count_bk_3)
+        self.SendMessage("无上市日：%d" % self.count_ssrq)
+
+    def PullData_SecurityInfo_HK(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_SecurityInfo_HK 数据库 dbm 尚未连接！")
+            return
+        # 证券市场：72 香港联交所
+        # 证券类别：3 H股、4 大盘(指数)、51 港股、52 合订证券、53 红筹股、62 ETF基金
+        # 过滤排除：10 其他、20 衍生权证、21 股本权证、25 牛熊证、55 优先股、60 基金、61 信托基金、64 杠杆及反向产品、65 债务证券、69 美国证券、71 普通预托证券
+        # 上市板块：1 主板、2 中小企业板、6 创业板
+        # 上市状态：1 上市、3 暂停
+        # 查询字段：HK_SecuMain：证券内部编码、公司代码、证券代码、证券简称、证券市场、证券类别、上市日期、上市板块、上市状态、买卖单位
+        # 唯一约束：HK_SecuMain = InnerCode
+        sql = "SELECT InnerCode, CompanyCode, SecuCode, SecuAbbr, SecuMarket, SecuCategory, ListedDate, ListedSector, ListedState, TradingUnit \
+               FROM HK_SecuMain \
+               WHERE (HK_SecuMain.SecuMarket = 72) \
+                   AND (HK_SecuMain.SecuCategory = 3 OR HK_SecuMain.SecuCategory = 4 OR HK_SecuMain.SecuCategory = 51 OR HK_SecuMain.SecuCategory = 52 OR HK_SecuMain.SecuCategory = 53 OR HK_SecuMain.SecuCategory = 62) \
+                   AND (HK_SecuMain.ListedState = 1 OR HK_SecuMain.ListedState = 3) \
+               ORDER BY SecuMarket ASC, SecuCode ASC"
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, CompanyCode, SecuCode, SecuAbbr, SecuMarket, SecuCategory, ListedDate, ListedSector, ListedState, TradingUnit) in result_list:
+                stock_name = SecuAbbr.replace(" ", "")
+                stock_market = "HK"
+                security_info_item = SecurityInfoItem(inners = InnerCode, company = CompanyCode, market = stock_market, code = SecuCode, name = stock_name)
+                security_info_item.SetFlag_LB(SecuCategory, SecuMarket, SecuCode, ListedSector) # 证券类别
+                security_info_item.SetFlag_BK(ListedSector) # 上市板块
+                security_info_item.SetFlag_ZT(ListedState) # 上市状态
+                security_info_item.SetListDate(ListedDate) # 上市日期
+                if TradingUnit != None:
+                    security_info_item.trade_unit = int(TradingUnit) # 买卖单位
+                self.security_dict[InnerCode] = security_info_item
+                #print(InnerCode, CompanyCode, SecuCode, SecuAbbr, SecuMarket, SecuCategory, ListedDate, ListedSector, ListedState, TradingUnit)
+            self.SendMessage("获取 港股信息 成功。总计 %d 个。" % len(result_list))
+            self.CheckStockList()
+        else:
+            self.SendMessage("获取 港股信息 失败！")
+
+    def SaveData_SecurityInfo_HK(self, dbm, table_name, save_path):
+        security_keys = list(self.security_dict.keys())
+        security_keys.sort()
+        security_dict_list = [self.security_dict[key] for key in security_keys]
+        total_record_num = len(security_dict_list)
+        values_list = []
+        for i in range(total_record_num):
+            str_date = common.TransDateIntToStr(security_dict_list[i].list_date)
+            values_list.append((security_dict_list[i].inners, security_dict_list[i].company, security_dict_list[i].market, security_dict_list[i].code, security_dict_list[i].name, security_dict_list[i].category, security_dict_list[i].sector, security_dict_list[i].trade_unit, security_dict_list[i].list_state, str_date))
+        columns = ["inners", "company", "market", "code", "name", "category", "sector", "trade_unit", "list_state", "list_date"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`company` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '公司代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
+                  "`sector` int(8) DEFAULT '0' COMMENT '上市板块，详见说明'," + \
+                  "`trade_unit` int(8) DEFAULT '0' COMMENT '买卖单位，股/手'," + \
+                  "`list_state` int(8) DEFAULT '0' COMMENT '上市状态，详见说明'," + \
+                  "`list_date` date COMMENT '上市日期'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_inners` (`inners`)," + \
+                  "KEY `idx_company` (`company`) USING BTREE," + \
+                  "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, company, market, code, name, category, sector, trade_unit, list_state, list_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
+
 class DataMaker_TingPaiStock():
     def __init__(self, parent = None):
         self.parent = parent
@@ -1237,6 +1373,7 @@ class BasicDataMaker(QDialog):
         self.tb_trading_day = "trading_day"
         self.tb_industry_data = "industry_data"
         self.tb_security_info = "security_info"
+        self.tb_security_info_hk = "security_info_hk"
         self.tb_capital_data = "capital_data"
         self.tb_ex_rights_data = "ex_rights_data"
         self.tb_ting_pai_stock = "tod_ting_pai"
@@ -1402,6 +1539,11 @@ class BasicDataMaker(QDialog):
         self.button_security_info.setStyleSheet("color:blue")
         self.button_security_info.setFixedWidth(70)
         
+        self.button_security_info_hk = QPushButton("港股信息")
+        self.button_security_info_hk.setFont(QFont("SimSun", 9))
+        self.button_security_info_hk.setStyleSheet("color:blue")
+        self.button_security_info_hk.setFixedWidth(70)
+        
         self.button_ting_pai_stock = QPushButton("当日停牌")
         self.button_ting_pai_stock.setFont(QFont("SimSun", 9))
         self.button_ting_pai_stock.setStyleSheet("color:blue")
@@ -1433,14 +1575,20 @@ class BasicDataMaker(QDialog):
         self.h_box_layout_buttons_1.addStretch(1)
         self.h_box_layout_buttons_1.addWidget(self.button_security_info)
         self.h_box_layout_buttons_1.addStretch(1)
+        self.h_box_layout_buttons_1.addWidget(self.button_ting_pai_stock)
+        self.h_box_layout_buttons_1.addStretch(1)
         
         self.h_box_layout_buttons_2 = QHBoxLayout()
         self.h_box_layout_buttons_2.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_buttons_2.addStretch(1)
-        self.h_box_layout_buttons_2.addWidget(self.button_ting_pai_stock)
+        self.h_box_layout_buttons_2.addWidget(self.button_security_info_hk)
         self.h_box_layout_buttons_2.addStretch(1)
-        self.h_box_layout_buttons_2.addWidget(self.button_trading_day)
-        self.h_box_layout_buttons_2.addStretch(1)
+        
+        self.h_box_layout_buttons_3 = QHBoxLayout()
+        self.h_box_layout_buttons_3.setContentsMargins(-1, -1, -1, -1)
+        self.h_box_layout_buttons_3.addStretch(1)
+        self.h_box_layout_buttons_3.addWidget(self.button_trading_day)
+        self.h_box_layout_buttons_3.addStretch(1)
         
         self.h_box_layout_text_info = QHBoxLayout()
         self.h_box_layout_text_info.setContentsMargins(-1, -1, -1, -1)
@@ -1452,6 +1600,7 @@ class BasicDataMaker(QDialog):
         self.v_box_layout.addLayout(self.h_box_layout_database)
         self.v_box_layout.addLayout(self.h_box_layout_buttons_1)
         self.v_box_layout.addLayout(self.h_box_layout_buttons_2)
+        self.v_box_layout.addLayout(self.h_box_layout_buttons_3)
         
         self.setLayout(self.v_box_layout)
         
@@ -1462,6 +1611,7 @@ class BasicDataMaker(QDialog):
         self.button_industry.clicked.connect(self.OnButtonIndustry)
         self.button_pre_quote_stk.clicked.connect(self.OnButtonPreQuoteStk)
         self.button_security_info.clicked.connect(self.OnButtonSecurityInfo)
+        self.button_security_info_hk.clicked.connect(self.OnButtonSecurityInfo_HK)
         self.button_ting_pai_stock.clicked.connect(self.OnButtonTingPaiStock)
         self.button_trading_day.clicked.connect(self.OnButtonTradingDay)
 
@@ -1548,6 +1698,22 @@ class BasicDataMaker(QDialog):
         else:
             self.SendMessage("正在生成数据，请等待...")
 
+    def Thread_SecurityInfo_HK(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_security_info_hk)
+                data_maker_security_info_hk = DataMaker_SecurityInfo_HK(self)
+                data_maker_security_info_hk.PullData_SecurityInfo_HK(self.dbm_jydb)
+                data_maker_security_info_hk.SaveData_SecurityInfo_HK(self.dbm_financial, self.tb_security_info_hk, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
     def Thread_TingPaiStock(self, data_type):
         if self.flag_data_make == False:
             self.flag_data_make = True
@@ -1598,6 +1764,10 @@ class BasicDataMaker(QDialog):
 
     def OnButtonSecurityInfo(self):
         self.thread_make_data = threading.Thread(target = self.Thread_SecurityInfo, args = ("证券信息",))
+        self.thread_make_data.start()
+
+    def OnButtonSecurityInfo_HK(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_SecurityInfo_HK, args = ("港股信息",))
         self.thread_make_data.start()
 
     def OnButtonTingPaiStock(self):
