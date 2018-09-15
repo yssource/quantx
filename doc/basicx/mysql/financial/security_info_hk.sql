@@ -29,6 +29,7 @@ CREATE TABLE `security_info_hk` (
   `category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明',
   `sector` int(8) DEFAULT '0' COMMENT '上市板块，详见说明',
   `trade_unit` int(8) DEFAULT '0' COMMENT '买卖单位，股/手',
+  `min_price_chg` float(8,4) DEFAULT '0.0000' COMMENT '最小变动价格',
   `list_state` int(8) DEFAULT '0' COMMENT '上市状态，详见说明',
   `list_date` date COMMENT '上市日期',
   PRIMARY KEY (`id`),

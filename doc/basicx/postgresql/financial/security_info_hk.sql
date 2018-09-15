@@ -29,6 +29,7 @@ CREATE TABLE "public"."security_info_hk" (
 "category" int4 DEFAULT 0,
 "sector" int4 DEFAULT 0,
 "trade_unit" int4 DEFAULT 0,
+"min_price_chg" float4 DEFAULT 0.0000,
 "list_state" int4 DEFAULT 0,
 "list_date" date
 )
@@ -44,6 +45,7 @@ COMMENT ON COLUMN "public"."security_info_hk"."name" IS '证券名称';
 COMMENT ON COLUMN "public"."security_info_hk"."category" IS '证券类别，详见说明';
 COMMENT ON COLUMN "public"."security_info_hk"."sector" IS '上市板块，详见说明';
 COMMENT ON COLUMN "public"."security_info_hk"."trade_unit" IS '买卖单位，股/手';
+COMMENT ON COLUMN "public"."security_info_hk"."min_price_chg" IS '最小变动价格';
 COMMENT ON COLUMN "public"."security_info_hk"."list_state" IS '上市状态，详见说明';
 COMMENT ON COLUMN "public"."security_info_hk"."list_date" IS '上市日期';
 

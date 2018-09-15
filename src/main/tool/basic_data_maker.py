@@ -139,6 +139,7 @@ class SecurityInfoItem(object):
         self.sector = kwargs.get("sector", 0) # 上市板块
         self.is_st = kwargs.get("is_st", 0) # 是否ST股
         self.trade_unit = kwargs.get("trade_unit", 0) # 买卖单位
+        self.min_price_chg = kwargs.get("min_price_chg", 0.0) # 最小变动价格
         self.list_state = kwargs.get("list_state", 0) # 上市状态
         self.list_date = kwargs.get("list_date", 0) # 上市日期
 
@@ -1086,12 +1087,14 @@ class DataMaker_SecurityInfo_HK():
     def __init__(self, parent = None):
         self.parent = parent
         self.security_dict = {}
+        self.min_price_chg_dict = {}
         self.count_lb_21 = 0
         self.count_lb_22 = 0
         self.count_lb_23 = 0
         self.count_bk_1 = 0
         self.count_bk_2 = 0
         self.count_bk_3 = 0
+        self.count_mpc = 0
         self.count_ssrq = 0
 
     def SendMessage(self, text_info):
@@ -1102,6 +1105,8 @@ class DataMaker_SecurityInfo_HK():
         for item in self.security_dict.values():
             if item.category == 21:
                 self.count_lb_21 += 1
+                if item.min_price_chg <= 0.0:
+                    self.count_mpc += 1
             elif item.category == 22:
                 self.count_lb_22 += 1
             elif item.category == 23:
@@ -1125,16 +1130,61 @@ class DataMaker_SecurityInfo_HK():
         self.SendMessage("主板板块：%d" % self.count_bk_1)
         self.SendMessage("中小板块：%d" % self.count_bk_2)
         self.SendMessage("创业板块：%d" % self.count_bk_3)
+        self.SendMessage("无最小变动价格个股：%d" % self.count_mpc)
         self.SendMessage("无上市日：%d" % self.count_ssrq)
 
     def PullData_SecurityInfo_HK(self, dbm):
         if dbm == None:
             self.SendMessage("PullData_SecurityInfo_HK 数据库 dbm 尚未连接！")
             return
+        pre_date = ""
+        now_date = datetime.now().strftime("%Y-%m-%d")
+        # 证券市场：72 香港联交所
+        # 查询字段：QT_TradingDayNew：日期、是否交易日、证券市场
+        # 唯一约束：QT_TradingDayNew = Date、SecuMarket
+        sql = "SELECT MAX(TradingDate) \
+               FROM QT_TradingDayNew \
+               WHERE QT_TradingDayNew.SecuMarket = 72 \
+                   AND QT_TradingDayNew.TradingDate < '%s' \
+                   AND QT_TradingDayNew.IfTradingDay = 1" % now_date
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (TradingDate,) in result_list:
+                pre_date = TradingDate.strftime("%Y-%m-%d")
+        if pre_date == "":
+            self.SendMessage("获取 上一交易日期 失败！")
+            return
+        else:
+            self.SendMessage("获取 上一交易日期 成功。%s" % pre_date)
+        self.min_price_chg_dict = {}
+        # 证券市场：72 香港联交所
+        # 证券类别：3 H股、51 港股、52 合订证券、53 红筹股（排除 4 大盘指数 和 62 ETF基金）
+        # 上市状态：1 上市、3 暂停
+        # 查询字段：HK_SecuMain：证券内部编码、证券代码、证券简称、证券类别、证券市场
+        # 查询字段：QT_HKDailyQuoteIndex：交易日、最小变动价格
+        # 唯一约束：SecuMain = InnerCode、QT_HKDailyQuoteIndex = InnerCode & TradingDay
+        sql = "SELECT HK_SecuMain.InnerCode, HK_SecuMain.SecuCode, HK_SecuMain.SecuAbbr, HK_SecuMain.SecuCategory, HK_SecuMain.SecuMarket, \
+               QT_HKDailyQuoteIndex.TradingDay, CAST(QT_HKDailyQuoteIndex.MinPriceChg AS decimal(8,4)) \
+               FROM HK_SecuMain INNER JOIN QT_HKDailyQuoteIndex \
+               ON HK_SecuMain.InnerCode = QT_HKDailyQuoteIndex.InnerCode \
+               WHERE (HK_SecuMain.SecuMarket = 72) \
+                   AND (HK_SecuMain.SecuCategory = 3 OR HK_SecuMain.SecuCategory = 51 OR HK_SecuMain.SecuCategory = 52 OR HK_SecuMain.SecuCategory = 53) \
+                   AND (HK_SecuMain.ListedState = 1 OR HK_SecuMain.ListedState = 3) \
+                   AND QT_HKDailyQuoteIndex.TradingDay = '%s' \
+               ORDER BY HK_SecuMain.SecuMarket ASC, HK_SecuMain.SecuCode ASC" % pre_date
+        # 注意以上查询语句中，需要将 money 类型的 MinPriceChg 字段精度转换到 4 位，不然查询结果只会保留 2 位
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, MinPriceChg) in result_list:
+                if MinPriceChg != None:
+                    self.min_price_chg_dict[InnerCode] = MinPriceChg
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, MinPriceChg)
+            self.SendMessage("获取 上一交易日最小变动价格 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 上一交易最小变动价格 失败！")
         # 证券市场：72 香港联交所
         # 证券类别：3 H股、4 大盘(指数)、51 港股、52 合订证券、53 红筹股、62 ETF基金
         # 过滤排除：10 其他、20 衍生权证、21 股本权证、25 牛熊证、55 优先股、60 基金、61 信托基金、64 杠杆及反向产品、65 债务证券、69 美国证券、71 普通预托证券
-        # 上市板块：1 主板、2 中小企业板、6 创业板
         # 上市状态：1 上市、3 暂停
         # 查询字段：HK_SecuMain：证券内部编码、公司代码、证券代码、证券简称、证券市场、证券类别、上市日期、上市板块、上市状态、买卖单位
         # 唯一约束：HK_SecuMain = InnerCode
@@ -1156,6 +1206,8 @@ class DataMaker_SecurityInfo_HK():
                 security_info_item.SetListDate(ListedDate) # 上市日期
                 if TradingUnit != None:
                     security_info_item.trade_unit = int(TradingUnit) # 买卖单位
+                if InnerCode in self.min_price_chg_dict.keys():
+                    security_info_item.min_price_chg = self.min_price_chg_dict[InnerCode] # 最小变动价格
                 self.security_dict[InnerCode] = security_info_item
                 #print(InnerCode, CompanyCode, SecuCode, SecuAbbr, SecuMarket, SecuCategory, ListedDate, ListedSector, ListedState, TradingUnit)
             self.SendMessage("获取 港股信息 成功。总计 %d 个。" % len(result_list))
@@ -1171,8 +1223,8 @@ class DataMaker_SecurityInfo_HK():
         values_list = []
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(security_dict_list[i].list_date)
-            values_list.append((security_dict_list[i].inners, security_dict_list[i].company, security_dict_list[i].market, security_dict_list[i].code, security_dict_list[i].name, security_dict_list[i].category, security_dict_list[i].sector, security_dict_list[i].trade_unit, security_dict_list[i].list_state, str_date))
-        columns = ["inners", "company", "market", "code", "name", "category", "sector", "trade_unit", "list_state", "list_date"]
+            values_list.append((security_dict_list[i].inners, security_dict_list[i].company, security_dict_list[i].market, security_dict_list[i].code, security_dict_list[i].name, security_dict_list[i].category, security_dict_list[i].sector, security_dict_list[i].trade_unit, security_dict_list[i].min_price_chg, security_dict_list[i].list_state, str_date))
+        columns = ["inners", "company", "market", "code", "name", "category", "sector", "trade_unit", "min_price_chg", "list_state", "list_date"]
         result = pd.DataFrame(columns = columns) # 空
         if len(values_list) > 0:
             result = pd.DataFrame(data = values_list, columns = columns)
@@ -1190,6 +1242,7 @@ class DataMaker_SecurityInfo_HK():
                   "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
                   "`sector` int(8) DEFAULT '0' COMMENT '上市板块，详见说明'," + \
                   "`trade_unit` int(8) DEFAULT '0' COMMENT '买卖单位，股/手'," + \
+                  "`min_price_chg` float(8,4) DEFAULT '0.0000' COMMENT '最小变动价格'," + \
                   "`list_state` int(8) DEFAULT '0' COMMENT '上市状态，详见说明'," + \
                   "`list_date` date COMMENT '上市日期'," + \
                   "PRIMARY KEY (`id`)," + \
@@ -1198,7 +1251,7 @@ class DataMaker_SecurityInfo_HK():
                   "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
                   ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
             if dbm.TruncateOrCreateTable(table_name, sql) == True:
-                sql = "INSERT INTO %s" % table_name + "(inners, company, market, code, name, category, sector, trade_unit, list_state, list_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO %s" % table_name + "(inners, company, market, code, name, category, sector, trade_unit, min_price_chg, list_state, list_date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
                 self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
             else:
@@ -1782,7 +1835,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     basic_data_maker = BasicDataMaker(folder = "../data")
-    basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "user", password = "user", database = "JYDB_NEW", charset = "GBK")
-    basic_data_maker.SetMySQL(host = "10.0.7.80", port = 3306, user = "user", passwd = "user", db = "financial", charset = "utf8")
+    basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "research", password = "Research@123", database = "JYDB_NEW", charset = "GBK")
+    basic_data_maker.SetMySQL(host = "10.0.7.53", port = 3306, user = "root", passwd = "root", db = "financial", charset = "utf8")
     basic_data_maker.show()
     sys.exit(app.exec_())
