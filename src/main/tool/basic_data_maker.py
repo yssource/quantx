@@ -120,6 +120,20 @@ class PreQuoteStkItem(object):
             else: # 普通开放式基金
                 self.category = 4
 
+    def SetCategory_HK(self, category, symbol):
+        if category == 3: # H股
+            self.category = 21 # 港股个股
+        elif category == 4: # 大盘(指数)
+            self.category = 22 # 港股指数
+        elif category == 51: # 港股
+            self.category = 21 # 港股个股
+        elif category == 52: # 合订证券
+            self.category = 21 # 港股个股
+        elif category == 53: # 红筹股
+            self.category = 21 # 港股个股
+        elif category == 62: # ETF基金
+            self.category = 23 # 港股ETF基金
+
     def SetQuoteDate(self, date):
         if date != None:
             self.quote_date = date.year * 10000 + date.month * 100 + date.day
@@ -850,9 +864,9 @@ class DataMaker_PreQuoteStk():
                 self.quote_data_list.append(pre_quote_stk_item)
                 #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals, XGRQ)
                 #print(pre_quote_stk_item.code, pre_quote_stk_item.category, pre_quote_stk_item.quote_date, pre_quote_stk_item.quote_time, XGRQ, XGRQ.hour, XGRQ.minute, XGRQ.second, XGRQ.microsecond)
-            self.SendMessage("获取 上一交易日行情数据 成功。总计 %d 个。" % len(result_list))
+            self.SendMessage("获取 昨日行情 成功。总计 %d 个。" % len(result_list))
         else:
-            self.SendMessage("获取 上一交易日行情数据 失败！")
+            self.SendMessage("获取 昨日行情 失败！")
 
     def SaveData_PreQuoteStk(self, dbm, table_name, save_path):
         total_record_num = len(self.quote_data_list)
@@ -875,6 +889,123 @@ class DataMaker_PreQuoteStk():
                   "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
                   "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
                   "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
+                  "`open` float(16,4) DEFAULT '0.0000' COMMENT '开盘价'," + \
+                  "`high` float(16,4) DEFAULT '0.0000' COMMENT '最高价'," + \
+                  "`low` float(16,4) DEFAULT '0.0000' COMMENT '最低价'," + \
+                  "`close` float(16,4) DEFAULT '0.0000' COMMENT '收盘价'," + \
+                  "`pre_close` float(16,4) DEFAULT '0.0000' COMMENT '昨收价'," + \
+                  "`volume` bigint(64) DEFAULT '0' COMMENT '成交量，股'," + \
+                  "`turnover` double(64,2) DEFAULT '0.00' COMMENT '成交额，元'," + \
+                  "`trade_count` int(32) DEFAULT '0' COMMENT '成交笔数'," + \
+                  "`quote_date` date DEFAULT NULL COMMENT '行情日期，2015-12-31'," + \
+                  "`quote_time` datetime(6) DEFAULT NULL COMMENT '行情时间'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, open, high, low, close, pre_close, volume, turnover, trade_count, quote_date, quote_time) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
+
+class DataMaker_PreQuoteStk_HK():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.quote_data_list = []
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def TransTimeIntToStr(self, str_date, int_time):
+        hour = int(int_time / 10000000)
+        minute = int((int_time % 10000000) / 100000)
+        second = int((int_time % 100000) / 1000)
+        microsecond = int_time % 1000
+        return "%s %d:%d:%d.%d" % (str_date, hour, minute, second, microsecond)
+
+    def PullData_PreQuoteStk_HK(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_PreQuoteStk_HK 数据库 dbm 尚未连接！")
+            return
+        pre_date = ""
+        now_date = datetime.now().strftime("%Y-%m-%d")
+        # 证券市场：72 香港联交所
+        # 查询字段：QT_TradingDayNew：日期、是否交易日、证券市场
+        # 唯一约束：QT_TradingDayNew = Date、SecuMarket
+        sql = "SELECT MAX(TradingDate) \
+               FROM QT_TradingDayNew \
+               WHERE QT_TradingDayNew.SecuMarket = 72 \
+                   AND QT_TradingDayNew.TradingDate < '%s' \
+                   AND QT_TradingDayNew.IfTradingDay = 1" % now_date
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (TradingDate,) in result_list:
+                pre_date = TradingDate.strftime("%Y-%m-%d")
+        if pre_date == "":
+            self.SendMessage("获取 上一交易日期 失败！")
+            return
+        else:
+            self.SendMessage("获取 上一交易日期 成功。%s" % pre_date)
+        self.quote_data_list = []
+        # 证券市场：72 香港联交所
+        # 证券类别：3 H股、4 大盘(指数)、51 港股、52 合订证券、53 红筹股、62 ETF基金
+        # 过滤排除：10 其他、20 衍生权证、21 股本权证、25 牛熊证、55 优先股、60 基金、61 信托基金、64 杠杆及反向产品、65 债务证券、69 美国证券、71 普通预托证券
+        # 上市状态：1 上市、3 暂停
+        # 查询字段：HK_SecuMain：证券内部编码、证券代码、证券简称、证券类别、证券市场
+        # 查询字段：QT_HKDailyQuote：交易日、昨收盘、今开盘、最高价、最低价、收盘价、成交量、成交金额、更新时间
+        # 唯一约束：SecuMain = InnerCode、QT_DailyQuote = InnerCode & TradingDay
+        sql = "SELECT HK_SecuMain.InnerCode, HK_SecuMain.SecuCode, HK_SecuMain.SecuAbbr, HK_SecuMain.SecuCategory, HK_SecuMain.SecuMarket, \
+                      QT_HKDailyQuote.TradingDay,  QT_HKDailyQuote.PrevClosePrice,  QT_HKDailyQuote.OpenPrice,  QT_HKDailyQuote.HighPrice,  QT_HKDailyQuote.LowPrice,  QT_HKDailyQuote.ClosePrice, \
+                      QT_HKDailyQuote.TurnoverVolume,  QT_HKDailyQuote.TurnoverValue,  QT_HKDailyQuote.XGRQ \
+               FROM HK_SecuMain INNER JOIN  QT_HKDailyQuote \
+               ON HK_SecuMain.InnerCode =  QT_HKDailyQuote.InnerCode \
+               WHERE (HK_SecuMain.SecuMarket = 72) \
+                   AND (HK_SecuMain.SecuCategory = 3 OR HK_SecuMain.SecuCategory = 4 OR HK_SecuMain.SecuCategory = 51 OR HK_SecuMain.SecuCategory = 52 OR HK_SecuMain.SecuCategory = 53 OR HK_SecuMain.SecuCategory = 62) \
+                   AND (HK_SecuMain.ListedSector = 1 or HK_SecuMain.ListedSector = 3) \
+                   AND QT_HKDailyQuote.TradingDay = '%s' \
+               ORDER BY HK_SecuMain.SecuMarket ASC, HK_SecuMain.SecuCode ASC" % pre_date
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, XGRQ) in result_list:
+                stock_name = SecuAbbr.replace(" ", "")
+                stock_market = "HK"
+                pre_quote_stk_item = PreQuoteStkItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, open = OpenPrice, high = HighPrice, low = LowPrice, close = ClosePrice, pre_close = PrevClosePrice, volume = TurnoverVolume, turnover = TurnoverValue)
+                pre_quote_stk_item.SetCategory_HK(SecuCategory, SecuCode) #
+                pre_quote_stk_item.SetQuoteDate(TradingDay) #
+                pre_quote_stk_item.SetQuoteTime(XGRQ) #
+                self.quote_data_list.append(pre_quote_stk_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, XGRQ)
+                #print(pre_quote_stk_item.code, pre_quote_stk_item.category, pre_quote_stk_item.quote_date, pre_quote_stk_item.quote_time, XGRQ, XGRQ.hour, XGRQ.minute, XGRQ.second, XGRQ.microsecond)
+            self.SendMessage("获取 昨日行情-HK 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 昨日行情-HK 失败！")
+
+    def SaveData_PreQuoteStk_HK(self, dbm, table_name, save_path):
+        total_record_num = len(self.quote_data_list)
+        values_list = []
+        for i in range(total_record_num):
+            str_date = common.TransDateIntToStr(self.quote_data_list[i].quote_date)
+            str_time = self.TransTimeIntToStr(str_date, self.quote_data_list[i].quote_time)
+            values_list.append((self.quote_data_list[i].inners, self.quote_data_list[i].market, self.quote_data_list[i].code, self.quote_data_list[i].name, self.quote_data_list[i].category, 
+                           self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
+                           self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
+        columns = ["inners", "market", "code", "name", "category", "open", "high", "low", "close", "pre_close", "volume", "turnover", "trade_count", "quote_date", "quote_time"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，HK'," + \
                   "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
                   "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
                   "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
@@ -1063,7 +1194,7 @@ class DataMaker_SecurityInfo():
                   "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
                   "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
                   "`company` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '公司代码'," + \
-                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，HK'," + \
                   "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
                   "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
                   "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
@@ -1210,10 +1341,10 @@ class DataMaker_SecurityInfo_HK():
                     security_info_item.min_price_chg = self.min_price_chg_dict[InnerCode] # 最小变动价格
                 self.security_dict[InnerCode] = security_info_item
                 #print(InnerCode, CompanyCode, SecuCode, SecuAbbr, SecuMarket, SecuCategory, ListedDate, ListedSector, ListedState, TradingUnit)
-            self.SendMessage("获取 港股信息 成功。总计 %d 个。" % len(result_list))
+            self.SendMessage("获取 证券信息-HK 成功。总计 %d 个。" % len(result_list))
             self.CheckStockList()
         else:
-            self.SendMessage("获取 港股信息 失败！")
+            self.SendMessage("获取 证券信息-HK 失败！")
 
     def SaveData_SecurityInfo_HK(self, dbm, table_name, save_path):
         security_keys = list(self.security_dict.keys())
@@ -1431,6 +1562,7 @@ class BasicDataMaker(QDialog):
         self.tb_ex_rights_data = "ex_rights_data"
         self.tb_ting_pai_stock = "tod_ting_pai"
         self.tb_pre_quote_stk = "pre_quote_stk"
+        self.tb_pre_quote_stk_hk = "pre_quote_stk_hk"
         
         self.mssql_host = "0.0.0.0"
         self.mssql_port = 0
@@ -1587,15 +1719,20 @@ class BasicDataMaker(QDialog):
         self.button_pre_quote_stk.setStyleSheet("color:blue")
         self.button_pre_quote_stk.setFixedWidth(70)
         
+        self.button_pre_quote_stk_hk = QPushButton("昨日行情-HK")
+        self.button_pre_quote_stk_hk.setFont(QFont("SimSun", 9))
+        self.button_pre_quote_stk_hk.setStyleSheet("color:blue")
+        self.button_pre_quote_stk_hk.setFixedWidth(85)
+        
         self.button_security_info = QPushButton("证券信息")
         self.button_security_info.setFont(QFont("SimSun", 9))
         self.button_security_info.setStyleSheet("color:blue")
         self.button_security_info.setFixedWidth(70)
         
-        self.button_security_info_hk = QPushButton("港股信息")
+        self.button_security_info_hk = QPushButton("证券信息-HK")
         self.button_security_info_hk.setFont(QFont("SimSun", 9))
         self.button_security_info_hk.setStyleSheet("color:blue")
-        self.button_security_info_hk.setFixedWidth(70)
+        self.button_security_info_hk.setFixedWidth(85)
         
         self.button_ting_pai_stock = QPushButton("当日停牌")
         self.button_ting_pai_stock.setFont(QFont("SimSun", 9))
@@ -1634,6 +1771,8 @@ class BasicDataMaker(QDialog):
         self.h_box_layout_buttons_2 = QHBoxLayout()
         self.h_box_layout_buttons_2.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_buttons_2.addStretch(1)
+        self.h_box_layout_buttons_2.addWidget(self.button_pre_quote_stk_hk)
+        self.h_box_layout_buttons_2.addStretch(1)
         self.h_box_layout_buttons_2.addWidget(self.button_security_info_hk)
         self.h_box_layout_buttons_2.addStretch(1)
         
@@ -1663,6 +1802,7 @@ class BasicDataMaker(QDialog):
         self.button_exrights.clicked.connect(self.OnButtonExRights)
         self.button_industry.clicked.connect(self.OnButtonIndustry)
         self.button_pre_quote_stk.clicked.connect(self.OnButtonPreQuoteStk)
+        self.button_pre_quote_stk_hk.clicked.connect(self.OnButtonPreQuoteStk_HK)
         self.button_security_info.clicked.connect(self.OnButtonSecurityInfo)
         self.button_security_info_hk.clicked.connect(self.OnButtonSecurityInfo_HK)
         self.button_ting_pai_stock.clicked.connect(self.OnButtonTingPaiStock)
@@ -1728,6 +1868,22 @@ class BasicDataMaker(QDialog):
                 data_maker_pre_quote_stk = DataMaker_PreQuoteStk(self)
                 data_maker_pre_quote_stk.PullData_PreQuoteStk(self.dbm_jydb)
                 data_maker_pre_quote_stk.SaveData_PreQuoteStk(self.dbm_financial, self.tb_pre_quote_stk, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
+    def Thread_PreQuoteStk_HK(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_pre_quote_stk_hk)
+                data_maker_pre_quote_stk = DataMaker_PreQuoteStk_HK(self)
+                data_maker_pre_quote_stk.PullData_PreQuoteStk_HK(self.dbm_jydb)
+                data_maker_pre_quote_stk.SaveData_PreQuoteStk_HK(self.dbm_financial, self.tb_pre_quote_stk_hk, save_path)
                 self.SendMessage("# -------------------- %s -------------------- #" % data_type)
             except Exception as e:
                 self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
@@ -1815,12 +1971,16 @@ class BasicDataMaker(QDialog):
         self.thread_make_data = threading.Thread(target = self.Thread_PreQuoteStk, args = ("昨日行情",))
         self.thread_make_data.start()
 
+    def OnButtonPreQuoteStk_HK(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_PreQuoteStk_HK, args = ("昨日行情-HK",))
+        self.thread_make_data.start()
+
     def OnButtonSecurityInfo(self):
         self.thread_make_data = threading.Thread(target = self.Thread_SecurityInfo, args = ("证券信息",))
         self.thread_make_data.start()
 
     def OnButtonSecurityInfo_HK(self):
-        self.thread_make_data = threading.Thread(target = self.Thread_SecurityInfo_HK, args = ("港股信息",))
+        self.thread_make_data = threading.Thread(target = self.Thread_SecurityInfo_HK, args = ("证券信息-HK",))
         self.thread_make_data.start()
 
     def OnButtonTingPaiStock(self):
@@ -1835,7 +1995,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     basic_data_maker = BasicDataMaker(folder = "../data")
-    basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "research", password = "Research@123", database = "JYDB_NEW", charset = "GBK")
-    basic_data_maker.SetMySQL(host = "10.0.7.53", port = 3306, user = "root", passwd = "root", db = "financial", charset = "utf8")
+    basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "user", password = "user", database = "JYDB_NEW", charset = "GBK")
+    basic_data_maker.SetMySQL(host = "10.0.7.53", port = 3306, user = "user", passwd = "user", db = "financial", charset = "utf8")
     basic_data_maker.show()
     sys.exit(app.exec_())

@@ -10,30 +10,32 @@ Target Server Type    : MYSQL
 Target Server Version : 50717
 File Encoding         : 65001
 
-Date: 2017-02-09 15:10:33
+Date: 2017-12-20 15:10:33
 */
 
 SET FOREIGN_KEY_CHECKS=0;
 
 -- ----------------------------
--- Table structure for security_info_hk
+-- Table structure for pre_quote_stk_hk
 -- ----------------------------
-DROP TABLE IF EXISTS `security_info_hk`;
-CREATE TABLE `security_info_hk` (
+DROP TABLE IF EXISTS `pre_quote_stk_hk`;
+CREATE TABLE `pre_quote_stk_hk` (
   `id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号',
   `inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码',
-  `company` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '公司代码',
   `market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，HK',
   `code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码',
   `name` varchar(32) DEFAULT '' COMMENT '证券名称',
   `category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明',
-  `sector` int(8) DEFAULT '0' COMMENT '上市板块，详见说明',
-  `trade_unit` int(8) DEFAULT '0' COMMENT '买卖单位，股/手',
-  `min_price_chg` float(8,4) DEFAULT '0.0000' COMMENT '最小变动价格',
-  `list_state` int(8) DEFAULT '0' COMMENT '上市状态，详见说明',
-  `list_date` date COMMENT '上市日期',
+  `open` float(16,4) DEFAULT '0.0000' COMMENT '开盘价',
+  `high` float(16,4) DEFAULT '0.0000' COMMENT '最高价',
+  `low` float(16,4) DEFAULT '0.0000' COMMENT '最低价',
+  `close` float(16,4) DEFAULT '0.0000' COMMENT '收盘价',
+  `pre_close` float(16,4) DEFAULT '0.0000' COMMENT '昨收价',
+  `volume` bigint(64) DEFAULT '0' COMMENT '成交量，股',
+  `turnover` double(64,2) DEFAULT '0.00' COMMENT '成交额，元',
+  `trade_count` int(32) DEFAULT '0' COMMENT '成交笔数',
+  `quote_date` date DEFAULT NULL COMMENT '行情日期，2015-12-31',
+  `quote_time` datetime(6) DEFAULT NULL COMMENT '行情时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_inners` (`inners`),
-  KEY `idx_company` (`company`) USING BTREE,
   UNIQUE KEY `idx_market_code` (`market`,`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
