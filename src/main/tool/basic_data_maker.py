@@ -442,6 +442,124 @@ class DataMaker_Capital():
             else:
                 self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
+class DataMaker_Capital_HK():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.capital_dict = {}
+        self.count_zgb_none = 0 # 总股本缺失
+        self.count_ltgb_none = 0 # 流通股本缺失
+        self.count_zgb_zero = 0 # 总股本为零
+        self.count_ltgb_zero = 0 # 流通股本为零
+        self.count_zgb_ltgb = 0 # 全流通计数
+        self.count_jzrq_none = 0 # 截止日期缺失
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def CheckStockGuBen(self):
+        for item in self.capital_dict.values():
+            if item.total_shares == -1:
+                self.count_zgb_none += 1
+                self.SendMessage("总股本缺失：%s %s" % (item.market, item.code))
+            elif item.total_shares == 0:
+                self.count_zgb_zero += 1
+                self.SendMessage("总股本为零：%s %s" % (item.market, item.code))
+            if item.circu_shares == -1:
+                self.count_ltgb_none += 1
+                self.SendMessage("流通股本缺失：%s %s" % (item.market, item.code))
+            elif item.circu_shares == 0:
+                self.count_ltgb_zero += 1
+                self.SendMessage("流通股本为零：%s %s" % (item.market, item.code))
+            if item.total_shares == item.circu_shares:
+                self.count_zgb_ltgb += 1
+            if item.end_date == 0:
+                self.count_jzrq_none += 1
+        self.SendMessage("总计：%s" % len(self.capital_dict))
+        self.SendMessage("总股本缺失：%s" % self.count_zgb_none)
+        self.SendMessage("总股本为零：%s" % self.count_zgb_zero)
+        self.SendMessage("流通股本缺失：%s" % self.count_ltgb_none)
+        self.SendMessage("流通股本为零：%s" % self.count_ltgb_zero)
+        self.SendMessage("全流通股票：%s" % self.count_zgb_ltgb)
+        self.SendMessage("截止日期缺失：%s" % self.count_jzrq_none)
+
+    def PullData_Capital_HK(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_Capital_HK 数据库 dbm 尚未连接！")
+            return
+        # 证券市场：72 香港联交所
+        # 证券类别：3 H股、51 港股、52 合订证券、53 红筹股
+        # 上市状态：1 上市、3 暂停
+        # 查询字段：HK_SecuMain：证券内部编码、证券代码、证券简称、证券市场
+        # 查询字段：HK_ShareStru：截止日期、实收股数(股)、已上市(股)
+        # 唯一约束：HK_SecuMain = InnerCode、HK_ShareStru = CompanyCode & EndDate
+        sql = "SELECT HK_SecuMain.InnerCode, HK_SecuMain.SecuCode, HK_SecuMain.SecuAbbr, HK_SecuMain.SecuMarket, HK_ShareStru.EndDate, HK_ShareStru.PaidUpSharesComShare, HK_ShareStru.ListedShares \
+               FROM HK_SecuMain INNER JOIN HK_ShareStru \
+               ON HK_SecuMain.CompanyCode = HK_ShareStru.CompanyCode \
+               WHERE (HK_SecuMain.SecuMarket = 72) \
+                   AND (HK_SecuMain.SecuCategory = 3 OR HK_SecuMain.SecuCategory = 51 OR HK_SecuMain.SecuCategory = 52 OR HK_SecuMain.SecuCategory = 53) \
+                   AND (HK_SecuMain.ListedSector = 1 or HK_SecuMain.ListedSector = 3) \
+                   AND CAST(HK_ShareStru.CompanyCode as nvarchar) + CAST(HK_ShareStru.EndDate as nvarchar) IN \
+                       ( \
+                           SELECT CAST(CompanyCode as nvarchar) + CAST(MAX(EndDate) as nvarchar) \
+                           FROM HK_ShareStru \
+                           GROUP BY CompanyCode \
+                       ) \
+               ORDER BY HK_SecuMain.SecuMarket ASC, HK_SecuMain.SecuCode ASC"
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, PaidUpSharesComShare, ListedShares) in result_list:
+                if not SecuCode[0] == "N": # 排除未上市的新股
+                    stock_market = "HK"
+                    capital_item = CapitalItem(inners = InnerCode, market = stock_market, code = SecuCode, name = SecuAbbr)
+                    capital_item.SetEndDate(EndDate) # 截止日期
+                    if PaidUpSharesComShare != None:
+                        capital_item.total_shares = PaidUpSharesComShare
+                    if ListedShares != None:
+                        capital_item.circu_shares = ListedShares
+                    self.capital_dict[InnerCode] = capital_item
+                    #print InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, PaidUpSharesComShare, ListedShares
+            self.SendMessage("获取 股本结构-HK 成功。总计 %d 个。" % len(result_list))
+            self.CheckStockGuBen()
+        else:
+            self.SendMessage("获取 股本结构-HK 失败！")
+
+    def SaveData_Capital_HK(self, dbm, table_name, save_path):
+        capital_keys = list(self.capital_dict.keys())
+        capital_keys.sort()
+        capital_dict_list = [self.capital_dict[key] for key in capital_keys]
+        total_record_num = len(capital_dict_list)
+        values_list = []
+        for i in range(total_record_num):
+            str_date = common.TransDateIntToStr(capital_dict_list[i].end_date)
+            values_list.append((capital_dict_list[i].inners, capital_dict_list[i].market, capital_dict_list[i].code, capital_dict_list[i].name, str_date, capital_dict_list[i].total_shares, capital_dict_list[i].circu_shares))
+        columns = ["inners", "market", "code", "name", "end_date", "total_shares", "circu_shares"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，HK'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`end_date` date NOT NULL COMMENT '截止日期'," + \
+                  "`total_shares` bigint(64) DEFAULT '0' COMMENT '总股本，股'," + \
+                  "`circu_shares` bigint(64) DEFAULT '0' COMMENT '流通股本，股，普通股'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_market_code_end_date` (`market`,`code`,`end_date`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, end_date, total_shares, circu_shares) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
+
 class DataMaker_ExRights():
     def __init__(self, parent = None):
         self.parent = parent
@@ -1559,6 +1677,7 @@ class BasicDataMaker(QDialog):
         self.tb_security_info = "security_info"
         self.tb_security_info_hk = "security_info_hk"
         self.tb_capital_data = "capital_data"
+        self.tb_capital_data_hk = "capital_data_hk"
         self.tb_ex_rights_data = "ex_rights_data"
         self.tb_ting_pai_stock = "tod_ting_pai"
         self.tb_pre_quote_stk = "pre_quote_stk"
@@ -1699,10 +1818,10 @@ class BasicDataMaker(QDialog):
         self.button_capital.setStyleSheet("color:blue")
         self.button_capital.setFixedWidth(70)
         
-        self.button_capital = QPushButton("股本结构")
-        self.button_capital.setFont(QFont("SimSun", 9))
-        self.button_capital.setStyleSheet("color:blue")
-        self.button_capital.setFixedWidth(70)
+        self.button_capital_hk = QPushButton("股本结构-HK")
+        self.button_capital_hk.setFont(QFont("SimSun", 9))
+        self.button_capital_hk.setStyleSheet("color:blue")
+        self.button_capital_hk.setFixedWidth(85)
         
         self.button_exrights = QPushButton("除权数据")
         self.button_exrights.setFont(QFont("SimSun", 9))
@@ -1771,6 +1890,8 @@ class BasicDataMaker(QDialog):
         self.h_box_layout_buttons_2 = QHBoxLayout()
         self.h_box_layout_buttons_2.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_buttons_2.addStretch(1)
+        self.h_box_layout_buttons_2.addWidget(self.button_capital_hk)
+        self.h_box_layout_buttons_2.addStretch(1)
         self.h_box_layout_buttons_2.addWidget(self.button_pre_quote_stk_hk)
         self.h_box_layout_buttons_2.addStretch(1)
         self.h_box_layout_buttons_2.addWidget(self.button_security_info_hk)
@@ -1799,6 +1920,7 @@ class BasicDataMaker(QDialog):
         self.button_connect_db.clicked.connect(self.ConnectDB)
         self.button_disconnect_db.clicked.connect(self.DisconnectDB)
         self.button_capital.clicked.connect(self.OnButtonCapital)
+        self.button_capital_hk.clicked.connect(self.OnButtonCapital_HK)
         self.button_exrights.clicked.connect(self.OnButtonExRights)
         self.button_industry.clicked.connect(self.OnButtonIndustry)
         self.button_pre_quote_stk.clicked.connect(self.OnButtonPreQuoteStk)
@@ -1817,6 +1939,22 @@ class BasicDataMaker(QDialog):
                 data_maker_capital = DataMaker_Capital(self)
                 data_maker_capital.PullData_Capital(self.dbm_jydb)
                 data_maker_capital.SaveData_Capital(self.dbm_financial, self.tb_capital_data, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
+    def Thread_Capital_HK(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_capital_data_hk)
+                data_maker_capital = DataMaker_Capital_HK(self)
+                data_maker_capital.PullData_Capital_HK(self.dbm_jydb)
+                data_maker_capital.SaveData_Capital_HK(self.dbm_financial, self.tb_capital_data_hk, save_path)
                 self.SendMessage("# -------------------- %s -------------------- #" % data_type)
             except Exception as e:
                 self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
@@ -1957,6 +2095,10 @@ class BasicDataMaker(QDialog):
 
     def OnButtonCapital(self):
         self.thread_make_data = threading.Thread(target = self.Thread_Capital, args = ("股本结构",))
+        self.thread_make_data.start()
+
+    def OnButtonCapital_HK(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_Capital_HK, args = ("股本结构-HK",))
         self.thread_make_data.start()
 
     def OnButtonExRights(self):
