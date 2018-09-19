@@ -89,6 +89,20 @@ class IndustryItem(object):
         if date != None:
             self.info_date = date.year * 10000 + date.month * 100 + date.day
 
+    def SetIndustryCodeName_HK(self, classification, code, name):
+        if classification == 1:
+            self.industry_code_1 = "%d" % code
+            self.industry_name_1 = name
+        elif classification == 2:
+            self.industry_code_2 = "%d" % code
+            self.industry_name_2 = name
+        elif classification == 3:
+            self.industry_code_3 = "%d" % code
+            self.industry_name_3 = name
+        elif classification == 4:
+            self.industry_code_4 = "%d" % code
+            self.industry_name_4 = name
+
 class PreQuoteStkItem(object):
     def __init__(self, **kwargs):
         self.inners = kwargs.get("inners", 0) # 内部代码
@@ -910,6 +924,106 @@ class DataMaker_Industry():
             else:
                 self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
+class DataMaker_Industry_HK():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.industry_list = []
+        self.industry_dict = {}
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def PullData_Industry_HK(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_Industry_HK 数据库 dbm 尚未连接！")
+            return
+        self.industry_dict = {}
+        # 证券市场：72 香港联交所
+        # 证券类别：3 H股、51 港股、52 合订证券、53 红筹股
+        # 上市状态：1 上市、3 暂停
+        # 查询字段：HK_SecuMain：证券内部编码、证券代码、证券简称、证券市场
+        # 查询字段：HK_ExgIndustry：公司内码、行业划分标准、生效日期
+        # 查询字段：HK_IndustryCategory：行业编码、行业名称、行业级别
+        # 唯一约束：HK_SecuMain = InnerCode、HK_ExgIndustry = CompanyCode & Standard & IndustryNum & ExcuteDate、HK_IndustryCategory = Standard & IndustryNum & ExcuteDate
+        sql = "SELECT HK_SecuMain.InnerCode, HK_SecuMain.SecuCode, HK_SecuMain.SecuAbbr, HK_SecuMain.SecuMarket, \
+                      HK_ExgIndustry.CompanyCode, HK_ExgIndustry.Standard, HK_ExgIndustry.ExcuteDate, \
+                      HK_IndustryCategory.IndustryNum, HK_IndustryCategory.IndustryName, HK_IndustryCategory.Classification \
+               FROM HK_ExgIndustry INNER JOIN HK_SecuMain ON HK_SecuMain.CompanyCode = HK_ExgIndustry.CompanyCode \
+                                   INNER JOIN HK_IndustryCategory ON HK_ExgIndustry.IndustryNum = HK_IndustryCategory.IndustryNum \
+               WHERE (HK_SecuMain.SecuMarket = 72) \
+                   AND (HK_SecuMain.SecuCategory = 3 OR HK_SecuMain.SecuCategory = 51 OR HK_SecuMain.SecuCategory = 52 OR HK_SecuMain.SecuCategory = 53) \
+                   AND (HK_SecuMain.ListedSector = 1 OR HK_SecuMain.ListedSector = 3) \
+                   AND (HK_ExgIndustry.IfExecuted = 1 AND HK_IndustryCategory.IfExecuted = 1) \
+               ORDER BY HK_ExgIndustry.CompanyCode ASC, HK_ExgIndustry.Standard ASC, HK_IndustryCategory.Classification ASC, HK_ExgIndustry.IndustryNum ASC"
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuMarket, CompanyCode, Standard, ExcuteDate, IndustryNum, IndustryName, Classification) in result_list:
+                stock_market = "HK"
+                key = "%d%d" % (CompanyCode, Standard)
+                # 结果根据 Classification 排序，所以 industry 为分类标准中最高级的行业分类
+                if not key in self.industry_dict.keys():
+                    industry_item = IndustryItem(standard = Standard, industry = IndustryNum, inners = InnerCode, market = stock_market, code = SecuCode, name = SecuAbbr)
+                    industry_item.SetInfoDate(ExcuteDate) #
+                    industry_item.SetIndustryCodeName_HK(Classification, IndustryNum, IndustryName)
+                    self.industry_dict[key] = industry_item
+                else:
+                    industry_item = self.industry_dict[key]
+                    industry_item.SetIndustryCodeName_HK(Classification, IndustryNum, IndustryName)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuMarket, CompanyCode, Standard, ExcuteDate, IndustryNum, IndustryName, Classification)
+            self.SendMessage("获取 行业划分-HK 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 行业划分-HK 失败！")
+
+    def SaveData_Industry_HK(self, dbm, table_name, save_path):
+        industry_keys = list(self.industry_dict.keys())
+        industry_keys.sort()
+        self.industry_list = [self.industry_dict[key] for key in industry_keys]
+        total_record_num = len(self.industry_list)
+        values_list = []
+        for i in range(total_record_num):
+            str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
+            values_list.append((self.industry_list[i].standard, self.industry_list[i].industry, 
+                           self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
+                           self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
+                           self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
+        columns = ["standard", "industry", "industry_code_1", "industry_name_1", "industry_code_2", "industry_name_2", 
+                   "industry_code_3", "industry_name_3", "industry_code_4", "industry_name_4", "inners", "market", "code", "name", "info_date"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`standard` int(32) NOT NULL DEFAULT '0' COMMENT '行业划分标准'," + \
+                  "`industry` int(32) NOT NULL DEFAULT '0' COMMENT '所属行业'," + \
+                  "`industry_code_1` varchar(32) DEFAULT '' COMMENT '一级行业代码'," + \
+                  "`industry_name_1` varchar(100) DEFAULT '' COMMENT '一级行业名称'," + \
+                  "`industry_code_2` varchar(32) DEFAULT '' COMMENT '二级行业代码'," + \
+                  "`industry_name_2` varchar(100) DEFAULT '' COMMENT '二级行业名称'," + \
+                  "`industry_code_3` varchar(32) DEFAULT '' COMMENT '三级行业代码'," + \
+                  "`industry_name_3` varchar(100) DEFAULT '' COMMENT '三级行业名称'," + \
+                  "`industry_code_4` varchar(32) DEFAULT '' COMMENT '四级行业代码'," + \
+                  "`industry_name_4` varchar(100) DEFAULT '' COMMENT '四级行业名称'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，HK'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`info_date` date NOT NULL COMMENT '信息日期'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_standard_industry_market_code_info_date` (`standard`,`industry`,`market`,`code`,`info_date`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(standard, industry, industry_code_1, industry_name_1, industry_code_2, industry_name_2, industry_code_3, industry_name_3, industry_code_4, industry_name_4, inners, market, code, name, info_date) \
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
+
 class DataMaker_PreQuoteStk():
     def __init__(self, parent = None):
         self.parent = parent
@@ -1674,6 +1788,7 @@ class BasicDataMaker(QDialog):
         self.folder = kwargs.get("folder", "") # 数据文件缓存
         self.tb_trading_day = "trading_day"
         self.tb_industry_data = "industry_data"
+        self.tb_industry_data_hk = "industry_data_hk"
         self.tb_security_info = "security_info"
         self.tb_security_info_hk = "security_info_hk"
         self.tb_capital_data = "capital_data"
@@ -1833,6 +1948,11 @@ class BasicDataMaker(QDialog):
         self.button_industry.setStyleSheet("color:blue")
         self.button_industry.setFixedWidth(70)
         
+        self.button_industry_hk = QPushButton("行业划分-HK")
+        self.button_industry_hk.setFont(QFont("SimSun", 9))
+        self.button_industry_hk.setStyleSheet("color:blue")
+        self.button_industry_hk.setFixedWidth(85)
+        
         self.button_pre_quote_stk = QPushButton("昨日行情")
         self.button_pre_quote_stk.setFont(QFont("SimSun", 9))
         self.button_pre_quote_stk.setStyleSheet("color:blue")
@@ -1892,6 +2012,8 @@ class BasicDataMaker(QDialog):
         self.h_box_layout_buttons_2.addStretch(1)
         self.h_box_layout_buttons_2.addWidget(self.button_capital_hk)
         self.h_box_layout_buttons_2.addStretch(1)
+        self.h_box_layout_buttons_2.addWidget(self.button_industry_hk)
+        self.h_box_layout_buttons_2.addStretch(1)
         self.h_box_layout_buttons_2.addWidget(self.button_pre_quote_stk_hk)
         self.h_box_layout_buttons_2.addStretch(1)
         self.h_box_layout_buttons_2.addWidget(self.button_security_info_hk)
@@ -1923,6 +2045,7 @@ class BasicDataMaker(QDialog):
         self.button_capital_hk.clicked.connect(self.OnButtonCapital_HK)
         self.button_exrights.clicked.connect(self.OnButtonExRights)
         self.button_industry.clicked.connect(self.OnButtonIndustry)
+        self.button_industry_hk.clicked.connect(self.OnButtonIndustry_HK)
         self.button_pre_quote_stk.clicked.connect(self.OnButtonPreQuoteStk)
         self.button_pre_quote_stk_hk.clicked.connect(self.OnButtonPreQuoteStk_HK)
         self.button_security_info.clicked.connect(self.OnButtonSecurityInfo)
@@ -1990,6 +2113,22 @@ class BasicDataMaker(QDialog):
                 data_maker_industry = DataMaker_Industry(self)
                 data_maker_industry.PullData_Industry(self.dbm_jydb)
                 data_maker_industry.SaveData_Industry(self.dbm_financial, self.tb_industry_data, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
+    def Thread_Industry_HK(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_industry_data_hk)
+                data_maker_industry = DataMaker_Industry_HK(self)
+                data_maker_industry.PullData_Industry_HK(self.dbm_jydb)
+                data_maker_industry.SaveData_Industry_HK(self.dbm_financial, self.tb_industry_data_hk, save_path)
                 self.SendMessage("# -------------------- %s -------------------- #" % data_type)
             except Exception as e:
                 self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
@@ -2107,6 +2246,10 @@ class BasicDataMaker(QDialog):
 
     def OnButtonIndustry(self):
         self.thread_make_data = threading.Thread(target = self.Thread_Industry, args = ("行业划分",))
+        self.thread_make_data.start()
+
+    def OnButtonIndustry_HK(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_Industry_HK, args = ("行业划分-HK",))
         self.thread_make_data.start()
 
     def OnButtonPreQuoteStk(self):
