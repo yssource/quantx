@@ -29,9 +29,7 @@ CREATE TABLE "public"."stock_daily_sh_600000" (
 "volume" int8 DEFAULT 0,
 "turnover" int8 DEFAULT 0
 )
-WITH (OIDS=FALSE)
-
-;
+WITH (OIDS=FALSE);
 COMMENT ON COLUMN "public"."stock_daily_sh_600000"."id" IS '序号';
 COMMENT ON COLUMN "public"."stock_daily_sh_600000"."date" IS '日期';
 COMMENT ON COLUMN "public"."stock_daily_sh_600000"."open" IS '开盘价';

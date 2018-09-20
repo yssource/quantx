@@ -29,9 +29,7 @@ CREATE TABLE "public"."trading_day" (
 "quarter_end" int4 DEFAULT 0,
 "year_end" int4 DEFAULT 0
 )
-WITH (OIDS=FALSE)
-
-;
+WITH (OIDS=FALSE);
 COMMENT ON COLUMN "public"."trading_day"."id" IS '序号';
 COMMENT ON COLUMN "public"."trading_day"."natural_date" IS '日期';
 COMMENT ON COLUMN "public"."trading_day"."market" IS '证券市场，72、83、89';

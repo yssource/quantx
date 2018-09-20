@@ -37,9 +37,7 @@ CREATE TABLE "public"."industry_data" (
 "name" varchar(32) COLLATE "default" DEFAULT ''::character varying,
 "info_date" date NOT NULL
 )
-WITH (OIDS=FALSE)
-
-;
+WITH (OIDS=FALSE);
 COMMENT ON COLUMN "public"."industry_data"."id" IS '序号';
 COMMENT ON COLUMN "public"."industry_data"."standard" IS '行业划分标准';
 COMMENT ON COLUMN "public"."industry_data"."industry" IS '所属行业';

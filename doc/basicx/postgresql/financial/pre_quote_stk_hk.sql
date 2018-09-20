@@ -37,9 +37,7 @@ CREATE TABLE "public"."pre_quote_stk_hk" (
 "quote_date" date,
 "quote_time" timestamp
 )
-WITH (OIDS=FALSE)
-
-;
+WITH (OIDS=FALSE);
 COMMENT ON COLUMN "public"."pre_quote_stk_hk"."id" IS '序号';
 COMMENT ON COLUMN "public"."pre_quote_stk_hk"."inners" IS '内部代码';
 COMMENT ON COLUMN "public"."pre_quote_stk_hk"."market" IS '证券市场，HK';

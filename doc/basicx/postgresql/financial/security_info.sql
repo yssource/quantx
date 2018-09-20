@@ -32,9 +32,7 @@ CREATE TABLE "public"."security_info" (
 "list_state" int4 DEFAULT 0,
 "list_date" date
 )
-WITH (OIDS=FALSE)
-
-;
+WITH (OIDS=FALSE);
 COMMENT ON COLUMN "public"."security_info"."id" IS '序号';
 COMMENT ON COLUMN "public"."security_info"."inners" IS '内部代码';
 COMMENT ON COLUMN "public"."security_info"."company" IS '公司代码';

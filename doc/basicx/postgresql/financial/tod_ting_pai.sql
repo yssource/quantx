@@ -36,9 +36,7 @@ CREATE TABLE "public"."tod_ting_pai" (
 "fp_statement" varchar(110) COLLATE "default" DEFAULT ''::character varying,
 "update_time" timestamp
 )
-WITH (OIDS=FALSE)
-
-;
+WITH (OIDS=FALSE);
 COMMENT ON COLUMN "public"."tod_ting_pai"."id" IS '序号';
 COMMENT ON COLUMN "public"."tod_ting_pai"."inners" IS '内部代码';
 COMMENT ON COLUMN "public"."tod_ting_pai"."market" IS '证券市场，SH、SZ';

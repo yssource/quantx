@@ -29,9 +29,7 @@ CREATE TABLE "public"."capital_data_hk" (
 "total_shares" int8 DEFAULT 0,
 "circu_shares" int8 DEFAULT 0
 )
-WITH (OIDS=FALSE)
-
-;
+WITH (OIDS=FALSE);
 COMMENT ON COLUMN "public"."capital_data_hk"."id" IS '序号';
 COMMENT ON COLUMN "public"."capital_data_hk"."inners" IS '内部代码';
 COMMENT ON COLUMN "public"."capital_data_hk"."market" IS '证券市场，HK';

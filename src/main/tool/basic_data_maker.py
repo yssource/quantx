@@ -334,6 +334,18 @@ class TradingDayItem(object):
         if date != None:
             self.natural_date = date.year * 10000 + date.month * 100 + date.day
 
+class ExchangeRateItem(object):
+    def __init__(self, **kwargs):
+        self.base_money = kwargs.get("base_money", "") #֤ 基础货币
+        self.price = kwargs.get("price", 0.0) # 汇率价格
+        self.exchange_money = kwargs.get("exchange_money", "") #֤ 汇兑货币
+        self.quote_type = kwargs.get("quote_type", 0) # 标价方式
+        self.end_date = kwargs.get("end_date", 0) # 截止日期
+
+    def SetEndDate(self, date): # 截止日期
+        if date != None:
+            self.end_date = date.year * 10000 + date.month * 100 + date.day
+
 class DataMaker_Capital():
     def __init__(self, parent = None):
         self.parent = parent
@@ -390,10 +402,10 @@ class DataMaker_Capital():
                ON SecuMain.CompanyCode = LC_ShareStru.CompanyCode \
                WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
                    AND (SecuMain.SecuCategory = 1) \
-                   AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
-                   AND CAST(LC_ShareStru.CompanyCode as nvarchar) + CAST(LC_ShareStru.EndDate as nvarchar) IN \
+                   AND (SecuMain.ListedSector = 1 OR SecuMain.ListedSector = 2 OR SecuMain.ListedSector = 6) \
+                   AND CAST(LC_ShareStru.CompanyCode AS nvarchar) + CAST(LC_ShareStru.EndDate AS nvarchar) IN \
                        ( \
-                           SELECT CAST(CompanyCode as nvarchar) + CAST(MAX(EndDate) as nvarchar) \
+                           SELECT CAST(CompanyCode AS nvarchar) + CAST(MAX(EndDate) AS nvarchar) \
                            FROM LC_ShareStru \
                            GROUP BY CompanyCode \
                        ) \
@@ -414,7 +426,7 @@ class DataMaker_Capital():
                     if AFloatListed != None:
                         capital_item.circu_shares = AFloatListed
                     self.capital_dict[InnerCode] = capital_item
-                    #print InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, TotalShares, AFloatListed
+                    #print(InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, TotalShares, AFloatListed)
             self.SendMessage("获取 股本结构 成功。总计 %d 个。" % len(result_list))
             self.CheckStockGuBen()
         else:
@@ -512,10 +524,10 @@ class DataMaker_Capital_HK():
                ON HK_SecuMain.CompanyCode = HK_ShareStru.CompanyCode \
                WHERE (HK_SecuMain.SecuMarket = 72) \
                    AND (HK_SecuMain.SecuCategory = 3 OR HK_SecuMain.SecuCategory = 51 OR HK_SecuMain.SecuCategory = 52 OR HK_SecuMain.SecuCategory = 53) \
-                   AND (HK_SecuMain.ListedSector = 1 or HK_SecuMain.ListedSector = 3) \
-                   AND CAST(HK_ShareStru.CompanyCode as nvarchar) + CAST(HK_ShareStru.EndDate as nvarchar) IN \
+                   AND (HK_SecuMain.ListedSector = 1 OR HK_SecuMain.ListedSector = 3) \
+                   AND CAST(HK_ShareStru.CompanyCode AS nvarchar) + CAST(HK_ShareStru.EndDate AS nvarchar) IN \
                        ( \
-                           SELECT CAST(CompanyCode as nvarchar) + CAST(MAX(EndDate) as nvarchar) \
+                           SELECT CAST(CompanyCode AS nvarchar) + CAST(MAX(EndDate) AS nvarchar) \
                            FROM HK_ShareStru \
                            GROUP BY CompanyCode \
                        ) \
@@ -532,7 +544,7 @@ class DataMaker_Capital_HK():
                     if ListedShares != None:
                         capital_item.circu_shares = ListedShares
                     self.capital_dict[InnerCode] = capital_item
-                    #print InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, PaidUpSharesComShare, ListedShares
+                    #print(InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, PaidUpSharesComShare, ListedShares)
             self.SendMessage("获取 股本结构-HK 成功。总计 %d 个。" % len(result_list))
             self.CheckStockGuBen()
         else:
@@ -856,7 +868,7 @@ class DataMaker_Industry():
                ON SecuMain.CompanyCode = LC_ExgIndustry.CompanyCode \
                WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
                    AND (SecuMain.SecuCategory = 1) \
-                   AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
+                   AND (SecuMain.ListedSector = 1 OR SecuMain.ListedSector = 2 OR SecuMain.ListedSector = 6) \
                    AND (LC_ExgIndustry.IfPerformed = 1) \
                ORDER BY LC_ExgIndustry.Standard ASC, LC_ExgIndustry.Industry ASC, \
                         LC_ExgIndustry.FirstIndustryCode ASC, LC_ExgIndustry.SecondIndustryCode ASC, LC_ExgIndustry.ThirdIndustryCode ASC, LC_ExgIndustry.FourthIndustryCode ASC"
@@ -1077,7 +1089,7 @@ class DataMaker_PreQuoteStk():
                ON SecuMain.InnerCode = QT_DailyQuote.InnerCode \
                WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
                    AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
-                   AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
+                   AND (SecuMain.ListedSector = 1 OR SecuMain.ListedSector = 2 OR SecuMain.ListedSector = 6) \
                    AND QT_DailyQuote.TradingDay = '%s' \
                ORDER BY SecuMain.SecuMarket ASC, SecuMain.SecuCode ASC" % pre_date
         result_list = dbm.ExecQuery(sql)
@@ -1192,13 +1204,13 @@ class DataMaker_PreQuoteStk_HK():
         # 查询字段：QT_HKDailyQuote：交易日、昨收盘、今开盘、最高价、最低价、收盘价、成交量、成交金额、更新时间
         # 唯一约束：SecuMain = InnerCode、QT_DailyQuote = InnerCode & TradingDay
         sql = "SELECT HK_SecuMain.InnerCode, HK_SecuMain.SecuCode, HK_SecuMain.SecuAbbr, HK_SecuMain.SecuCategory, HK_SecuMain.SecuMarket, \
-                      QT_HKDailyQuote.TradingDay,  QT_HKDailyQuote.PrevClosePrice,  QT_HKDailyQuote.OpenPrice,  QT_HKDailyQuote.HighPrice,  QT_HKDailyQuote.LowPrice,  QT_HKDailyQuote.ClosePrice, \
-                      QT_HKDailyQuote.TurnoverVolume,  QT_HKDailyQuote.TurnoverValue,  QT_HKDailyQuote.XGRQ \
-               FROM HK_SecuMain INNER JOIN  QT_HKDailyQuote \
-               ON HK_SecuMain.InnerCode =  QT_HKDailyQuote.InnerCode \
+                      QT_HKDailyQuote.TradingDay, QT_HKDailyQuote.PrevClosePrice, QT_HKDailyQuote.OpenPrice, QT_HKDailyQuote.HighPrice, QT_HKDailyQuote.LowPrice, QT_HKDailyQuote.ClosePrice, \
+                      QT_HKDailyQuote.TurnoverVolume, QT_HKDailyQuote.TurnoverValue, QT_HKDailyQuote.XGRQ \
+               FROM HK_SecuMain INNER JOIN QT_HKDailyQuote \
+               ON HK_SecuMain.InnerCode = QT_HKDailyQuote.InnerCode \
                WHERE (HK_SecuMain.SecuMarket = 72) \
                    AND (HK_SecuMain.SecuCategory = 3 OR HK_SecuMain.SecuCategory = 4 OR HK_SecuMain.SecuCategory = 51 OR HK_SecuMain.SecuCategory = 52 OR HK_SecuMain.SecuCategory = 53 OR HK_SecuMain.SecuCategory = 62) \
-                   AND (HK_SecuMain.ListedSector = 1 or HK_SecuMain.ListedSector = 3) \
+                   AND (HK_SecuMain.ListedSector = 1 OR HK_SecuMain.ListedSector = 3) \
                    AND QT_HKDailyQuote.TradingDay = '%s' \
                ORDER BY HK_SecuMain.SecuMarket ASC, HK_SecuMain.SecuCode ASC" % pre_date
         result_list = dbm.ExecQuery(sql)
@@ -1648,7 +1660,7 @@ class DataMaker_TingPaiStock():
                ON SecuMain.InnerCode = LC_SuspendResumption.InnerCode \
                WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
                    AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
-                   AND (SecuMain.ListedSector = 1 or SecuMain.ListedSector = 2 or SecuMain.ListedSector = 6) \
+                   AND (SecuMain.ListedSector = 1 OR SecuMain.ListedSector = 2 OR SecuMain.ListedSector = 6) \
                    AND (LC_SuspendResumption.ResumptionDate = '1900-01-01' OR LC_SuspendResumption.ResumptionDate > '%s') \
                ORDER BY SecuMain.SecuMarket ASC, SecuMain.SecuCode ASC" % now_date # 复牌日期 1900-01-01 的为长期停牌
         result_list = dbm.ExecQuery(sql)
@@ -1782,6 +1794,78 @@ class DataMaker_TradingDay():
             else:
                 self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
+class DataMaker_ExchangeRate():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.exchange_rate_list = []
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def PullData_ExchangeRate(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_ExchangeRate 数据库 dbm 尚未连接！")
+            return
+        self.exchange_rate_list = []
+        now_date = datetime.now().strftime("%Y-%m-%d")
+        # 币种选择：1000 美元、1100 港元
+        # 数据期间：5 日
+        # 查询字段：ED_RMBBaseEXchangeRate：截止日期、币种选择、标价方式、期末价
+        # 唯一约束：ED_RMBBaseEXchangeRate = EndDate、DataReportPeriod、Currency
+        sql = "SELECT EndDate, Currency, QuotationType, CAST(PeriodEndPrice AS decimal(8,4)) \
+               FROM ED_RMBBaseEXchangeRate \
+               WHERE (Currency = 1000 OR Currency = 1100) \
+                   AND (DataReportPeriod = 5) \
+                   AND (EndDate = '%s')" % now_date
+        # 注意以上查询语句中，需要将 money 类型的 PeriodEndPrice 字段精度转换到 4 位，不然查询结果只会保留 2 位
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (EndDate, Currency, QuotationType, PeriodEndPrice) in result_list:
+                exchange_money = ""
+                if 1000 == Currency:
+                    exchange_money = "USD"
+                elif 1100 == Currency:
+                    exchange_money = "HKD"
+                exchange_rate_item = ExchangeRateItem(base_money = "RMB", price = PeriodEndPrice, exchange_money = exchange_money, quote_type = QuotationType)
+                exchange_rate_item.SetEndDate(EndDate) # 截止日期
+                self.exchange_rate_list.append(exchange_rate_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuMarket, EndDate, TotalShares, AFloatListed)
+            self.SendMessage("获取 基础汇率 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 基础汇率 失败！")
+
+    def SaveData_ExchangeRate(self, dbm, table_name, save_path):
+        total_record_num = len(self.exchange_rate_list)
+        values_list = []
+        for i in range(total_record_num):
+            str_date = common.TransDateIntToStr(self.exchange_rate_list[i].end_date)
+            values_list.append((self.exchange_rate_list[i].base_money, self.exchange_rate_list[i].price, self.exchange_rate_list[i].exchange_money, self.exchange_rate_list[i].quote_type, str_date))
+        columns = ["base_money", "price", "exchange_money", "quote_type", "end_date"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`base_money` varchar(8) NOT NULL DEFAULT '' COMMENT '基础货币，RMB'," + \
+                  "`price` float(16,4) NOT NULL DEFAULT '0.0000' COMMENT '汇率价格，人民币元 / 100外币'," + \
+                  "`exchange_money` varchar(8) NOT NULL DEFAULT '' COMMENT '汇兑货币，USD、HKD'," + \
+                  "`quote_type` int(8) DEFAULT '0' COMMENT '标价方式，1 直接、2 间接'," + \
+                  "`end_date` date NOT NULL COMMENT '截止日期'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_base_money_exchange_money_end_date` (`base_money`,`exchange_money`,`end_date`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(base_money, price, exchange_money, quote_type, end_date) VALUES (%s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
+
 class BasicDataMaker(QDialog):
     def __init__(self, **kwargs):
         super(BasicDataMaker, self).__init__()
@@ -1797,6 +1881,7 @@ class BasicDataMaker(QDialog):
         self.tb_ting_pai_stock = "tod_ting_pai"
         self.tb_pre_quote_stk = "pre_quote_stk"
         self.tb_pre_quote_stk_hk = "pre_quote_stk_hk"
+        self.tb_exchange_rate = "exchange_rate"
         
         self.mssql_host = "0.0.0.0"
         self.mssql_port = 0
@@ -1983,6 +2068,11 @@ class BasicDataMaker(QDialog):
         self.button_trading_day.setStyleSheet("color:blue")
         self.button_trading_day.setFixedWidth(70)
         
+        self.button_exchange_rate = QPushButton("基础汇率")
+        self.button_exchange_rate.setFont(QFont("SimSun", 9))
+        self.button_exchange_rate.setStyleSheet("color:blue")
+        self.button_exchange_rate.setFixedWidth(70)
+        
         self.h_box_layout_database = QHBoxLayout()
         self.h_box_layout_database.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_database.addStretch(1)
@@ -2024,6 +2114,8 @@ class BasicDataMaker(QDialog):
         self.h_box_layout_buttons_3.addStretch(1)
         self.h_box_layout_buttons_3.addWidget(self.button_trading_day)
         self.h_box_layout_buttons_3.addStretch(1)
+        self.h_box_layout_buttons_3.addWidget(self.button_exchange_rate)
+        self.h_box_layout_buttons_3.addStretch(1)
         
         self.h_box_layout_text_info = QHBoxLayout()
         self.h_box_layout_text_info.setContentsMargins(-1, -1, -1, -1)
@@ -2052,6 +2144,7 @@ class BasicDataMaker(QDialog):
         self.button_security_info_hk.clicked.connect(self.OnButtonSecurityInfo_HK)
         self.button_ting_pai_stock.clicked.connect(self.OnButtonTingPaiStock)
         self.button_trading_day.clicked.connect(self.OnButtonTradingDay)
+        self.button_exchange_rate.clicked.connect(self.OnButtonExchangeRate)
 
     def Thread_Capital(self, data_type):
         if self.flag_data_make == False:
@@ -2232,6 +2325,22 @@ class BasicDataMaker(QDialog):
         else:
             self.SendMessage("正在生成数据，请等待...")
 
+    def Thread_ExchangeRate(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_exchange_rate)
+                data_maker_exchange_rate = DataMaker_ExchangeRate(self)
+                data_maker_exchange_rate.PullData_ExchangeRate(self.dbm_jydb)
+                data_maker_exchange_rate.SaveData_ExchangeRate(self.dbm_financial, self.tb_exchange_rate, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
     def OnButtonCapital(self):
         self.thread_make_data = threading.Thread(target = self.Thread_Capital, args = ("股本结构",))
         self.thread_make_data.start()
@@ -2274,6 +2383,10 @@ class BasicDataMaker(QDialog):
 
     def OnButtonTradingDay(self):
         self.thread_make_data = threading.Thread(target = self.Thread_TradingDay, args = ("交易日期",))
+        self.thread_make_data.start()
+
+    def OnButtonExchangeRate(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_ExchangeRate, args = ("基础汇率",))
         self.thread_make_data.start()
 
 if __name__ == "__main__":

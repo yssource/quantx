@@ -32,9 +32,7 @@ CREATE TABLE "public"."ex_rights_data" (
 "price" float4 DEFAULT 0.0,
 "bonus" float4 DEFAULT 0.0
 )
-WITH (OIDS=FALSE)
-
-;
+WITH (OIDS=FALSE);
 COMMENT ON COLUMN "public"."ex_rights_data"."id" IS '序号';
 COMMENT ON COLUMN "public"."ex_rights_data"."inners" IS '内部代码';
 COMMENT ON COLUMN "public"."ex_rights_data"."market" IS '证券市场，SH、SZ';

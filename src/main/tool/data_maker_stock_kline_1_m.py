@@ -130,7 +130,7 @@ class DataMaker_StockKline_1_M():
             for file_item in file_list:
                 file_path = os.path.join("%s\%s" % (folder_path, file_item))
                 ticks_list.append(file_path)
-                #print file_path
+                #print(file_path)
         return ticks_list
 
     def SaveData_StockTicks(self, ticks_list, market, code_list, model): # market：sh、sz
