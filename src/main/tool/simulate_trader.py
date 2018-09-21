@@ -59,7 +59,7 @@ class QuoteData(object):
         self.market = kwargs.get("market", "")
         self.code = kwargs.get("code", "")
         self.name = kwargs.get("name", "")
-        self.category = kwargs.get("category", "")
+        self.category = kwargs.get("category", 0)
         self.open = kwargs.get("open", 0.0)
         self.high = kwargs.get("high", 0.0)
         self.low = kwargs.get("low", 0.0)

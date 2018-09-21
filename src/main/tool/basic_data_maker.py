@@ -109,7 +109,7 @@ class PreQuoteStkItem(object):
         self.market = kwargs.get("market", "")
         self.code = kwargs.get("code", "")
         self.name = kwargs.get("name", "")
-        self.category = kwargs.get("category", "")
+        self.category = kwargs.get("category", 0)
         self.open = kwargs.get("open", 0.0)
         self.high = kwargs.get("high", 0.0)
         self.low = kwargs.get("low", 0.0)
@@ -296,7 +296,7 @@ class TingPaiStockItem(object):
         self.market = kwargs.get("market", "")
         self.code = kwargs.get("code", "")
         self.name = kwargs.get("name", "")
-        self.category = kwargs.get("category", "")
+        self.category = kwargs.get("category", 0)
         self.tp_date = kwargs.get("tp_date", datetime(1900, 1, 1)) # 停牌日期
         self.tp_time = kwargs.get("tp_time", "") # 停牌时间
         self.tp_reason = kwargs.get("tp_reason", "") # 停牌原因
@@ -345,6 +345,28 @@ class ExchangeRateItem(object):
     def SetEndDate(self, date): # 截止日期
         if date != None:
             self.end_date = date.year * 10000 + date.month * 100 + date.day
+
+class ComponentHsggtItem(object):
+    def __init__(self, **kwargs):
+        self.inners = kwargs.get("inners", 0) # 内部代码
+        self.market = kwargs.get("market", "")
+        self.code = kwargs.get("code", "")
+        self.name = kwargs.get("name", "")
+        self.category = kwargs.get("category", 0)
+        self.comp_type = kwargs.get("comp_type", 0) # 成分类别
+        self.update_time = kwargs.get("update_time", datetime(1900, 1, 1))
+
+    def SetCategory(self, category, symbol):
+        if category == 1: # A股
+            self.category = 1
+        elif category == 3: # H股
+            self.category = 21 # 港股个股
+        elif category == 51: # 港股
+            self.category = 21 # 港股个股
+        elif category == 52: # 合订证券
+            self.category = 21 # 港股个股
+        elif category == 53: # 红筹股
+            self.category = 21 # 港股个股
 
 class DataMaker_Capital():
     def __init__(self, parent = None):
@@ -896,9 +918,9 @@ class DataMaker_Industry():
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
             values_list.append((self.industry_list[i].standard, self.industry_list[i].industry, 
-                           self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
-                           self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
-                           self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
+                                self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
+                                self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
+                                self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
         columns = ["standard", "industry", "industry_code_1", "industry_name_1", "industry_code_2", "industry_name_2", 
                    "industry_code_3", "industry_name_3", "industry_code_4", "industry_name_4", "inners", "market", "code", "name", "info_date"]
         result = pd.DataFrame(columns = columns) # 空
@@ -996,9 +1018,9 @@ class DataMaker_Industry_HK():
         for i in range(total_record_num):
             str_date = common.TransDateIntToStr(self.industry_list[i].info_date)
             values_list.append((self.industry_list[i].standard, self.industry_list[i].industry, 
-                           self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
-                           self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
-                           self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
+                                self.industry_list[i].industry_code_1, self.industry_list[i].industry_name_1, self.industry_list[i].industry_code_2, self.industry_list[i].industry_name_2, 
+                                self.industry_list[i].industry_code_3, self.industry_list[i].industry_name_3, self.industry_list[i].industry_code_4, self.industry_list[i].industry_name_4, 
+                                self.industry_list[i].inners, self.industry_list[i].market, self.industry_list[i].code, self.industry_list[i].name, str_date))
         columns = ["standard", "industry", "industry_code_1", "industry_name_1", "industry_code_2", "industry_name_2", 
                    "industry_code_3", "industry_name_3", "industry_code_4", "industry_name_4", "inners", "market", "code", "name", "info_date"]
         result = pd.DataFrame(columns = columns) # 空
@@ -1119,8 +1141,8 @@ class DataMaker_PreQuoteStk():
             str_date = common.TransDateIntToStr(self.quote_data_list[i].quote_date)
             str_time = self.TransTimeIntToStr(str_date, self.quote_data_list[i].quote_time)
             values_list.append((self.quote_data_list[i].inners, self.quote_data_list[i].market, self.quote_data_list[i].code, self.quote_data_list[i].name, self.quote_data_list[i].category, 
-                           self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
-                           self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
+                                self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
+                                self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
         columns = ["inners", "market", "code", "name", "category", "open", "high", "low", "close", "pre_close", "volume", "turnover", "trade_count", "quote_date", "quote_time"]
         result = pd.DataFrame(columns = columns) # 空
         if len(values_list) > 0:
@@ -1236,8 +1258,8 @@ class DataMaker_PreQuoteStk_HK():
             str_date = common.TransDateIntToStr(self.quote_data_list[i].quote_date)
             str_time = self.TransTimeIntToStr(str_date, self.quote_data_list[i].quote_time)
             values_list.append((self.quote_data_list[i].inners, self.quote_data_list[i].market, self.quote_data_list[i].code, self.quote_data_list[i].name, self.quote_data_list[i].category, 
-                           self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
-                           self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
+                                self.quote_data_list[i].open, self.quote_data_list[i].high, self.quote_data_list[i].low, self.quote_data_list[i].close, self.quote_data_list[i].pre_close, 
+                                self.quote_data_list[i].volume, self.quote_data_list[i].turnover, self.quote_data_list[i].trade_count, str_date, str_time))
         columns = ["inners", "market", "code", "name", "category", "open", "high", "low", "close", "pre_close", "volume", "turnover", "trade_count", "quote_date", "quote_time"]
         result = pd.DataFrame(columns = columns) # 空
         if len(values_list) > 0:
@@ -1689,8 +1711,8 @@ class DataMaker_TingPaiStock():
             str_date_fp = self.ting_pai_stock_list[i].fp_date.strftime("%Y-%m-%d")
             str_date_up = self.ting_pai_stock_list[i].update_time.strftime("%Y-%m-%d")
             values_list.append((self.ting_pai_stock_list[i].inners, self.ting_pai_stock_list[i].market, self.ting_pai_stock_list[i].code, self.ting_pai_stock_list[i].name, self.ting_pai_stock_list[i].category, 
-                           str_date_tp, self.ting_pai_stock_list[i].tp_time, self.ting_pai_stock_list[i].tp_reason, self.ting_pai_stock_list[i].tp_statement, self.ting_pai_stock_list[i].tp_term, 
-                           str_date_fp, self.ting_pai_stock_list[i].fp_time, self.ting_pai_stock_list[i].fp_statement, str_date_up))
+                                str_date_tp, self.ting_pai_stock_list[i].tp_time, self.ting_pai_stock_list[i].tp_reason, self.ting_pai_stock_list[i].tp_statement, self.ting_pai_stock_list[i].tp_term, 
+                                str_date_fp, self.ting_pai_stock_list[i].fp_time, self.ting_pai_stock_list[i].fp_statement, str_date_up))
         columns = ["inners", "market", "code", "name", "category", "tp_date", "tp_time", "tp_reason", "tp_statement", "tp_term", "fp_date", "fp_time", "fp_statement", "update_time"]
         result = pd.DataFrame(columns = columns) # 空
         if len(values_list) > 0:
@@ -1866,6 +1888,94 @@ class DataMaker_ExchangeRate():
             else:
                 self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
 
+class DataMaker_ComponentHSGGT():
+    def __init__(self, parent = None):
+        self.parent = parent
+        self.component_hsggt_list = []
+
+    def SendMessage(self, text_info):
+        if self.parent != None:
+            self.parent.SendMessage(text_info)
+
+    def PullData_ComponentHSGGT(self, dbm):
+        if dbm == None:
+            self.SendMessage("PullData_ComponentHSGGT 数据库 dbm 尚未连接！")
+            return
+        self.component_hsggt_list = []
+        # TODO：
+        
+        
+        
+        
+        # 证券市场：83 上海证券交易所、90 深圳证券交易所
+        # 证券类别：1 A股、8 开放式基金、62 ETF基金
+        # 上市板块：1 主板、2 中小企业板、6 创业板
+        # 查询字段：SecuMain：证券内部编码、证券代码、证券简称、证券类别、证券市场
+        # 查询字段：QT_DailyQuote：交易日、昨收盘、今开盘、最高价、最低价、收盘价、成交量、成交金额、成交笔数、更新时间
+        # 唯一约束：SecuMain = InnerCode、QT_DailyQuote = InnerCode & TradingDay
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuCategory, SecuMain.SecuMarket, \
+                      QT_DailyQuote.TradingDay, QT_DailyQuote.PrevClosePrice, QT_DailyQuote.OpenPrice, QT_DailyQuote.HighPrice, QT_DailyQuote.LowPrice, QT_DailyQuote.ClosePrice, \
+                      QT_DailyQuote.TurnoverVolume, QT_DailyQuote.TurnoverValue, QT_DailyQuote.TurnoverDeals, QT_DailyQuote.XGRQ \
+               FROM SecuMain INNER JOIN QT_DailyQuote \
+               ON SecuMain.InnerCode = QT_DailyQuote.InnerCode \
+               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
+                   AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
+                   AND (SecuMain.ListedSector = 1 OR SecuMain.ListedSector = 2 OR SecuMain.ListedSector = 6) \
+                   AND QT_DailyQuote.TradingDay = '%s' \
+               ORDER BY SecuMain.SecuMarket ASC, SecuMain.SecuCode ASC" % pre_date
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals, XGRQ) in result_list:
+                stock_name = SecuAbbr.replace(" ", "")
+                stock_market = ""
+                if SecuMarket == 83:
+                    stock_market = "SH"
+                elif SecuMarket == 90:
+                    stock_market = "SZ"
+                pre_quote_stk_item = PreQuoteStkItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, open = OpenPrice, high = HighPrice, low = LowPrice, close = ClosePrice, pre_close = PrevClosePrice, volume = TurnoverVolume, turnover = TurnoverValue, trade_count = TurnoverDeals)
+                pre_quote_stk_item.SetCategory(SecuCategory, SecuCode) #
+                pre_quote_stk_item.SetQuoteDate(TradingDay) #
+                pre_quote_stk_item.SetQuoteTime(XGRQ) #
+                self.component_hsggt_list.append(pre_quote_stk_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals, XGRQ)
+                #print(pre_quote_stk_item.code, pre_quote_stk_item.category, pre_quote_stk_item.quote_date, pre_quote_stk_item.quote_time, XGRQ, XGRQ.hour, XGRQ.minute, XGRQ.second, XGRQ.microsecond)
+            self.SendMessage("获取 港通成分 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 港通成分 失败！")
+
+    def SaveData_ComponentHSGGT(self, dbm, table_name, save_path):
+        total_record_num = len(self.component_hsggt_list)
+        values_list = []
+        for i in range(total_record_num):
+            values_list.append((self.component_hsggt_list[i].inners, self.component_hsggt_list[i].market, self.component_hsggt_list[i].code, self.component_hsggt_list[i].name, self.component_hsggt_list[i].category, 
+                                self.component_hsggt_list[i].comp_type, self.component_hsggt_list[i].update_time.strftime("%Y-%m-%d")))
+        columns = ["inners", "market", "code", "name", "category", "comp_type", "update_time"]
+        result = pd.DataFrame(columns = columns) # 空
+        if len(values_list) > 0:
+            result = pd.DataFrame(data = values_list, columns = columns)
+        #print(result)
+        result.to_pickle(save_path)
+        self.SendMessage("本地保存：总记录 %d，保存记录 %d，失败记录 %d。" % (total_record_num, result.shape[0], total_record_num - result.shape[0]))
+        if dbm != None:
+            sql = "CREATE TABLE `%s` (" % table_name + \
+                  "`id` int(32) unsigned NOT NULL AUTO_INCREMENT COMMENT '序号'," + \
+                  "`inners` int(32) unsigned NOT NULL DEFAULT '0' COMMENT '内部代码'," + \
+                  "`market` varchar(32) NOT NULL DEFAULT '' COMMENT '证券市场，SH、SZ、HK'," + \
+                  "`code` varchar(32) NOT NULL DEFAULT '' COMMENT '证券代码'," + \
+                  "`name` varchar(32) DEFAULT '' COMMENT '证券名称'," + \
+                  "`category` int(8) DEFAULT '0' COMMENT '证券类别，详见说明'," + \
+                  "`comp_type` int(8) DEFAULT '0' COMMENT '成分类别，详见说明'," + \
+                  "`update_time` datetime(6) DEFAULT NULL COMMENT '更新时间'," + \
+                  "PRIMARY KEY (`id`)," + \
+                  "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                  ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
+            if dbm.TruncateOrCreateTable(table_name, sql) == True:
+                sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, comp_type, update_time) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                total_record_num, save_record_success, save_record_failed = dbm.BatchInsert(values_list, sql)
+                self.SendMessage("远程入库：总记录 %d，入库记录 %d，失败记录 %d。" % (total_record_num, save_record_success, save_record_failed))
+            else:
+                self.SendMessage("远程入库：初始化数据库表 %s 失败！" % table_name)
+
 class BasicDataMaker(QDialog):
     def __init__(self, **kwargs):
         super(BasicDataMaker, self).__init__()
@@ -1882,6 +1992,7 @@ class BasicDataMaker(QDialog):
         self.tb_pre_quote_stk = "pre_quote_stk"
         self.tb_pre_quote_stk_hk = "pre_quote_stk_hk"
         self.tb_exchange_rate = "exchange_rate"
+        self.tb_component_hsggt = "component_hsggt"
         
         self.mssql_host = "0.0.0.0"
         self.mssql_port = 0
@@ -2073,6 +2184,11 @@ class BasicDataMaker(QDialog):
         self.button_exchange_rate.setStyleSheet("color:blue")
         self.button_exchange_rate.setFixedWidth(70)
         
+        self.button_component_hsggt = QPushButton("港通成分")
+        self.button_component_hsggt.setFont(QFont("SimSun", 9))
+        self.button_component_hsggt.setStyleSheet("color:blue")
+        self.button_component_hsggt.setFixedWidth(70)
+        
         self.h_box_layout_database = QHBoxLayout()
         self.h_box_layout_database.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_database.addStretch(1)
@@ -2112,9 +2228,11 @@ class BasicDataMaker(QDialog):
         self.h_box_layout_buttons_3 = QHBoxLayout()
         self.h_box_layout_buttons_3.setContentsMargins(-1, -1, -1, -1)
         self.h_box_layout_buttons_3.addStretch(1)
-        self.h_box_layout_buttons_3.addWidget(self.button_trading_day)
-        self.h_box_layout_buttons_3.addStretch(1)
         self.h_box_layout_buttons_3.addWidget(self.button_exchange_rate)
+        self.h_box_layout_buttons_3.addStretch(1)
+        self.h_box_layout_buttons_3.addWidget(self.button_component_hsggt)
+        self.h_box_layout_buttons_3.addStretch(1)
+        self.h_box_layout_buttons_3.addWidget(self.button_trading_day)
         self.h_box_layout_buttons_3.addStretch(1)
         
         self.h_box_layout_text_info = QHBoxLayout()
@@ -2145,6 +2263,7 @@ class BasicDataMaker(QDialog):
         self.button_ting_pai_stock.clicked.connect(self.OnButtonTingPaiStock)
         self.button_trading_day.clicked.connect(self.OnButtonTradingDay)
         self.button_exchange_rate.clicked.connect(self.OnButtonExchangeRate)
+        self.button_component_hsggt.clicked.connect(self.OnButtonComponentHSGGT)
 
     def Thread_Capital(self, data_type):
         if self.flag_data_make == False:
@@ -2341,6 +2460,22 @@ class BasicDataMaker(QDialog):
         else:
             self.SendMessage("正在生成数据，请等待...")
 
+    def Thread_ComponentHSGGT(self, data_type):
+        if self.flag_data_make == False:
+            self.flag_data_make = True
+            try:
+                self.SendMessage("\n# -------------------- %s -------------------- #" % data_type)
+                save_path = "%s/%s" % (self.folder_financial, self.tb_component_hsggt)
+                data_maker_component_hsggt = DataMaker_ComponentHSGGT(self)
+                data_maker_component_hsggt.PullData_ComponentHSGGT(self.dbm_jydb)
+                data_maker_component_hsggt.SaveData_ComponentHSGGT(self.dbm_financial, self.tb_component_hsggt, save_path)
+                self.SendMessage("# -------------------- %s -------------------- #" % data_type)
+            except Exception as e:
+                self.SendMessage("生成 %s 发生异常！%s" % (data_type, e))
+            self.flag_data_make = False #
+        else:
+            self.SendMessage("正在生成数据，请等待...")
+
     def OnButtonCapital(self):
         self.thread_make_data = threading.Thread(target = self.Thread_Capital, args = ("股本结构",))
         self.thread_make_data.start()
@@ -2387,6 +2522,10 @@ class BasicDataMaker(QDialog):
 
     def OnButtonExchangeRate(self):
         self.thread_make_data = threading.Thread(target = self.Thread_ExchangeRate, args = ("基础汇率",))
+        self.thread_make_data.start()
+
+    def OnButtonComponentHSGGT(self):
+        self.thread_make_data = threading.Thread(target = self.Thread_ComponentHSGGT, args = ("港通成分",))
         self.thread_make_data.start()
 
 if __name__ == "__main__":
