@@ -46,7 +46,7 @@ COMMENT ON COLUMN "public"."component_hsggt"."update_time" IS '更新时间';
 -- ----------------------------
 -- Indexes structure for table component_hsggt
 -- ----------------------------
-CREATE UNIQUE INDEX "idx_market_code" ON "public"."component_hsggt" USING btree ("market","code");
+CREATE UNIQUE INDEX "idx_market_code_comp_type" ON "public"."component_hsggt" USING btree ("market","code","comp_type");
 
 -- ----------------------------
 -- Primary Key structure for table component_hsggt

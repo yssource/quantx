@@ -29,5 +29,5 @@ CREATE TABLE `component_hsggt` (
   `comp_type` int(8) DEFAULT '0' COMMENT '成分类别，详见说明',
   `update_time` datetime(6) DEFAULT NULL COMMENT '更新时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_market_code` (`market`,`code`)
+  UNIQUE KEY `idx_market_code_comp_type` (`market`,`code`,`comp_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

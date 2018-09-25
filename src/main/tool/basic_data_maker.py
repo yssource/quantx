@@ -1902,46 +1902,92 @@ class DataMaker_ComponentHSGGT():
             self.SendMessage("PullData_ComponentHSGGT 数据库 dbm 尚未连接！")
             return
         self.component_hsggt_list = []
-        # TODO：
-        
-        
-        
-        
-        # 证券市场：83 上海证券交易所、90 深圳证券交易所
-        # 证券类别：1 A股、8 开放式基金、62 ETF基金
-        # 上市板块：1 主板、2 中小企业板、6 创业板
+        # 成分类别：1 沪港通、2 沪股通、3 深股通、4 深港通
+        # 成分标志：1 是成分股
         # 查询字段：SecuMain：证券内部编码、证券代码、证券简称、证券类别、证券市场
-        # 查询字段：QT_DailyQuote：交易日、昨收盘、今开盘、最高价、最低价、收盘价、成交量、成交金额、成交笔数、更新时间
-        # 唯一约束：SecuMain = InnerCode、QT_DailyQuote = InnerCode & TradingDay
-        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuCategory, SecuMain.SecuMarket, \
-                      QT_DailyQuote.TradingDay, QT_DailyQuote.PrevClosePrice, QT_DailyQuote.OpenPrice, QT_DailyQuote.HighPrice, QT_DailyQuote.LowPrice, QT_DailyQuote.ClosePrice, \
-                      QT_DailyQuote.TurnoverVolume, QT_DailyQuote.TurnoverValue, QT_DailyQuote.TurnoverDeals, QT_DailyQuote.XGRQ \
-               FROM SecuMain INNER JOIN QT_DailyQuote \
-               ON SecuMain.InnerCode = QT_DailyQuote.InnerCode \
-               WHERE (SecuMain.SecuMarket = 83 OR SecuMain.SecuMarket = 90) \
-                   AND (SecuMain.SecuCategory = 1 OR SecuMain.SecuCategory = 8 OR SecuMain.SecuCategory = 62) \
-                   AND (SecuMain.ListedSector = 1 OR SecuMain.ListedSector = 2 OR SecuMain.ListedSector = 6) \
-                   AND QT_DailyQuote.TradingDay = '%s' \
-               ORDER BY SecuMain.SecuMarket ASC, SecuMain.SecuCode ASC" % pre_date
+        # 查询字段：HK_SecuMain：证券内部编码、证券代码、证券简称、证券类别、证券市场
+        # 查询字段：LC_ZHSCComponent：成分股类别、更新时间
+        # 唯一约束：SecuMain = InnerCode、HK_SecuMain = InnerCode、LC_ZHSCComponent = CompType & InnerCode & InDate
+        sql = "SELECT HK_SecuMain.InnerCode, HK_SecuMain.SecuCode, HK_SecuMain.SecuAbbr, HK_SecuMain.SecuCategory, HK_SecuMain.SecuMarket, LC_SHSCComponent.CompType, LC_SHSCComponent.UpdateTime \
+               FROM HK_SecuMain INNER JOIN LC_SHSCComponent \
+               ON HK_SecuMain.InnerCode = LC_SHSCComponent.InnerCode \
+               WHERE LC_SHSCComponent.CompType = 1 AND LC_SHSCComponent.Flag = 1 \
+               ORDER BY HK_SecuMain.SecuCode ASC"
         result_list = dbm.ExecQuery(sql)
         if result_list != None:
-            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals, XGRQ) in result_list:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, CompType, UpdateTime) in result_list:
+                stock_name = SecuAbbr.replace(" ", "")
+                stock_market = ""
+                if SecuMarket == 72:
+                    stock_market = "HK"
+                component_hsggt_item = ComponentHsggtItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, comp_type = CompType, update_time = UpdateTime)
+                component_hsggt_item.SetCategory(SecuCategory, SecuCode) #
+                self.component_hsggt_list.append(component_hsggt_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, CompType, UpdateTime)
+            self.SendMessage("获取 沪港通成分 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 沪港通成分 失败！")
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuCategory, SecuMain.SecuMarket, LC_SHSCComponent.CompType, LC_SHSCComponent.UpdateTime \
+               FROM SecuMain INNER JOIN LC_SHSCComponent \
+               ON SecuMain.InnerCode = LC_SHSCComponent.InnerCode \
+               WHERE LC_SHSCComponent.CompType = 2 AND LC_SHSCComponent.Flag = 1 \
+               ORDER BY SecuMain.SecuCode ASC"
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, CompType, UpdateTime) in result_list:
                 stock_name = SecuAbbr.replace(" ", "")
                 stock_market = ""
                 if SecuMarket == 83:
                     stock_market = "SH"
                 elif SecuMarket == 90:
                     stock_market = "SZ"
-                pre_quote_stk_item = PreQuoteStkItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, open = OpenPrice, high = HighPrice, low = LowPrice, close = ClosePrice, pre_close = PrevClosePrice, volume = TurnoverVolume, turnover = TurnoverValue, trade_count = TurnoverDeals)
-                pre_quote_stk_item.SetCategory(SecuCategory, SecuCode) #
-                pre_quote_stk_item.SetQuoteDate(TradingDay) #
-                pre_quote_stk_item.SetQuoteTime(XGRQ) #
-                self.component_hsggt_list.append(pre_quote_stk_item)
-                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, TradingDay, PrevClosePrice, OpenPrice, HighPrice, LowPrice, ClosePrice, TurnoverVolume, TurnoverValue, TurnoverDeals, XGRQ)
-                #print(pre_quote_stk_item.code, pre_quote_stk_item.category, pre_quote_stk_item.quote_date, pre_quote_stk_item.quote_time, XGRQ, XGRQ.hour, XGRQ.minute, XGRQ.second, XGRQ.microsecond)
-            self.SendMessage("获取 港通成分 成功。总计 %d 个。" % len(result_list))
+                component_hsggt_item = ComponentHsggtItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, comp_type = CompType, update_time = UpdateTime)
+                component_hsggt_item.SetCategory(SecuCategory, SecuCode) #
+                self.component_hsggt_list.append(component_hsggt_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, CompType, UpdateTime)
+            self.SendMessage("获取 沪股通成分 成功。总计 %d 个。" % len(result_list))
         else:
-            self.SendMessage("获取 港通成分 失败！")
+            self.SendMessage("获取 沪股通成分 失败！")
+        sql = "SELECT HK_SecuMain.InnerCode, HK_SecuMain.SecuCode, HK_SecuMain.SecuAbbr, HK_SecuMain.SecuCategory, HK_SecuMain.SecuMarket, LC_ZHSCComponent.CompType, LC_ZHSCComponent.UpdateTime \
+               FROM HK_SecuMain INNER JOIN LC_ZHSCComponent \
+               ON HK_SecuMain.InnerCode = LC_ZHSCComponent.InnerCode \
+               WHERE LC_ZHSCComponent.CompType = 4 AND LC_ZHSCComponent.Flag = 1 \
+               ORDER BY HK_SecuMain.SecuCode ASC"
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, CompType, UpdateTime) in result_list:
+                stock_name = SecuAbbr.replace(" ", "")
+                stock_market = ""
+                if SecuMarket == 72:
+                    stock_market = "HK"
+                component_hsggt_item = ComponentHsggtItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, comp_type = CompType, update_time = UpdateTime)
+                component_hsggt_item.SetCategory(SecuCategory, SecuCode) #
+                self.component_hsggt_list.append(component_hsggt_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, CompType, UpdateTime)
+            self.SendMessage("获取 深港通成分 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 深港通成分 失败！")
+        sql = "SELECT SecuMain.InnerCode, SecuMain.SecuCode, SecuMain.SecuAbbr, SecuMain.SecuCategory, SecuMain.SecuMarket, LC_ZHSCComponent.CompType, LC_ZHSCComponent.UpdateTime \
+               FROM SecuMain INNER JOIN LC_ZHSCComponent \
+               ON SecuMain.InnerCode = LC_ZHSCComponent.InnerCode \
+               WHERE LC_ZHSCComponent.CompType = 3 AND LC_ZHSCComponent.Flag = 1 \
+               ORDER BY SecuMain.SecuCode ASC"
+        result_list = dbm.ExecQuery(sql)
+        if result_list != None:
+            for (InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, CompType, UpdateTime) in result_list:
+                stock_name = SecuAbbr.replace(" ", "")
+                stock_market = ""
+                if SecuMarket == 83:
+                    stock_market = "SH"
+                elif SecuMarket == 90:
+                    stock_market = "SZ"
+                component_hsggt_item = ComponentHsggtItem(inners = InnerCode, market = stock_market, code = SecuCode, name = stock_name, comp_type = CompType, update_time = UpdateTime)
+                component_hsggt_item.SetCategory(SecuCategory, SecuCode) #
+                self.component_hsggt_list.append(component_hsggt_item)
+                #print(InnerCode, SecuCode, SecuAbbr, SecuCategory, SecuMarket, CompType, UpdateTime)
+            self.SendMessage("获取 深股通成分 成功。总计 %d 个。" % len(result_list))
+        else:
+            self.SendMessage("获取 深股通成分 失败！")
 
     def SaveData_ComponentHSGGT(self, dbm, table_name, save_path):
         total_record_num = len(self.component_hsggt_list)
@@ -1967,7 +2013,7 @@ class DataMaker_ComponentHSGGT():
                   "`comp_type` int(8) DEFAULT '0' COMMENT '成分类别，详见说明'," + \
                   "`update_time` datetime(6) DEFAULT NULL COMMENT '更新时间'," + \
                   "PRIMARY KEY (`id`)," + \
-                  "UNIQUE KEY `idx_market_code` (`market`,`code`)" + \
+                  "UNIQUE KEY `idx_market_code_comp_type` (`market`,`code`,`comp_type`)" + \
                   ") ENGINE=InnoDB DEFAULT CHARSET=utf8"
             if dbm.TruncateOrCreateTable(table_name, sql) == True:
                 sql = "INSERT INTO %s" % table_name + "(inners, market, code, name, category, comp_type, update_time) VALUES (%s, %s, %s, %s, %s, %s, %s)"
@@ -2532,7 +2578,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     basic_data_maker = BasicDataMaker(folder = "../data")
-    basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "user", password = "user", database = "JYDB_NEW", charset = "GBK")
-    basic_data_maker.SetMySQL(host = "10.0.7.53", port = 3306, user = "user", passwd = "user", db = "financial", charset = "utf8")
+    basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "research", password = "Research@123", database = "JYDB_NEW", charset = "GBK")
+    basic_data_maker.SetMySQL(host = "10.0.7.53", port = 3306, user = "root", passwd = "root", db = "financial", charset = "utf8")
     basic_data_maker.show()
     sys.exit(app.exec_())
