@@ -2578,7 +2578,7 @@ if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
     basic_data_maker = BasicDataMaker(folder = "../data")
-    basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "research", password = "Research@123", database = "JYDB_NEW", charset = "GBK")
-    basic_data_maker.SetMySQL(host = "10.0.7.53", port = 3306, user = "root", passwd = "root", db = "financial", charset = "utf8")
+    basic_data_maker.SetMsSQL(host = "10.0.7.80", port = "1433", user = "user", password = "user", database = "JYDB_NEW", charset = "GBK")
+    basic_data_maker.SetMySQL(host = "10.0.7.53", port = 3306, user = "user", passwd = "user", db = "financial", charset = "utf8")
     basic_data_maker.show()
     sys.exit(app.exec_())
