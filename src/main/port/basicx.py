@@ -32,8 +32,10 @@ import pandas as pd
 
 try: import logger
 except: pass
-import dbm_mongo
-import dbm_mysql
+try: import dbm_mongo
+except: pass
+try: import dbm_mysql
+except: pass
 
 pd.set_option("max_colwidth", 200)
 pd.set_option("display.width", 500)
@@ -209,24 +211,29 @@ class BasicX(Singleton):
     def InitDbmConnect(self): # 避免数据库连接超时前，主界面启动只有白框
         self.log_text = "等待 金融类 和 行情类 数据库连接 ..."
         self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-        self.dbm_financial = dbm_mysql.DBM_MySQL(host = self.host, port = self.port, user = self.user, passwd = self.passwd, db = self.db_financial, charset = self.charset) # db_financial
-        self.dbm_quotedata = dbm_mysql.DBM_MySQL(host = self.host, port = self.port, user = self.user, passwd = self.passwd, db = self.db_quotedata, charset = self.charset) # db_quotedata
-        if self.dbm_financial.Connect() == True:
-            self.log_text = "金融类 数据库连接完成。"
-            self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-            #self.InitTables_Financial() # 慢一点
-            self.InitTables_Financial_DB() # 快一点
-        else:
-            self.log_text = "金融类 数据库连接失败！"
-            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
-        if self.dbm_quotedata.Connect() == True:
-            self.log_text = "行情类 数据库连接完成。"
-            self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-            #self.InitTables_QuoteData() # 慢一点
-            self.InitTables_QuoteData_DB() # 快一点
-        else:
-            self.log_text = "行情类 数据库连接失败！"
-            self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+        try:
+            self.dbm_financial = dbm_mysql.DBM_MySQL(host = self.host, port = self.port, user = self.user, passwd = self.passwd, db = self.db_financial, charset = self.charset) # db_financial
+            self.dbm_quotedata = dbm_mysql.DBM_MySQL(host = self.host, port = self.port, user = self.user, passwd = self.passwd, db = self.db_quotedata, charset = self.charset) # db_quotedata
+        except Exception as e:
+            print("InitDbmConnect 发生异常！%s" % e)
+        if self.dbm_financial != None:
+            if self.dbm_financial.Connect() == True:
+                self.log_text = "金融类 数据库连接完成。"
+                self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+                #self.InitTables_Financial() # 慢一点
+                self.InitTables_Financial_DB() # 快一点
+            else:
+                self.log_text = "金融类 数据库连接失败！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+        if self.dbm_quotedata != None:
+            if self.dbm_quotedata.Connect() == True:
+                self.log_text = "行情类 数据库连接完成。"
+                self.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+                #self.InitTables_QuoteData() # 慢一点
+                self.InitTables_QuoteData_DB() # 快一点
+            else:
+                self.log_text = "行情类 数据库连接失败！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "S")
 
     def InitCacheData(self, **kwargs): # 目前先独立配置
         self.mongo_host = kwargs.get("host", "0.0.0.0")
@@ -247,24 +254,27 @@ class BasicX(Singleton):
         self.dbm_mongo_quotedata_stock_s_ltp = None
         self.dbm_mongo_quotedata_stock_i_ltp = None
         self.dbm_mongo_quotedata_future_ctp = None
-        if "TDF" in self.quote_flag:
-            self.dbm_mongo_quotedata_stock_s_tdf = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_tdf, collection = self.mongo_cc_stock_snapshot_s)
-            self.dbm_mongo_quotedata_stock_i_tdf = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_tdf, collection = self.mongo_cc_stock_snapshot_i)
-            self.dbm_mongo_quotedata_stock_s_tdf.Connect()
-            self.dbm_mongo_quotedata_stock_i_tdf.Connect()
-        if "LTB" in self.quote_flag:
-            self.dbm_mongo_quotedata_stock_s_ltb = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_ltb, collection = self.mongo_cc_stock_snapshot_s)
-            self.dbm_mongo_quotedata_stock_i_ltb = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_ltb, collection = self.mongo_cc_stock_snapshot_i)
-            self.dbm_mongo_quotedata_stock_s_ltb.Connect()
-            self.dbm_mongo_quotedata_stock_i_ltb.Connect()
-        if "LTP" in self.quote_flag:
-            self.dbm_mongo_quotedata_stock_s_ltp = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_ltp, collection = self.mongo_cc_stock_snapshot_s)
-            self.dbm_mongo_quotedata_stock_i_ltp = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_ltp, collection = self.mongo_cc_stock_snapshot_i)
-            self.dbm_mongo_quotedata_stock_s_ltp.Connect()
-            self.dbm_mongo_quotedata_stock_i_ltp.Connect()
-        if "CTP" in self.quote_flag:
-            self.dbm_mongo_quotedata_future_ctp = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_future_ctp, collection = self.mongo_cc_future_snapshot)
-            self.dbm_mongo_quotedata_future_ctp.Connect()
+        try:
+            if "TDF" in self.quote_flag:
+                self.dbm_mongo_quotedata_stock_s_tdf = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_tdf, collection = self.mongo_cc_stock_snapshot_s)
+                self.dbm_mongo_quotedata_stock_i_tdf = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_tdf, collection = self.mongo_cc_stock_snapshot_i)
+                self.dbm_mongo_quotedata_stock_s_tdf.Connect()
+                self.dbm_mongo_quotedata_stock_i_tdf.Connect()
+            if "LTB" in self.quote_flag:
+                self.dbm_mongo_quotedata_stock_s_ltb = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_ltb, collection = self.mongo_cc_stock_snapshot_s)
+                self.dbm_mongo_quotedata_stock_i_ltb = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_ltb, collection = self.mongo_cc_stock_snapshot_i)
+                self.dbm_mongo_quotedata_stock_s_ltb.Connect()
+                self.dbm_mongo_quotedata_stock_i_ltb.Connect()
+            if "LTP" in self.quote_flag:
+                self.dbm_mongo_quotedata_stock_s_ltp = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_ltp, collection = self.mongo_cc_stock_snapshot_s)
+                self.dbm_mongo_quotedata_stock_i_ltp = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_stock_ltp, collection = self.mongo_cc_stock_snapshot_i)
+                self.dbm_mongo_quotedata_stock_s_ltp.Connect()
+                self.dbm_mongo_quotedata_stock_i_ltp.Connect()
+            if "CTP" in self.quote_flag:
+                self.dbm_mongo_quotedata_future_ctp = dbm_mongo.DBM_Mongo(host = self.mongo_host, port = self.mongo_port, database = self.mongo_db_quote_future_ctp, collection = self.mongo_cc_future_snapshot)
+                self.dbm_mongo_quotedata_future_ctp.Connect()
+        except Exception as e:
+            print("InitCacheData 发生异常！%s" % e)
 
     def __del__(self):
         if self.dbm_financial != None:
@@ -328,30 +338,32 @@ class BasicX(Singleton):
         return modify_time
 
     def InitTables_Financial(self): # 慢一点
-        dbm = self.dbm_financial
-        sql = "SHOW TABLES"
-        rows = dbm.QueryAllSql(sql)
-        if rows != None:
-            data_tables = list(rows)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            for table in have_tables:
-                self.tables_financial[table] = table
-            self.df_tables_financial = pd.DataFrame(data = sorted(self.tables_financial.values()), columns = ["table"])
+        if self.dbm_financial != None:
+            dbm = self.dbm_financial
+            sql = "SHOW TABLES"
+            rows = dbm.QueryAllSql(sql)
+            if rows != None:
+                data_tables = list(rows)
+                #print(data_tables)
+                have_tables = re.findall("(\'.*?\')", str(data_tables))
+                have_tables = [re.sub("'", "", table) for table in have_tables]
+                #print(have_tables)
+                for table in have_tables:
+                    self.tables_financial[table] = table
+                self.df_tables_financial = pd.DataFrame(data = sorted(self.tables_financial.values()), columns = ["table"])
 
     def InitTables_Financial_DB(self): # 快一点
-        dbm = self.dbm_financial
-        sql = "SELECT TABLE_NAME " + \
-              "FROM information_schema.TABLES " + \
-              "WHERE TABLE_SCHEMA = '%s'" % self.db_financial
-        rows = dbm.QueryAllSql(sql)
-        if rows != None:
-            for (table_name,) in rows:
-                #print(table_name)
-                self.tables_financial[table_name] = table_name
-            self.df_tables_financial = pd.DataFrame(data = sorted(self.tables_financial.values()), columns = ["table"])
+        if self.dbm_financial != None:
+            dbm = self.dbm_financial
+            sql = "SELECT TABLE_NAME " + \
+                  "FROM information_schema.TABLES " + \
+                  "WHERE TABLE_SCHEMA = '%s'" % self.db_financial
+            rows = dbm.QueryAllSql(sql)
+            if rows != None:
+                for (table_name,) in rows:
+                    #print(table_name)
+                    self.tables_financial[table_name] = table_name
+                self.df_tables_financial = pd.DataFrame(data = sorted(self.tables_financial.values()), columns = ["table"])
 
     def GetTables_Financial(self):
         return self.df_tables_financial
@@ -997,40 +1009,42 @@ class BasicX(Singleton):
         return result
 
     def InitTables_QuoteData(self): # 慢一点
-        dbm = self.dbm_quotedata
-        sql = "SHOW TABLES"
-        rows = dbm.QueryAllSql(sql)
-        if rows != None:
-            data_tables = list(rows)
-            #print(data_tables)
-            have_tables = re.findall("(\'.*?\')", str(data_tables))
-            have_tables = [re.sub("'", "", table) for table in have_tables]
-            #print(have_tables)
-            for table in have_tables:
-                key = table[-9:] # sh_600000、sz_000001
-                if table[0:11] == "stock_daily":
-                    self.tables_stock_daily[key] = table
-                elif table[0:15] == "stock_kline_1_m":
-                    self.tables_stock_kline_1_m[key] = table
-            self.df_tables_stock_daily = pd.DataFrame(data = sorted(self.tables_stock_daily.values()), columns = ["table"])
-            self.df_tables_stock_kline_1_m = pd.DataFrame(data = sorted(self.tables_stock_kline_1_m.values()), columns = ["table"])
+        if self.dbm_quotedata != None:
+            dbm = self.dbm_quotedata
+            sql = "SHOW TABLES"
+            rows = dbm.QueryAllSql(sql)
+            if rows != None:
+                data_tables = list(rows)
+                #print(data_tables)
+                have_tables = re.findall("(\'.*?\')", str(data_tables))
+                have_tables = [re.sub("'", "", table) for table in have_tables]
+                #print(have_tables)
+                for table in have_tables:
+                    key = table[-9:] # sh_600000、sz_000001
+                    if table[0:11] == "stock_daily":
+                        self.tables_stock_daily[key] = table
+                    elif table[0:15] == "stock_kline_1_m":
+                        self.tables_stock_kline_1_m[key] = table
+                self.df_tables_stock_daily = pd.DataFrame(data = sorted(self.tables_stock_daily.values()), columns = ["table"])
+                self.df_tables_stock_kline_1_m = pd.DataFrame(data = sorted(self.tables_stock_kline_1_m.values()), columns = ["table"])
 
     def InitTables_QuoteData_DB(self): # 快一点
-        dbm = self.dbm_quotedata
-        sql = "SELECT TABLE_NAME " + \
-              "FROM information_schema.TABLES " + \
-              "WHERE TABLE_SCHEMA = '%s'" % self.db_quotedata
-        rows = dbm.QueryAllSql(sql)
-        if rows != None:
-            for (table_name,) in rows:
-                #print(table_name)
-                key = table_name[-9:] # sh_600000、sz_000001
-                if table_name[0:11] == "stock_daily":
-                    self.tables_stock_daily[key] = table_name
-                elif table_name[0:15] == "stock_kline_1_m":
-                    self.tables_stock_kline_1_m[key] = table_name
-            self.df_tables_stock_daily = pd.DataFrame(data = sorted(self.tables_stock_daily.values()), columns = ["table"])
-            self.df_tables_stock_kline_1_m = pd.DataFrame(data = sorted(self.tables_stock_kline_1_m.values()), columns = ["table"])
+        if self.dbm_quotedata != None:
+            dbm = self.dbm_quotedata
+            sql = "SELECT TABLE_NAME " + \
+                  "FROM information_schema.TABLES " + \
+                  "WHERE TABLE_SCHEMA = '%s'" % self.db_quotedata
+            rows = dbm.QueryAllSql(sql)
+            if rows != None:
+                for (table_name,) in rows:
+                    #print(table_name)
+                    key = table_name[-9:] # sh_600000、sz_000001
+                    if table_name[0:11] == "stock_daily":
+                        self.tables_stock_daily[key] = table_name
+                    elif table_name[0:15] == "stock_kline_1_m":
+                        self.tables_stock_kline_1_m[key] = table_name
+                self.df_tables_stock_daily = pd.DataFrame(data = sorted(self.tables_stock_daily.values()), columns = ["table"])
+                self.df_tables_stock_kline_1_m = pd.DataFrame(data = sorted(self.tables_stock_kline_1_m.values()), columns = ["table"])
 
     def GetTables_Stock_Daily(self):
         return self.df_tables_stock_daily
