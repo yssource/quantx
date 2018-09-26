@@ -47,13 +47,13 @@ class Version(object):
         self.revision  = "revision"
         self.build     = "build"
         self.name      = "name         BasicX"
-        self.version   = "version      V0.1.0-Beta Build 20180515"
+        self.version   = "version      V0.1.0-Beta Build 20180925"
         self.author    = "author       Xu Rendong"
         self.developer = "developer    Developed by the X-Lab."
         self.company   = "company      X-Lab (Shanghai) Co., Ltd."
         self.copyright = "copyright    Copyright 2018-2018 X-Lab All Rights Reserved."
         self.homeurl   = "homeurl      http://www.xlab.com"
-        self.data = [0, 1, 0, 20180515, "", "", "", "", "", "", ""]
+        self.data = [0, 1, 0, 20180925, "", "", "", "", "", "", ""]
         self.columns = ["version"]
         self.index = [self.major, self.minor, self.revision, self.build, self.name, self.version, self.author, self.developer, self.company, self.copyright, self.homeurl]
         self.version_df = pd.DataFrame(data = self.data, columns = self.columns, index = self.index)
@@ -68,6 +68,8 @@ class Security(object):
         self.category = kwargs.get("category", 0) # 证券类别
         self.sector = kwargs.get("sector", 0) # 上市板块
         self.is_st = kwargs.get("is_st", 0) # 是否ST股
+        self.trade_unit = kwargs.get("trade_unit", 0) # 买卖单位
+        self.min_price_chg = kwargs.get("min_price_chg", 0.0) # 最小变动价格
         self.list_state = kwargs.get("list_state", 0) # 上市状态
         self.list_date = kwargs.get("list_date", 0) # 上市日期
 
@@ -151,10 +153,17 @@ class BasicX(Singleton):
         self.charset = "utf8"
         self.tb_trading_day = "trading_day"
         self.tb_industry_data = "industry_data"
+        self.tb_industry_data_hk = "industry_data_hk"
         self.tb_security_info = "security_info"
+        self.tb_security_info_hk = "security_info_hk"
         self.tb_capital_data = "capital_data"
+        self.tb_capital_data_hk = "capital_data_hk"
+        self.tb_pre_quote_stk = "pre_quote_stk"
+        self.tb_pre_quote_stk_hk = "pre_quote_stk_hk"
         self.tb_ex_rights_data = "ex_rights_data"
         self.tb_ting_pai_stock = "tod_ting_pai"
+        self.tb_exchange_rate = "exchange_rate"
+        self.tb_component_hsggt = "component_hsggt"
         
         self.flag_use_database = True
         if self.host == "0.0.0.0": # 不使用数据库
@@ -194,6 +203,7 @@ class BasicX(Singleton):
             thread_init_dbm_connect.start()
         
         self.security_dict = None # 首次计算除权时缓存一份证券信息
+        self.security_hk_dict = None # 
         self.exrights_dict = None # 首次计算除权时缓存一份除权数据
 
     def InitDbmConnect(self): # 避免数据库连接超时前，主界面启动只有白框
@@ -401,12 +411,12 @@ class BasicX(Singleton):
         result = pd.DataFrame(columns = columns) # 空
         if dbm == None: # 直接读取本地文件
             if self.folder_financial == "": # 缓存路径为空
-                self.log_text = "直接缓存获取 行业划分 时，本地数据缓存路径为空！"
+                self.log_text = "直接缓存获取 A股行业划分 时，本地数据缓存路径为空！"
                 self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
             else:
                 save_path = "%s/%s" % (self.folder_financial, self.tb_industry_data)
                 if not os.path.exists(save_path): # 缓存文件不存在
-                    self.log_text = "直接缓存获取 行业划分 时，本地数据缓存文件不存在！"
+                    self.log_text = "直接缓存获取 A股行业划分 时，本地数据缓存文件不存在！"
                     self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
                 else: # 读取缓存文件
                     result = pd.read_pickle(save_path)
@@ -437,7 +447,55 @@ class BasicX(Singleton):
                         if save_path != "": # 保存到文件
                             result.to_pickle(save_path)
         if result.empty:
-            self.log_text = "获取的 行业划分 为空！"
+            self.log_text = "获取的 A股行业划分 为空！"
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+        return result
+
+    def GetIndustryData_HK(self):
+        save_path = ""
+        dbm = self.dbm_financial
+        columns = ["standard", "industry", "industry_code_1", "industry_name_1", "industry_code_2", "industry_name_2", 
+                   "industry_code_3", "industry_name_3", "industry_code_4", "industry_name_4", "inners", "market", "code", "name", "info_date"]
+        result = pd.DataFrame(columns = columns) # 空
+        if dbm == None: # 直接读取本地文件
+            if self.folder_financial == "": # 缓存路径为空
+                self.log_text = "直接缓存获取 港股行业划分 时，本地数据缓存路径为空！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_industry_data_hk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    self.log_text = "直接缓存获取 港股行业划分 时，本地数据缓存文件不存在！"
+                    self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                else: # 读取缓存文件
+                    result = pd.read_pickle(save_path)
+        else: # 可以查询数据库
+            need_query = False
+            if self.folder_financial == "": # 缓存路径为空
+                need_query = True
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_industry_data_hk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    need_query = True
+                else:
+                    modify_time_lf = datetime.fromtimestamp(os.path.getmtime(save_path))
+                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_industry_data_hk)
+                    if modify_time_db != None and modify_time_lf < modify_time_db: # 数据库时间更新 # 如果 modify_time_db 为 None 估计数据库表不存在也就不用查询了
+                        need_query = True
+                    else: # 读取缓存文件
+                        result = pd.read_pickle(save_path)
+            if need_query == True: # 查询数据表
+                sql = "SELECT standard, industry, industry_code_1, industry_name_1, industry_code_2, industry_name_2, " + \
+                      "industry_code_3, industry_name_3, industry_code_4, industry_name_4, inners, market, code, name, info_date " + \
+                      "FROM %s " % self.tb_industry_data_hk + \
+                      "ORDER BY standard ASC, industry_code_1 ASC, industry_code_2 ASC, industry_code_3 ASC, industry_code_4 ASC, market ASC, code ASC"
+                rows = dbm.QueryAllSql(sql)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
+        if result.empty:
+            self.log_text = "获取的 港股行业划分 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
         return result
 
@@ -448,12 +506,12 @@ class BasicX(Singleton):
         result = pd.DataFrame(columns = columns) # 空
         if dbm == None: # 直接读取本地文件
             if self.folder_financial == "": # 缓存路径为空
-                self.log_text = "直接缓存获取 证券信息 时，本地数据缓存路径为空！"
+                self.log_text = "直接缓存获取 A股证券信息 时，本地数据缓存路径为空！"
                 self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
             else:
                 save_path = "%s/%s" % (self.folder_financial, self.tb_security_info)
                 if not os.path.exists(save_path): # 缓存文件不存在
-                    self.log_text = "直接缓存获取 证券信息 时，本地数据缓存文件不存在！"
+                    self.log_text = "直接缓存获取 A股证券信息 时，本地数据缓存文件不存在！"
                     self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
                 else: # 读取缓存文件
                     result = pd.read_pickle(save_path)
@@ -483,7 +541,7 @@ class BasicX(Singleton):
                         if save_path != "": # 保存到文件
                             result.to_pickle(save_path)
         if result.empty:
-            self.log_text = "获取的 证券信息 为空！"
+            self.log_text = "获取的 A股证券信息 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
         # 首次调用时保存到 security_dict 中
         if self.security_dict == None and not result.empty:
@@ -497,6 +555,62 @@ class BasicX(Singleton):
             #          security_item.category, security_item.sector, security_item.is_st, security_item.list_state, security_item.list_date)
         return result
 
+    def GetSecurityInfo_HK(self):
+        save_path = ""
+        dbm = self.dbm_financial
+        columns = ["inners", "company", "market", "code", "name", "category", "sector", "trade_unit", "min_price_chg", "list_state", "list_date"]
+        result = pd.DataFrame(columns = columns) # 空
+        if dbm == None: # 直接读取本地文件
+            if self.folder_financial == "": # 缓存路径为空
+                self.log_text = "直接缓存获取 港股证券信息 时，本地数据缓存路径为空！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_security_info_hk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    self.log_text = "直接缓存获取 港股证券信息 时，本地数据缓存文件不存在！"
+                    self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                else: # 读取缓存文件
+                    result = pd.read_pickle(save_path)
+        else: # 可以查询数据库
+            need_query = False
+            if self.folder_financial == "": # 缓存路径为空
+                need_query = True
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_security_info_hk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    need_query = True
+                else:
+                    modify_time_lf = datetime.fromtimestamp(os.path.getmtime(save_path))
+                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_security_info_hk)
+                    if modify_time_db != None and modify_time_lf < modify_time_db: # 数据库时间更新 # 如果 modify_time_db 为 None 估计数据库表不存在也就不用查询了
+                        need_query = True
+                    else: # 读取缓存文件
+                        result = pd.read_pickle(save_path)
+            if need_query == True: # 查询数据表
+                sql = "SELECT inners, company, market, code, name, category, sector, trade_unit, min_price_chg, list_state, list_date " + \
+                      "FROM %s " % self.tb_security_info_hk + \
+                      "ORDER BY market ASC, code ASC"
+                rows = dbm.QueryAllSql(sql)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
+        if result.empty:
+            self.log_text = "获取的 港股证券信息 为空！"
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+        # 首次调用时保存到 security_hk_dict 中
+        if self.security_hk_dict == None and not result.empty:
+            self.security_hk_dict = {}
+            data = result.values.tolist()
+            for [inners, company, market, code, name, category, sector, trade_unit, min_price_chg, list_state, list_date] in data:
+                key = "%s_%s" % (market.lower(), code)
+                self.security_hk_dict[key] = Security(inners = inners, company = company, market = market, code = code, name = name, category = category, sector = sector, trade_unit = trade_unit, min_price_chg = min_price_chg, list_state = list_state, list_date = list_date)
+            #for security_item in self.security_hk_dict.values():
+            #    print(security_item.inners, security_item.company, security_item.market, security_item.code, security_item.name, \
+            #          security_item.category, security_item.sector, security_item.trade_unit, security_item.min_price_chg, security_item.list_state, security_item.list_date)
+        return result
+
     def GetCapitalData(self):
         save_path = ""
         dbm = self.dbm_financial
@@ -504,12 +618,12 @@ class BasicX(Singleton):
         result = pd.DataFrame(columns = columns) # 空
         if dbm == None: # 直接读取本地文件
             if self.folder_financial == "": # 缓存路径为空
-                self.log_text = "直接缓存获取 股本结构 时，本地数据缓存路径为空！"
+                self.log_text = "直接缓存获取 A股股本结构 时，本地数据缓存路径为空！"
                 self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
             else:
                 save_path = "%s/%s" % (self.folder_financial, self.tb_capital_data)
                 if not os.path.exists(save_path): # 缓存文件不存在
-                    self.log_text = "直接缓存获取 股本结构 时，本地数据缓存文件不存在！"
+                    self.log_text = "直接缓存获取 A股股本结构 时，本地数据缓存文件不存在！"
                     self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
                 else: # 读取缓存文件
                     result = pd.read_pickle(save_path)
@@ -539,7 +653,147 @@ class BasicX(Singleton):
                         if save_path != "": # 保存到文件
                             result.to_pickle(save_path)
         if result.empty:
-            self.log_text = "获取的 股本结构 为空！"
+            self.log_text = "获取的 A股股本结构 为空！"
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+        return result
+
+    def GetCapitalData_HK(self):
+        save_path = ""
+        dbm = self.dbm_financial
+        columns = ["inners", "market", "code", "name", "end_date", "total_shares", "circu_shares"]
+        result = pd.DataFrame(columns = columns) # 空
+        if dbm == None: # 直接读取本地文件
+            if self.folder_financial == "": # 缓存路径为空
+                self.log_text = "直接缓存获取 港股股本结构 时，本地数据缓存路径为空！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_capital_data_hk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    self.log_text = "直接缓存获取 港股股本结构 时，本地数据缓存文件不存在！"
+                    self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                else: # 读取缓存文件
+                    result = pd.read_pickle(save_path)
+        else: # 可以查询数据库
+            need_query = False
+            if self.folder_financial == "": # 缓存路径为空
+                need_query = True
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_capital_data_hk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    need_query = True
+                else:
+                    modify_time_lf = datetime.fromtimestamp(os.path.getmtime(save_path))
+                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_capital_data_hk)
+                    if modify_time_db != None and modify_time_lf < modify_time_db: # 数据库时间更新 # 如果 modify_time_db 为 None 估计数据库表不存在也就不用查询了
+                        need_query = True
+                    else: # 读取缓存文件
+                        result = pd.read_pickle(save_path)
+            if need_query == True: # 查询数据表
+                sql = "SELECT inners, market, code, name, end_date, total_shares, circu_shares " + \
+                      "FROM %s " % self.tb_capital_data_hk + \
+                      "ORDER BY market ASC, code ASC"
+                rows = dbm.QueryAllSql(sql)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
+        if result.empty:
+            self.log_text = "获取的 港股股本结构 为空！"
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+        return result
+
+    def GetPreQuoteStk(self):
+        save_path = ""
+        dbm = self.dbm_financial
+        columns = ["inners", "market", "code", "name", "category", "open", "high", "low", "close", "pre_close", "volume", "turnover", "trade_count", "quote_date", "quote_time"]
+        result = pd.DataFrame(columns = columns) # 空
+        if dbm == None: # 直接读取本地文件
+            if self.folder_financial == "": # 缓存路径为空
+                self.log_text = "直接缓存获取 前日A股股票行情 时，本地数据缓存路径为空！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_pre_quote_stk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    self.log_text = "直接缓存获取 前日A股股票行情 时，本地数据缓存文件不存在！"
+                    self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                else: # 读取缓存文件
+                    result = pd.read_pickle(save_path)
+        else: # 可以查询数据库
+            need_query = False
+            if self.folder_financial == "": # 缓存路径为空
+                need_query = True
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_pre_quote_stk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    need_query = True
+                else:
+                    modify_time_lf = datetime.fromtimestamp(os.path.getmtime(save_path))
+                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_pre_quote_stk)
+                    if modify_time_db != None and modify_time_lf < modify_time_db: # 数据库时间更新 # 如果 modify_time_db 为 None 估计数据库表不存在也就不用查询了
+                        need_query = True
+                    else: # 读取缓存文件
+                        result = pd.read_pickle(save_path)
+            if need_query == True: # 查询数据表
+                sql = "SELECT inners, market, code, name, category, " + \
+                      "open, high, low, close, pre_close, volume, turnover, trade_count, quote_date, quote_time " + \
+                      "FROM %s " % self.tb_pre_quote_stk + \
+                      "ORDER BY market ASC, code ASC"
+                rows = dbm.QueryAllSql(sql)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
+        if result.empty:
+            self.log_text = "获取的 前日A股股票行情 为空！"
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+        return result
+
+    def GetPreQuoteStk_HK(self):
+        save_path = ""
+        dbm = self.dbm_financial
+        columns = ["inners", "market", "code", "name", "category", "open", "high", "low", "close", "pre_close", "volume", "turnover", "trade_count", "quote_date", "quote_time"]
+        result = pd.DataFrame(columns = columns) # 空
+        if dbm == None: # 直接读取本地文件
+            if self.folder_financial == "": # 缓存路径为空
+                self.log_text = "直接缓存获取 前日港股股票行情 时，本地数据缓存路径为空！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_pre_quote_stk_hk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    self.log_text = "直接缓存获取 前日港股股票行情 时，本地数据缓存文件不存在！"
+                    self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                else: # 读取缓存文件
+                    result = pd.read_pickle(save_path)
+        else: # 可以查询数据库
+            need_query = False
+            if self.folder_financial == "": # 缓存路径为空
+                need_query = True
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_pre_quote_stk_hk)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    need_query = True
+                else:
+                    modify_time_lf = datetime.fromtimestamp(os.path.getmtime(save_path))
+                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_pre_quote_stk_hk)
+                    if modify_time_db != None and modify_time_lf < modify_time_db: # 数据库时间更新 # 如果 modify_time_db 为 None 估计数据库表不存在也就不用查询了
+                        need_query = True
+                    else: # 读取缓存文件
+                        result = pd.read_pickle(save_path)
+            if need_query == True: # 查询数据表
+                sql = "SELECT inners, market, code, name, category, " + \
+                      "open, high, low, close, pre_close, volume, turnover, trade_count, quote_date, quote_time " + \
+                      "FROM %s " % self.tb_pre_quote_stk_hk + \
+                      "ORDER BY market ASC, code ASC"
+                rows = dbm.QueryAllSql(sql)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
+        if result.empty:
+            self.log_text = "获取的 前日港股股票行情 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
         return result
 
@@ -647,6 +901,98 @@ class BasicX(Singleton):
                             result.to_pickle(save_path)
         if result.empty:
             self.log_text = "获取的 当日停牌证券 为空！"
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+        return result
+
+    def GetExchangeRate(self):
+        save_path = ""
+        dbm = self.dbm_financial
+        columns = ["base_money", "price", "exchange_money", "quote_type", "end_date"]
+        result = pd.DataFrame(columns = columns) # 空
+        if dbm == None: # 直接读取本地文件
+            if self.folder_financial == "": # 缓存路径为空
+                self.log_text = "直接缓存获取 基础汇率 时，本地数据缓存路径为空！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_exchange_rate)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    self.log_text = "直接缓存获取 基础汇率 时，本地数据缓存文件不存在！"
+                    self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                else: # 读取缓存文件
+                    result = pd.read_pickle(save_path)
+        else: # 可以查询数据库
+            need_query = False
+            if self.folder_financial == "": # 缓存路径为空
+                need_query = True
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_exchange_rate)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    need_query = True
+                else:
+                    modify_time_lf = datetime.fromtimestamp(os.path.getmtime(save_path))
+                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_exchange_rate)
+                    if modify_time_db != None and modify_time_lf < modify_time_db: # 数据库时间更新 # 如果 modify_time_db 为 None 估计数据库表不存在也就不用查询了
+                        need_query = True
+                    else: # 读取缓存文件
+                        result = pd.read_pickle(save_path)
+            if need_query == True: # 查询数据表
+                sql = "SELECT base_money, price, exchange_money, quote_type, end_date " + \
+                      "FROM %s " % self.tb_exchange_rate + \
+                      "ORDER BY base_money ASC, exchange_money ASC"
+                rows = dbm.QueryAllSql(sql)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
+        if result.empty:
+            self.log_text = "获取的 基础汇率 为空！"
+            self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
+        return result
+
+    def GetComponentHSGGT(self):
+        save_path = ""
+        dbm = self.dbm_financial
+        columns = ["inners", "market", "code", "name", "category", "comp_type", "update_time"]
+        result = pd.DataFrame(columns = columns) # 空
+        if dbm == None: # 直接读取本地文件
+            if self.folder_financial == "": # 缓存路径为空
+                self.log_text = "直接缓存获取 沪深港股通成分股 时，本地数据缓存路径为空！"
+                self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_component_hsggt)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    self.log_text = "直接缓存获取 沪深港股通成分股 时，本地数据缓存文件不存在！"
+                    self.SendMessage("E", 4, self.log_cate, self.log_text, "A")
+                else: # 读取缓存文件
+                    result = pd.read_pickle(save_path)
+        else: # 可以查询数据库
+            need_query = False
+            if self.folder_financial == "": # 缓存路径为空
+                need_query = True
+            else:
+                save_path = "%s/%s" % (self.folder_financial, self.tb_component_hsggt)
+                if not os.path.exists(save_path): # 缓存文件不存在
+                    need_query = True
+                else:
+                    modify_time_lf = datetime.fromtimestamp(os.path.getmtime(save_path))
+                    modify_time_db = self.GetTableModifyTime(dbm, self.db_financial, self.tb_component_hsggt)
+                    if modify_time_db != None and modify_time_lf < modify_time_db: # 数据库时间更新 # 如果 modify_time_db 为 None 估计数据库表不存在也就不用查询了
+                        need_query = True
+                    else: # 读取缓存文件
+                        result = pd.read_pickle(save_path)
+            if need_query == True: # 查询数据表
+                sql = "SELECT inners, market, code, name, category, comp_type, update_time " + \
+                      "FROM %s " % self.tb_component_hsggt + \
+                      "ORDER BY comp_type ASC, market ASC, code ASC"
+                rows = dbm.QueryAllSql(sql)
+                if rows != None:
+                    if len(rows) > 0:
+                        result = pd.DataFrame(data = list(rows), columns = columns)
+                        if save_path != "": # 保存到文件
+                            result.to_pickle(save_path)
+        if result.empty:
+            self.log_text = "获取的 沪深港股通成分股 为空！"
             self.SendMessage("W", 3, self.log_cate, self.log_text, "A")
         return result
 

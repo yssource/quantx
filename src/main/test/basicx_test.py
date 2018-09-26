@@ -38,10 +38,17 @@ def Main(basicx_test):
     #result = basicx_test.GetTables_Stock_Kline_1_M()
     #result = basicx_test.GetTradingDay()
     #result = basicx_test.GetIndustryData()
+    #result = basicx_test.GetIndustryData_HK()
     #result = basicx_test.GetSecurityInfo()
+    #result = basicx_test.GetSecurityInfo_HK()
     #result = basicx_test.GetCapitalData()
+    #result = basicx_test.GetCapitalData_HK()
+    #result = basicx_test.GetPreQuoteStk()
+    #result = basicx_test.GetPreQuoteStk_HK()
     #result = basicx_test.GetExRightsData()
     #result = basicx_test.GetTingPaiStock()
+    #result = basicx_test.GetExchangeRate()
+    #result = basicx_test.GetComponentHSGGT()
     #result = basicx_test.GetStockDaily("sz", "000001", 20100104, 20170126)
     #result = basicx_test.GetStockDaily("sz", "000001", 20160613, 20160620) # 删除文件，数据需要全部查询
     #result = basicx_test.GetStockDaily("sz", "000001", 20160614, 20160617) # 都在缓存数据中
@@ -94,6 +101,7 @@ if __name__ == "__main__":
     #basicx_test.InitBasicData(host = "10.0.7.80", port = 3306, user = "user", passwd = "user", folder = folder) # 生产
     #basicx_test.InitCacheData(host = "10.0.7.53", port = 27017, quote = ["CTP"]) # 测试 # ["TDF", "LTB", "LTP", "CTP"]
     basicx_test.InitCacheData(host = "10.0.7.80", port = 27017, quote = ["CTP"]) # 生产 # ["TDF", "LTB", "LTP", "CTP"]
+    time.sleep(5) # 等待数据库连接完成
     
     cProfile.run("Main(basicx_test)", "profile.log")
     # ncalls:  函数被call的次数

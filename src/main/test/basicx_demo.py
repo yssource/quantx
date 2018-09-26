@@ -20,6 +20,7 @@
 #
 # Be sure to retain the above copyright notice and conditions.
 
+import time
 from datetime import datetime
 
 import basicx # 要求已安装 numpy、pandas、pymysql、pymongo
@@ -30,6 +31,7 @@ if __name__ == "__main__":
     #basicx_demo.InitBasicData(folder = folder) # 不使用数据库
     #basicx_demo.InitBasicData(host = "10.0.7.53", port = 3306, user = "user", passwd = "user", folder = folder) # 测试
     #basicx_demo.InitBasicData(host = "10.0.7.80", port = 3306, user = "user", passwd = "user", folder = folder) # 生产
+    #time.sleep(5) # 等待数据库连接完成
     #basicx_demo.IgnoreUserTips(False) # 提高效率等信息提示
     #basicx_demo.IgnoreLocalFileLoss(False) # 本地缓存文件缺失
     #basicx_demo.IgnoreExRightsDataLoss(False) # 除权数据缺失
@@ -40,10 +42,17 @@ if __name__ == "__main__":
     #result = basicx_demo.GetTables_Stock_Kline_1_M()
     #result = basicx_demo.GetTradingDay()
     #result = basicx_demo.GetIndustryData()
+    #result = basicx_demo.GetIndustryData_HK()
     #result = basicx_demo.GetSecurityInfo()
+    #result = basicx_demo.GetSecurityInfo_HK()
     #result = basicx_demo.GetCapitalData()
+    #result = basicx_demo.GetCapitalData_HK()
+    #result = basicx_demo.GetPreQuoteStk()
+    #result = basicx_demo.GetPreQuoteStk_HK()
     #result = basicx_demo.GetExRightsData()
     #result = basicx_demo.GetTingPaiStock()
+    #result = basicx_demo.GetExchangeRate()
+    #result = basicx_demo.GetComponentHSGGT()
     #result = basicx_demo.GetStockDaily("sz", "000001", 20160101, 20161231)
     #result = basicx_demo.GetStockKline_1_M("sh", "600000", 20160101, 20161231)
     #if not result.empty:

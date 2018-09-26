@@ -24,11 +24,13 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
-path = "../../src/main/port" # 不用斜杠结尾
+path = "../../src/main" # 不用斜杠结尾
 
 file_dict = \
     {
-    "basicx" : ["%s/basicx.py" % path]
+    "basicx" : ["%s/port/basicx.py" % path],
+    "dbm_mongo" : ["%s/dbm_mongo.py" % path],
+    "dbm_mysql" : ["%s/dbm_mysql.py" % path]
     }
 
 for file_name, file_path in file_dict.items():
