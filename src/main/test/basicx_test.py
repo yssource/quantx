@@ -44,6 +44,7 @@ def Main(basicx_test):
     #result = basicx_test.GetCapitalData()
     #result = basicx_test.GetCapitalData_HK()
     #result = basicx_test.GetPreQuoteStk()
+    #result = basicx_test.GetPreQuoteFue()
     #result = basicx_test.GetPreQuoteStk_HK()
     #result = basicx_test.GetExRightsData()
     #result = basicx_test.GetTingPaiStock()

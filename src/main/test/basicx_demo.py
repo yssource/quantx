@@ -48,6 +48,7 @@ if __name__ == "__main__":
     #result = basicx_demo.GetCapitalData()
     #result = basicx_demo.GetCapitalData_HK()
     #result = basicx_demo.GetPreQuoteStk()
+    #result = basicx_demo.GetPreQuoteFue()
     #result = basicx_demo.GetPreQuoteStk_HK()
     #result = basicx_demo.GetExRightsData()
     #result = basicx_demo.GetTingPaiStock()
