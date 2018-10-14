@@ -39,8 +39,8 @@ class TradeX_Stk_Sy():
             self.batch_id = 0 # 批量委托编号
             self.symbol = kwargs.get("symbol", "") # 证券代码
             self.exchange = kwargs.get("exchange", "") # 交易所，SH：上交所，SZ：深交所
-            self.entr_type = kwargs.get("entr_type", 0) # 委托方式，1：限价，2：市价
-            self.exch_side = kwargs.get("exch_side", 0) # 交易类型，1：买入，2：卖出，29：申购，30：赎回，37：质押入库，38：质押出库
+            self.entr_type = kwargs.get("entr_type", 0) # 委托方式，A股(1：限价，2：市价)，港股(1：竞价限价盘，2：增强限价盘，3：零股买卖)
+            self.exch_side = kwargs.get("exch_side", 0) # 交易类型，A股(1：买入，2：卖出，29：申购，30：赎回，37：质押入库，38：质押出库)，港股(1：买入，2：卖出)
             # A0：A股，E0：ETF基金，E1：ETF资金，E3：ETF发行，E4：ETF申赎，EZ：国债ETF，F8：质押券，
             # H0：国债回购，H1：企债回购，H2：买断回购，H3：账户回购，Z0：现券国债，Z1：记帐国债，Z4：企业债券
             self.security_type = "" # 证券类别
@@ -309,8 +309,10 @@ class TradeX_Stk_Sy():
         self.reply_msg_handle_func_usr = {}
         self.reply_msg_handle_func_usr[define.trade_placeorder_s_func] = self.OnPlaceOrder
         self.reply_msg_handle_func_usr[define.trade_cancelorder_s_func] = self.OnCancelOrder
-        self.reply_msg_handle_func_usr[define.trade_placeorderbatch_s_func] = self.OnPlaceOrderBatch
-        self.reply_msg_handle_func_usr[define.trade_cancelorderbatch_s_func] = self.OnCancelOrderBatch
+        self.reply_msg_handle_func_usr[define.trade_placeorder_batch_s_func] = self.OnPlaceOrderBatch
+        self.reply_msg_handle_func_usr[define.trade_cancelorder_batch_s_func] = self.OnCancelOrderBatch
+        self.reply_msg_handle_func_usr[define.trade_placeorder_hk_s_func] = self.OnPlaceOrderHK
+        self.reply_msg_handle_func_usr[define.trade_cancelorder_hk_s_func] = self.OnCancelOrderHK
         self.reply_msg_handle_func_usr[define.trade_querycapital_s_func] = self.OnQueryCapital
         self.reply_msg_handle_func_usr[define.trade_queryposition_s_func] = self.OnQueryPosition
         self.reply_msg_handle_func_usr[define.trade_queryorder_s_func] = self.OnQueryOrder
@@ -575,10 +577,16 @@ class TradeX_Stk_Sy():
                     task_item.event_recv_answer.set() # 因为需要 order_id 所以这里只在下单失败时才设置，下单成功的需要继续等待交易所报单回报获得 order_id 后才设置
             if ret_func == define.trade_cancelorder_s_func: # 股票单个证券委托撤单
                 task_item.event_task_finish.set() # 标记 撤单 事务结束
-            if ret_func == define.trade_placeorderbatch_s_func: # 股票批量证券委托下单
+            if ret_func == define.trade_placeorder_batch_s_func: # 股票批量证券委托下单
                 pass
-            if ret_func == define.trade_cancelorderbatch_s_func: # 股票批量证券委托撤单
+            if ret_func == define.trade_cancelorder_batch_s_func: # 股票批量证券委托撤单
                 pass
+            if ret_func == define.trade_placeorder_hk_s_func: # 股票沪深港通证券委托下单
+                if task_item.status == define.TASK_STATUS_FAIL: # 这里只关注失败的，成功的根据成交回报处理
+                    task_item.event_task_finish.set() # 标记 下单 事务结束
+                    task_item.event_recv_answer.set() # 因为需要 order_id 所以这里只在下单失败时才设置，下单成功的需要继续等待交易所报单回报获得 order_id 后才设置
+            if ret_func == define.trade_cancelorder_hk_s_func: # 股票沪深港通批量证券委托撤单
+                task_item.event_task_finish.set() # 标记 撤单 事务结束
             
             # 证券查询类
             if ret_func == define.trade_querycapital_s_func: # 股票查询客户资金
@@ -669,8 +677,8 @@ class TradeX_Stk_Sy():
         task_item.order = order # 在这里放入原始委托
         self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
         msg_req = {"function":define.trade_placeorder_s_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, 
-                  "holder":holder, "symbol":order.symbol, "exchange":order.exchange, "price":order.price, "amount":order.amount, 
-                  "entr_type":order.entr_type, "exch_side":order.exch_side}
+                   "holder":holder, "symbol":order.symbol, "exchange":order.exchange, "price":order.price, "amount":order.amount, 
+                   "entr_type":order.entr_type, "exch_side":order.exch_side}
         if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
@@ -685,17 +693,26 @@ class TradeX_Stk_Sy():
             ret_code = int(msg_ans["ret_code"])
             if ret_code == 0:
                 #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
-                task_item.order.order_id = msg_ans["ret_data"][0]["order_id"] # 委托编号
-                #task_item.order.status = define.order_status_s_wait_trans # 委托状态
-                #print("下单应答：" + task_item.order.ToString())
-                task_item.status = define.TASK_STATUS_OVER # 任务状态
-                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
-                self.SendTraderEvent(ret_func, task_item)
-            else: # 执行失败
+                otc_code = int(msg_ans["ret_data"][0]["otc_code"])
+                if otc_code >= 0:
+                    task_item.order.order_id = msg_ans["ret_data"][0]["order_id"] # 委托编号
+                    #task_item.order.status = define.order_status_s_wait_trans # 委托状态
+                    #print("下单应答：" + task_item.order.ToString())
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
+                else: # 执行失败
+                    task_item.order.status = define.order_status_s_error_place # 委托状态
+                    task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                    task_item.messages.append("%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
+                    #print("下单失败：%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"]))
+            else: # 执行错误
                 task_item.order.status = define.order_status_s_error_place # 委托状态
                 task_item.status = define.TASK_STATUS_FAIL # 任务状态
                 task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
                 self.SendTraderEvent(ret_func, task_item)
+                #print("下单错误：%d %s" % (ret_code, msg_ans["ret_info"]))
         else:
             self.log_text = "%s：下单应答：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
@@ -718,15 +735,19 @@ class TradeX_Stk_Sy():
             ret_code = int(msg_ans["ret_code"])
             if ret_code == 0:
                 #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
+                otc_code = int(msg_ans["ret_data"][0]["otc_code"])
+                if otc_code < 0: # 撤单失败一般都是已经撤单或全部成交，为避免影响交易，这里不做失败处理
+                    print("撤单失败：%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"]))
                 #order_id = msg_ans["ret_data"][0]["order_id"] # 撤单委托号
                 #print("撤单应答：", order_id)
                 task_item.status = define.TASK_STATUS_OVER # 任务状态
                 task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
                 self.SendTraderEvent(ret_func, task_item)
-            else: # 执行失败
+            else: # 执行错误
                 task_item.status = define.TASK_STATUS_FAIL # 任务状态
                 task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
                 self.SendTraderEvent(ret_func, task_item)
+                #print("撤单错误：%d %s" % (ret_code, msg_ans["ret_info"]))
         else:
             self.log_text = "%s：撤单应答：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
@@ -757,10 +778,10 @@ class TradeX_Stk_Sy():
             batch_item = self.BatchItem()
             batch_item.order = order # 单个合约
             batch_info.batch_orders_list.append(batch_item) # 在这里放入原始委托
-        task_item = self.NewTaskItem(strategy, define.trade_placeorderbatch_s_func)
+        task_item = self.NewTaskItem(strategy, define.trade_placeorder_batch_s_func)
         task_item.batch = batch_info # 批量合约，BatchInfo，股票类特有
         self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
-        msg_req = {"function":define.trade_placeorderbatch_s_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, "order_numb":order_numb, "order_list":order_list}
+        msg_req = {"function":define.trade_placeorder_batch_s_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, "order_numb":order_numb, "order_list":order_list}
         if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
@@ -775,42 +796,52 @@ class TradeX_Stk_Sy():
             ret_code = int(msg_ans["ret_code"])
             if ret_code == 0:
                 #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
-                task_item.batch.batch_id = msg_ans["ret_data"][0]["batch_id"] # 批量委托编号
-                task_item.batch.batch_ht = msg_ans["ret_data"][0]["batch_ht"] # 委托合同号列表
-                wthth_list = task_item.batch.batch_ht.split(",") # 分割为列表
-                if len(wthth_list) > 0:
-                    wthth_list.pop() # 去掉最后一个空的
-                if len(wthth_list) != len(task_item.batch.batch_orders_list):
-                    self.log_text = "%s：批量下单应答：委托个数与合同号个数不一致！%d != %d" % (self.trade_name, len(task_item.batch.batch_orders_list), len(wthth_list))
-                    self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
-                else:
-                    for i in range(len(task_item.batch.batch_orders_list)): # wthth_list 与 batch_orders_list 长度和顺序都一致
-                        order_id = int(wthth_list[i]) # 注意：如果某个股票委托出现异常，则该股票的委托合同号为-620002XXX，可以用 委托数量 <= 0 或 委托价格 <= 0.0 测试
-                        task_item.batch.batch_orders_list[i].order.order_id = order_id # 委托编号
-                        task_item.batch.batch_orders_list[i].order.batch_id = task_item.batch.batch_id # 批量委托编号
-                        if order_id < 0:
-                            task_item.batch.batch_orders_list[i].order.status = define.order_status_s_error_place # 委托状态
-                        else: #放入 batch_orders_map 之中
-                            #task_item.batch.batch_orders_list[i].order.status = define.order_status_s_wait_trans # 委托状态
-                            task_item.batch.batch_orders_map[order_id] = task_item.batch.batch_orders_list[i] # BatchItem
-                #print("批量下单应答：" + task_item.batch.batch_id + "：" + task_item.batch.batch_ht)
-                task_item.status = define.TASK_STATUS_OVER # 任务状态
-                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
-                self.SendTraderEvent(ret_func, task_item)
-            else: # 执行失败
+                otc_code = int(msg_ans["ret_data"][0]["otc_code"])
+                if otc_code >= 0:
+                    task_item.batch.batch_id = msg_ans["ret_data"][0]["batch_id"] # 批量委托编号
+                    task_item.batch.batch_ht = msg_ans["ret_data"][0]["batch_ht"] # 委托合同号列表
+                    wthth_list = task_item.batch.batch_ht.split(",") # 分割为列表
+                    if len(wthth_list) > 0:
+                        wthth_list.pop() # 去掉最后一个空的
+                    if len(wthth_list) != len(task_item.batch.batch_orders_list):
+                        self.log_text = "%s：批量下单应答：委托个数与合同号个数不一致！%d != %d" % (self.trade_name, len(task_item.batch.batch_orders_list), len(wthth_list))
+                        self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "S")
+                    else:
+                        for i in range(len(task_item.batch.batch_orders_list)): # wthth_list 与 batch_orders_list 长度和顺序都一致
+                            order_id = int(wthth_list[i]) # 注意：如果某个股票委托出现异常，则该股票的委托合同号为-620002XXX，可以用 委托数量 <= 0 或 委托价格 <= 0.0 测试
+                            task_item.batch.batch_orders_list[i].order.order_id = order_id # 委托编号
+                            task_item.batch.batch_orders_list[i].order.batch_id = task_item.batch.batch_id # 批量委托编号
+                            if order_id < 0:
+                                task_item.batch.batch_orders_list[i].order.status = define.order_status_s_error_place # 委托状态
+                            else: #放入 batch_orders_map 之中
+                                #task_item.batch.batch_orders_list[i].order.status = define.order_status_s_wait_trans # 委托状态
+                                task_item.batch.batch_orders_map[order_id] = task_item.batch.batch_orders_list[i] # BatchItem
+                    #print("批量下单应答：" + task_item.batch.batch_id + "：" + task_item.batch.batch_ht)
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
+                else: # 执行失败
+                    for i in range(len(task_item.batch.batch_orders_list)):
+                        task_item.batch.batch_orders_list[i].order.status = define.order_status_s_error_place # 委托状态
+                    task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                    task_item.messages.append("%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
+                    #print("批量下单失败：%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"]))
+            else: # 执行错误
                 for i in range(len(task_item.batch.batch_orders_list)):
                     task_item.batch.batch_orders_list[i].order.status = define.order_status_s_error_place # 委托状态
                 task_item.status = define.TASK_STATUS_FAIL # 任务状态
                 task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
                 self.SendTraderEvent(ret_func, task_item)
+                #print("批量下单错误：%d %s" % (ret_code, msg_ans["ret_info"]))
         else:
             self.log_text = "%s：批量下单应答：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def CancelOrderBatch(self, batch_id, batch_ht, strategy):
-        task_item = self.NewTaskItem(strategy, define.trade_cancelorderbatch_s_func)
+        task_item = self.NewTaskItem(strategy, define.trade_cancelorder_batch_s_func)
         self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
-        msg_req = {"function":define.trade_cancelorderbatch_s_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, "batch_id":batch_id, "batch_ht":batch_ht}
+        msg_req = {"function":define.trade_cancelorder_batch_s_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, "batch_id":batch_id, "batch_ht":batch_ht}
         if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
@@ -825,16 +856,107 @@ class TradeX_Stk_Sy():
             ret_code = int(msg_ans["ret_code"])
             if ret_code == 0:
                 #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
+                otc_code = int(msg_ans["ret_data"][0]["otc_code"])
+                if otc_code < 0: # 撤单失败一般都是已经撤单或全部成交，为避免影响交易，这里不做失败处理
+                    print("批量撤单失败：%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"]))
                 #print("批量撤单应答：")
                 task_item.status = define.TASK_STATUS_OVER # 任务状态
                 task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
                 self.SendTraderEvent(ret_func, task_item)
-            else: # 执行失败
+            else: # 执行错误
                 task_item.status = define.TASK_STATUS_FAIL # 任务状态
                 task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
                 self.SendTraderEvent(ret_func, task_item)
+                #print("批量撤单错误：%d %s" % (ret_code, msg_ans["ret_info"]))
         else:
             self.log_text = "%s：批量撤单应答：未知任务编号！%d" % (self.trade_name, task_id)
+            self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
+
+    def PlaceOrderHK(self, order, exchange, strategy): # 仅限 APE 接口
+        holder = self.holder_sh
+        if exchange == "SZ":
+            holder = self.holder_sz
+        task_item = self.NewTaskItem(strategy, define.trade_placeorder_hk_s_func)
+        task_item.order = order # 在这里放入原始委托
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_placeorder_hk_s_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, 
+                   "holder":holder, "symbol":order.symbol, "exchange":order.exchange, "price":order.price, "amount":order.amount, 
+                   "entr_type":order.entr_type, "exch_side":order.exch_side}
+        if self.SendData(msg_req) == False:
+            self.UnConnect()
+            return None
+        return task_item
+
+    def OnPlaceOrderHK(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0:
+                #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
+                otc_code = int(msg_ans["ret_data"][0]["otc_code"])
+                if otc_code >= 0:
+                    task_item.order.order_id = msg_ans["ret_data"][0]["order_id"] # 委托编号
+                    #task_item.order.status = define.order_status_s_wait_trans # 委托状态
+                    #print("港股下单应答：" + task_item.order.ToString())
+                    task_item.status = define.TASK_STATUS_OVER # 任务状态
+                    task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
+                else: # 执行失败
+                    task_item.order.status = define.order_status_s_error_place # 委托状态
+                    task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                    task_item.messages.append("%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"])) # 任务信息
+                    self.SendTraderEvent(ret_func, task_item)
+                    #print("港股下单失败：%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"]))
+            else: # 执行错误
+                task_item.order.status = define.order_status_s_error_place # 委托状态
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
+                #print("港股下单错误：%d %s" % (ret_code, msg_ans["ret_info"]))
+        else:
+            self.log_text = "%s：港股下单应答：未知任务编号！%d" % (self.trade_name, task_id)
+            self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
+
+    def CancelOrderHK(self, order, exchange, strategy): # 仅限 APE 接口
+        holder = self.holder_sh
+        if exchange == "SZ":
+            holder = self.holder_sz
+        task_item = self.NewTaskItem(strategy, define.trade_cancelorder_hk_s_func)
+        self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
+        msg_req = {"function":define.trade_cancelorder_hk_s_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, 
+                   "holder":holder, "exchange":order.exchange, "order_id":order.order_id}
+        if self.SendData(msg_req) == False:
+            self.UnConnect()
+            return None
+        return task_item
+
+    def OnCancelOrderHK(self, ret_func, msg_ans): # 每次一条
+        #print(msg_ans["ret_func"], msg_ans["ret_code"], msg_ans["ret_info"], msg_ans["ret_task"], msg_ans["ret_last"], msg_ans["ret_numb"])
+        ret_func = int(msg_ans["ret_func"])
+        task_id = int(msg_ans["ret_task"])
+        if task_id in self.task_dict.keys():
+            task_item = self.task_dict[task_id]
+            ret_code = int(msg_ans["ret_code"])
+            if ret_code == 0:
+                #print(msg_ans["ret_data"][0]["otc_code"], msg_ans["ret_data"][0]["otc_info"])
+                otc_code = int(msg_ans["ret_data"][0]["otc_code"])
+                if otc_code < 0: # 撤单失败一般都是已经撤单或全部成交，为避免影响交易，这里不做失败处理
+                    print("港股撤单失败：%d %s" % (otc_code, msg_ans["ret_data"][0]["otc_info"]))
+                #order_id = msg_ans["ret_data"][0]["order_id"] # 撤单委托号
+                #print("港股撤单应答：", order_id)
+                task_item.status = define.TASK_STATUS_OVER # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
+            else: # 执行错误
+                task_item.status = define.TASK_STATUS_FAIL # 任务状态
+                task_item.messages.append("%d %s" % (ret_code, msg_ans["ret_info"])) # 任务信息
+                self.SendTraderEvent(ret_func, task_item)
+                #print("港股撤单错误：%d %s" % (ret_code, msg_ans["ret_info"]))
+        else:
+            self.log_text = "%s：港股撤单应答：未知任务编号！%d" % (self.trade_name, task_id)
             self.logger.SendMessage("W", 3, self.log_cate, self.log_text, "S")
 
     def QueryCapital(self, strategy):
@@ -1457,6 +1579,8 @@ if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
     
+    # 010000052848(B883340500, 0800223291)（不能交易港股通）
+    # 020090000609(A125907406, 0028596760)、010000000151(A105710083, 0020762814)（可以交易港股通）
     stock_trader = TradeX_Stk_Sy(None, "股票类交易", "test", 0, "10.0.7.80", 2001, "020090030000", "123321", "A679624770", "0124819363", "LHTZ_20170428001_000", 30)
     stock_trader.Start()
     
@@ -1464,8 +1588,6 @@ if __name__ == "__main__":
     
     # entr_type # 委托方式，1：限价，2：市价
     # exch_side # 交易类型，1：买入，2：卖出，29：申购，30：赎回，37：质押入库，38：质押出库
-    #                      A0：A股，E0：ETF基金，E1：ETF资金，E3：ETF发行，E4：ETF申赎，EZ：国债ETF，F8：质押券，
-    #                      H0：国债回购，H1：企债回购，H2：买断回购，H3：账户回购，Z0：现券国债，Z1：记帐国债，Z4：企业债券
     
     #order = stock_trader.Order(symbol = "600001", exchange = "SH", price = 5.29, amount = 100, entr_type = 1, exch_side = 1)
     #order = stock_trader.Order(symbol = "601618", exchange = "SH", price = 3.28, amount = 1000, entr_type = 1, exch_side = 2)
@@ -1477,9 +1599,21 @@ if __name__ == "__main__":
     #time.sleep(2)
     #stock_trader.PlaceOrder(order, "strategy")
     #time.sleep(2)
-    #task_cancel = stock_trader.CancelOrder(task_place.order, "strategy") #order.order_id = "O50215091607360574"
+    #task_cancel = stock_trader.CancelOrder(task_place.order, "strategy")
     #time.sleep(2)
     #stock_trader.PlaceOrder_FOC_Syn("", order, "strategy")
+    #time.sleep(2)
+    
+    # entr_type # 委托方式，1：竞价限价盘，2：增强限价盘，3：零股买卖
+    # exch_side # 交易类型，1：买入，2：卖出
+    
+    #order = stock_trader.Order(symbol = "02318", exchange = "HK", price = 50.0, amount = 500, entr_type = 2, exch_side = 1)
+    #order = stock_trader.Order(symbol = "02202", exchange = "HK", price = 50.0, amount = 500, entr_type = 2, exch_side = 2)
+    
+    #task_place = stock_trader.PlaceOrderHK(order, "SH", "strategy")
+    #print(task_place.task_id)
+    #time.sleep(2)
+    #task_cancel = stock_trader.CancelOrderHK(task_place.order, "SH", "strategy")
     #time.sleep(2)
     
     #stock_trader.QueryCapital("strategy")

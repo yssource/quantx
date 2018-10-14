@@ -24,7 +24,7 @@ import numpy
 
 APP_TITLE_EN = "QuantX" # 英文名称
 APP_TITLE_CN = "量 化 交 易 客 户 端" # 中文名称
-APP_VERSION = "V0.1.0-Beta Build 20180823" # 版本信息
+APP_VERSION = "V0.1.0-Beta Build 20180914" # 版本信息
 APP_DEVELOPER = "Developed by the X-Lab." # 开发者声明
 APP_COMPANY = "X-Lab (Shanghai) Co., Ltd." # 公司声明
 APP_COPYRIGHT = "Copyright 2018-2018 X-Lab All Rights Reserved." # 版权声明
@@ -138,8 +138,10 @@ trade_subscibe_s_func = 110003 # 股票消息订阅
 trade_unsubscibe_s_func = 110004 # 股票消息退订
 trade_placeorder_s_func = 120001 # 股票单个证券委托下单
 trade_cancelorder_s_func = 120002 # 股票单个证券委托撤单
-trade_placeorderbatch_s_func = 120003 # 股票批量证券委托下单
-trade_cancelorderbatch_s_func = 120004 # 股票批量证券委托撤单
+trade_placeorder_batch_s_func = 120003 # 股票批量证券委托下单
+trade_cancelorder_batch_s_func = 120004 # 股票批量证券委托撤单
+trade_placeorder_hk_s_func = 120005 # 股票沪深港通单个证券委托下单
+trade_cancelorder_hk_s_func = 120006 # 股票沪深港通单个证券委托撤单
 trade_querycapital_s_func = 130002 # 股票查询客户资金
 trade_queryposition_s_func = 130004 # 股票查询客户持仓
 trade_queryorder_s_func = 130005 # 股票查询客户当日委托

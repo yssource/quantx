@@ -842,8 +842,8 @@ class TradeX_Fue_As():
             self.trade_info.AddTbData_Place(task_item.task_id, strategy, order) #
         self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
         msg_req = {"function":define.trade_placeorder_f_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, 
-                  "instrument":order.instrument, "price":order.price, "amount":order.amount, 
-                  "entr_type":order.entr_type, "exch_side":order.exch_side, "offset":order.offset, "hedge":order.hedge}
+                   "instrument":order.instrument, "price":order.price, "amount":order.amount, 
+                   "entr_type":order.entr_type, "exch_side":order.exch_side, "offset":order.offset, "hedge":order.hedge}
         if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
@@ -914,8 +914,8 @@ class TradeX_Fue_As():
         task_item.order = order # 在这里放入原始委托
         self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
         msg_req = {"function":define.trade_placecombinorder_f_func, "session":self.session, "task_id":task_item.task_id, "asset_account":self.asset_account, 
-                  "instrument":order.instrument, "exchange":order.exchange, "price":order.price, "amount":order.amount, 
-                  "entr_type":order.entr_type, "exch_side":order.exch_side, "offset":order.offset, "hedge":order.hedge}
+                   "instrument":order.instrument, "exchange":order.exchange, "price":order.price, "amount":order.amount, 
+                   "entr_type":order.entr_type, "exch_side":order.exch_side, "offset":order.offset, "hedge":order.hedge}
         if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
@@ -1117,7 +1117,7 @@ class TradeX_Fue_As():
         task_item = self.NewTaskItem(strategy, define.trade_queryinstrument_f_func)
         self.task_dict[task_item.task_id] = task_item # 目前这里未加锁
         msg_req = {"function":define.trade_queryinstrument_f_func, "session":self.session, "task_id":task_item.task_id, 
-                  "category":category, "instrument":instrument}
+                   "category":category, "instrument":instrument}
         if self.SendData(msg_req) == False:
             self.UnConnect()
             return None
