@@ -77,6 +77,14 @@ class CfgMain(object):
         self.trade_stock_ape_show = "show"
         self.trade_stock_ape_tips = "tips"
         
+        self.trade_stock_vip_need = 0
+        self.trade_stock_vip_save = 0
+        self.trade_stock_vip_flag = "flag"
+        self.trade_stock_vip_addr = "127.0.0.1"
+        self.trade_stock_vip_port = 9999
+        self.trade_stock_vip_show = "show"
+        self.trade_stock_vip_tips = "tips"
+        
         self.trade_future_np_ctp_need = 0
         self.trade_future_np_ctp_save = 0
         self.trade_future_np_ctp_flag = "flag"
@@ -114,14 +122,21 @@ class CfgMain(object):
         self.stra_auto_load = 0
         self.stra_debug_info = 0
         
-        #华宝股票
+        #华宝APE股票
         self.user_username_ape = "username"
         self.user_password_ape = "password"
         self.user_gdh_sh_ape = "0123456789"
         self.user_gdh_sz_ape = "0123456789"
         self.user_asset_account_ape = "asset_account"
         
-        #上期期货
+        #华宝VIP股票
+        self.user_username_vip = "username"
+        self.user_password_vip = "password"
+        self.user_gdh_sh_vip = "0123456789"
+        self.user_gdh_sz_vip = "0123456789"
+        self.user_asset_account_vip = "asset_account"
+        
+        #上期CTP期货
         self.user_username_ctp = "username"
         self.user_password_ctp = "password"
         self.user_asset_account_ctp = "asset_account"
@@ -180,6 +195,14 @@ class CfgMain(object):
         self.trade_stock_ape_show = config.get("nets", "trade_stock_ape_show")
         self.trade_stock_ape_tips = config.get("nets", "trade_stock_ape_tips") # 配置文件格式必须为 UTF8 否则会报异常
         
+        self.trade_stock_vip_need = int(config.get("nets", "trade_stock_vip_need"))
+        self.trade_stock_vip_save = int(config.get("nets", "trade_stock_vip_save"))
+        self.trade_stock_vip_flag = config.get("nets", "trade_stock_vip_flag")
+        self.trade_stock_vip_addr = config.get("nets", "trade_stock_vip_addr")
+        self.trade_stock_vip_port = int(config.get("nets", "trade_stock_vip_port"))
+        self.trade_stock_vip_show = config.get("nets", "trade_stock_vip_show")
+        self.trade_stock_vip_tips = config.get("nets", "trade_stock_vip_tips") # 配置文件格式必须为 UTF8 否则会报异常
+        
         self.trade_future_np_ctp_need = int(config.get("nets", "trade_future_np_ctp_need"))
         self.trade_future_np_ctp_save = int(config.get("nets", "trade_future_np_ctp_save"))
         self.trade_future_np_ctp_flag = config.get("nets", "trade_future_np_ctp_flag")
@@ -217,14 +240,21 @@ class CfgMain(object):
         self.stra_auto_load = int(config.get("stra", "stra_auto_load"))
         self.stra_debug_info = int(config.get("stra", "stra_debug_info"))
         
-        # 顶点股票
+        # 顶点APE股票
         self.user_username_ape = config.get("user", "user_username_ape")
         self.user_password_ape = config.get("user", "user_password_ape")
         self.user_gdh_sh_ape = config.get("user", "user_gdh_sh_ape")
         self.user_gdh_sz_ape = config.get("user", "user_gdh_sz_ape")
         self.user_asset_account_ape = config.get("user", "user_asset_account_ape")
         
-        # 上期期货
+        # 顶点VIP股票
+        self.user_username_vip = config.get("user", "user_username_vip")
+        self.user_password_vip = config.get("user", "user_password_vip")
+        self.user_gdh_sh_vip = config.get("user", "user_gdh_sh_vip")
+        self.user_gdh_sz_vip = config.get("user", "user_gdh_sz_vip")
+        self.user_asset_account_vip = config.get("user", "user_asset_account_vip")
+        
+        # 上期CTP期货
         self.user_username_ctp = config.get("user", "user_username_ctp")
         self.user_password_ctp = config.get("user", "user_password_ctp")
         self.user_asset_account_ctp = config.get("user", "user_asset_account_ctp")

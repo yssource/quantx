@@ -93,16 +93,23 @@ class Trader(common.Singleton):
             self.quoter_dict[self.config.cfg_main.quote_future_np_flag] = quoter
         
         if self.config.cfg_main.trade_stock_ape_need == 1:
-            self.log_text = "正在加载 股票类顶点交易 (同步) 服务..."
+            self.log_text = "正在加载 股票类顶点APE交易 (同步) 服务..."
             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-            trader = tradex_stk_sy.TradeX_Stk_Sy(self, "股票类顶点交易(SY)", self.config.cfg_main.trade_stock_ape_flag, self.config.cfg_main.trade_stock_ape_save,
+            trader = tradex_stk_sy.TradeX_Stk_Sy(self, "股票类顶点APE交易(SY)", self.config.cfg_main.trade_stock_ape_flag, self.config.cfg_main.trade_stock_ape_save,
                      self.config.cfg_main.trade_stock_ape_addr, self.config.cfg_main.trade_stock_ape_port, self.config.cfg_main.user_username_ape, self.config.cfg_main.user_password_ape, self.config.cfg_main.user_gdh_sh_ape, self.config.cfg_main.user_gdh_sz_ape, self.config.cfg_main.user_asset_account_ape, 5)
             self.trader_dict[self.config.cfg_main.trade_stock_ape_flag] = trader
         
-        if self.config.cfg_main.trade_future_np_ctp_need == 1:
-            self.log_text = "正在加载 期货类内盘交易 (异步) 服务..."
+        if self.config.cfg_main.trade_stock_vip_need == 1:
+            self.log_text = "正在加载 股票类顶点VIP交易 (同步) 服务..."
             self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
-            trader = tradex_fue_as.TradeX_Fue_As(self, "期货类内盘交易(AS)", self.config.cfg_main.trade_future_np_ctp_flag, self.config.cfg_main.trade_future_np_ctp_save, 
+            trader = tradex_stk_sy.TradeX_Stk_Sy(self, "股票类顶点VIP交易(SY)", self.config.cfg_main.trade_stock_vip_flag, self.config.cfg_main.trade_stock_vip_save,
+                     self.config.cfg_main.trade_stock_vip_addr, self.config.cfg_main.trade_stock_vip_port, self.config.cfg_main.user_username_vip, self.config.cfg_main.user_password_vip, self.config.cfg_main.user_gdh_sh_vip, self.config.cfg_main.user_gdh_sz_vip, self.config.cfg_main.user_asset_account_vip, 5)
+            self.trader_dict[self.config.cfg_main.trade_stock_vip_flag] = trader
+        
+        if self.config.cfg_main.trade_future_np_ctp_need == 1:
+            self.log_text = "正在加载 期货类内盘CTP交易 (异步) 服务..."
+            self.logger.SendMessage("I", 1, self.log_cate, self.log_text, "S")
+            trader = tradex_fue_as.TradeX_Fue_As(self, "期货类内盘CTP交易(AS)", self.config.cfg_main.trade_future_np_ctp_flag, self.config.cfg_main.trade_future_np_ctp_save, 
                      self.config.cfg_main.trade_future_np_ctp_addr, self.config.cfg_main.trade_future_np_ctp_port, self.config.cfg_main.user_username_ctp, self.config.cfg_main.user_password_ctp, self.config.cfg_main.user_asset_account_ctp, 5)
             self.trader_dict[self.config.cfg_main.trade_future_np_ctp_flag] = trader
 

@@ -84,6 +84,12 @@ class TradeCenterBar(QToolBar):
             self.addWidget(self.bar_item_stock_ape.state_label)
             self.addSeparator()
         
+        if self.config.cfg_main.trade_stock_vip_need == 1:
+            self.bar_item_stock_vip = TradeBarItem(self.config.cfg_main.trade_stock_vip_flag, self.config.cfg_main.trade_stock_vip_show, self.config.cfg_main.trade_stock_vip_tips)
+            self.addWidget(self.bar_item_stock_vip.check_box)
+            self.addWidget(self.bar_item_stock_vip.state_label)
+            self.addSeparator()
+        
         if self.config.cfg_main.trade_future_np_ctp_need == 1:
             self.bar_item_future_np_ctp = TradeBarItem(self.config.cfg_main.trade_future_np_ctp_flag, self.config.cfg_main.trade_future_np_ctp_show, self.config.cfg_main.trade_future_np_ctp_tips)
             self.addWidget(self.bar_item_future_np_ctp.check_box)

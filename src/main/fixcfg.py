@@ -28,14 +28,21 @@ class FixCfg(common.Singleton):
         self.config = config.Config()
 
     def AssignValue(self):
-        # 顶点股票
+        # 顶点APE股票
         if self.config.cfg_main.user_username_ape == "0":
             self.config.cfg_main.user_username_ape = "username"
             self.config.cfg_main.user_password_ape = "password"
             self.config.cfg_main.user_gdh_sh_ape = "0123456789"
             self.config.cfg_main.user_gdh_sz_ape = "0123456789"
             self.config.cfg_main.user_asset_account_ape = "asset_account"
-        # 上期期货
+        # 顶点VIP股票
+        if self.config.cfg_main.user_username_vip == "0":
+            self.config.cfg_main.user_username_vip = "username"
+            self.config.cfg_main.user_password_vip = "password"
+            self.config.cfg_main.user_gdh_sh_vip = "0123456789"
+            self.config.cfg_main.user_gdh_sz_vip = "0123456789"
+            self.config.cfg_main.user_asset_account_vip = "asset_account"
+        # 上期CTP期货
         if self.config.cfg_main.user_username_ctp == "0":
             self.config.cfg_main.user_username_ctp = "12345678"
             self.config.cfg_main.user_password_ctp = "123456"

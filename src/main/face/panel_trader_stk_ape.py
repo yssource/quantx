@@ -55,9 +55,9 @@ class Panel(QDialog):
         if self.subscribe == False:
             self.center.RegQuoteSub(self.strategy, self.OnQuoteStock, "stock_ltp") # 目前只订阅个股
             self.subscribe = True
-        self.trader = trader.Trader().GetTrader("hbzq")
+        self.trader = trader.Trader().GetTrader("hbzq_vip") # 华宝顶点 VIP
         if self.trader == None:
-            self.logger.SendMessage("E", 4, self.log_cate, "获取标识为 hbzq 的交易服务失败！", "M")
+            self.logger.SendMessage("E", 4, self.log_cate, "获取标识为 hbzq_vip 的交易服务失败！", "M")
 
     def OnSuspend(self): # 供具体策略继承调用，在 暂停 前执行一些操作
         pass

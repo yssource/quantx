@@ -34,7 +34,7 @@ class Panel(QDialog):
     def __init__(self, **kwargs):
         super(Panel, self).__init__()
         self.strategy = kwargs.get("strategy", "")
-        self.version_info = "V0.1.0-Beta Build 20180422"
+        self.version_info = "V0.1.0-Beta Build 20181015"
         self.log_text = ""
         self.log_cate = "Panel_Trader_STK_HK_APE"
         self.logger = logger.Logger()
@@ -42,22 +42,23 @@ class Panel(QDialog):
         self.InitUserInterface()
         
         self.symbol = ""
-        self.exchange = "" # SH、SZ 或 SSE、SZE # 目前只订阅个股行情，不考虑沪深个股和指数代码重合问题
+        self.exchange = "" # HGT、SGT
         self.trader = None # 策略中赋值
         self.subscribe = False # 行情订阅标志
         self.center = center.Center()
         
         self.quote_data = None
-        self.price_round_stock = 2 # 小数位数
-        self.price_round_index = 2 # 小数位数
+        self.price_round_stock = 3 # 小数位数
+        self.price_round_index = 3 # 小数位数
 
     def OnWorking(self): # 供具体策略继承调用，在 运行 前执行一些操作
         if self.subscribe == False:
-            self.center.RegQuoteSub(self.strategy, self.OnQuoteStock, "stock_ltp") # 目前只订阅个股
+            self.center.RegQuoteSub(self.strategy, self.OnQuoteStock_HGT, "stock_hgt")
+            self.center.RegQuoteSub(self.strategy, self.OnQuoteStock_SGT, "stock_sgt")
             self.subscribe = True
-        self.trader = trader.Trader().GetTrader("hbzq")
+        self.trader = trader.Trader().GetTrader("hbzq_ape") # 华宝顶点 APE
         if self.trader == None:
-            self.logger.SendMessage("E", 4, self.log_cate, "获取标识为 hbzq 的交易服务失败！", "M")
+            self.logger.SendMessage("E", 4, self.log_cate, "获取标识为 hbzq_ape 的交易服务失败！", "M")
 
     def OnSuspend(self): # 供具体策略继承调用，在 暂停 前执行一些操作
         pass
