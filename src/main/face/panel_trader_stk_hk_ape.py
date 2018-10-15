@@ -53,8 +53,8 @@ class Panel(QDialog):
 
     def OnWorking(self): # 供具体策略继承调用，在 运行 前执行一些操作
         if self.subscribe == False:
-            self.center.RegQuoteSub(self.strategy, self.OnQuoteStock_HGT, "stock_hgt")
-            self.center.RegQuoteSub(self.strategy, self.OnQuoteStock_SGT, "stock_sgt")
+            self.center.RegQuoteSub(self.strategy, self.OnQuoteStock, "stock_hgt")
+            self.center.RegQuoteSub(self.strategy, self.OnQuoteStock, "stock_sgt")
             self.subscribe = True
         self.trader = trader.Trader().GetTrader("hbzq_ape") # 华宝顶点 APE
         if self.trader == None:
@@ -68,11 +68,12 @@ class Panel(QDialog):
 
     def OnTerminal(self): # 供具体策略继承调用，在 停止 前执行一些操作
         if self.subscribe == True:
-            self.center.DelQuoteSub(self.strategy, "stock_ltp")
+            self.center.DelQuoteSub(self.strategy, "stock_hgt")
+            self.center.DelQuoteSub(self.strategy, "stock_sgt")
             self.subscribe = False
 
     def event(self, event):
-        if event.type() == define.DEF_EVENT_TRADER_STK_APE_UPDATE_QUOTE:
+        if event.type() == define.DEF_EVENT_TRADER_STK_HK_APE_UPDATE_QUOTE:
             if self.quote_data != None:
                 self.OnUpdateQuote(self.quote_data, self.price_round_stock)
         return QDialog.event(self, event)
@@ -86,9 +87,8 @@ class Panel(QDialog):
         try:
             str_code = msg.data[0].decode()
             if str_code == self.symbol:
-                if "60" == str_code[0:2] or "000" == str_code[0:3] or "001" == str_code[0:3] or "002" == str_code[0:3] or "300" == str_code[0:3]:
-                    self.quote_data = msg.data
-                    QApplication.postEvent(self, QEvent(define.DEF_EVENT_TRADER_STK_APE_UPDATE_QUOTE)) # postEvent异步，sendEvent同步
+                self.quote_data = msg.data
+                QApplication.postEvent(self, QEvent(define.DEF_EVENT_TRADER_STK_HK_APE_UPDATE_QUOTE)) # postEvent异步，sendEvent同步
         except Exception as e:
             self.log_text = "%s：函数 OnQuoteStock 异常！%s" % (self.strategy, e)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "M")
@@ -101,8 +101,8 @@ class Panel(QDialog):
         self.color_black = QPalette()
         self.color_black.setColor(QPalette.WindowText, Qt.black)
         
-        self.list_exchange = [define.DEF_EXCHANGE_STOCK_SH, define.DEF_EXCHANGE_STOCK_SZ]
-        self.list_entr_type = [define.DEF_PRICE_TYPE_STOCK_LIMIT, define.DEF_PRICE_TYPE_STOCK_MARKET]
+        self.list_exchange = [define.DEF_EXCHANGE_STOCK_HGT, define.DEF_EXCHANGE_STOCK_SGT]
+        self.list_entr_type = [define.DEF_PRICE_TYPE_STOCK_HK_BOOST_LIMIT, define.DEF_PRICE_TYPE_STOCK_HK_AUCTION_LIMIT, define.DEF_PRICE_TYPE_STOCK_HK_ODDMENT]
         
         self.setWindowTitle("手动交易-股票-H股-APE %s" % self.version_info)
         self.resize(380, 300)
@@ -522,24 +522,26 @@ class Panel(QDialog):
                     return
                 str_symbol = self.line_edit_symbol.text() #str(unicode(self.line_edit_symbol.text(), "gb2312"))
                 str_exchange = ""
-                if self.combo_exchange.currentText() == define.DEF_EXCHANGE_STOCK_SH:
+                if self.combo_exchange.currentText() == define.DEF_EXCHANGE_STOCK_HGT:
                     str_exchange = "SH"
-                elif self.combo_exchange.currentText() == define.DEF_EXCHANGE_STOCK_SZ:
+                elif self.combo_exchange.currentText() == define.DEF_EXCHANGE_STOCK_SGT:
                     str_exchange = "SZ"
                 f_price = self.spin_price.value()
                 n_amount = self.spin_volume.value()
                 n_entr_type = 0
-                if self.combo_entr_type.currentText() == define.DEF_PRICE_TYPE_STOCK_LIMIT:
+                if self.combo_entr_type.currentText() == define.DEF_PRICE_TYPE_STOCK_HK_AUCTION_LIMIT:
                     n_entr_type = 1
-                elif self.combo_entr_type.currentText() == define.DEF_PRICE_TYPE_STOCK_MARKET:
+                elif self.combo_entr_type.currentText() == define.DEF_PRICE_TYPE_STOCK_HK_BOOST_LIMIT:
                     n_entr_type = 2
+                elif self.combo_entr_type.currentText() == define.DEF_PRICE_TYPE_STOCK_HK_ODDMENT:
+                    n_entr_type = 3
                 n_exch_side = 0
                 if self.radio_button_buy.isChecked():
                     n_exch_side = 1
                 elif self.radio_button_sell.isChecked():
                     n_exch_side = 2
-                order = self.trader.Order(symbol = str_symbol, exchange = str_exchange, price = f_price, amount = n_amount, entr_type = n_entr_type, exch_side = n_exch_side)
-                task_place = self.trader.PlaceOrder(order, self.strategy)
+                order = self.trader.Order(symbol = str_symbol, exchange = "HK", price = f_price, amount = n_amount, entr_type = n_entr_type, exch_side = n_exch_side)
+                task_place = self.trader.PlaceOrder(order, str_exchange, self.strategy)
                 QMessageBox.information(self, "提示", "委托下单提交完成。", QMessageBox.Ok)
         else:
             self.logger.SendMessage("E", 4, self.log_cate, "交易服务尚未获取！", "M")
@@ -554,7 +556,7 @@ class Panel(QDialog):
                     return
                 order = self.trader.Order()
                 order.order_id = int(self.line_edit_order_id.text()) # int
-                task_cancel = self.trader.CancelOrder(order, self.strategy)
+                task_cancel = self.trader.CancelOrder(order, str_exchange, self.strategy)
                 QMessageBox.information(self, "提示", "委托撤单提交完成。", QMessageBox.Ok)
         else:
             self.logger.SendMessage("E", 4, self.log_cate, "交易服务尚未获取！", "M")
@@ -564,6 +566,6 @@ class Panel(QDialog):
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    panel = Panel("Strategy_Trader_STK_HK_APE")
+    panel = Panel(strategy = "Strategy_Trader_STK_HK_APE")
     panel.show()
     sys.exit(app.exec_())

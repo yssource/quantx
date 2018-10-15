@@ -653,6 +653,6 @@ class Panel(QDialog):
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    panel = Panel("Strategy_Trader_FUE_CTP")
+    panel = Panel(strategy = "Strategy_Trader_FUE_CTP")
     panel.show()
     sys.exit(app.exec_())
