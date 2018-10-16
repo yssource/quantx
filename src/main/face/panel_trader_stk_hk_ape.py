@@ -29,6 +29,7 @@ import define
 import logger
 import center
 import trader
+import basicx
 
 class Panel(QDialog):
     def __init__(self, **kwargs):
@@ -42,14 +43,21 @@ class Panel(QDialog):
         self.InitUserInterface()
         
         self.symbol = ""
-        self.exchange = "" # HGT、SGT
+        self.exchange = "" # HK
         self.trader = None # 策略中赋值
         self.subscribe = False # 行情订阅标志
         self.center = center.Center()
+        self.basicx = basicx.BasicX()
         
         self.quote_data = None
         self.price_round_stock = 3 # 小数位数
         self.price_round_index = 3 # 小数位数
+        
+        self.trade_unit_dict = {} # 买卖单位
+        self.min_price_chg_dict = {} # 最小变动价格
+        self.security_name_dict = {} # 证券名称
+        self.component_hsggt_hgt_dict = {} # 沪港通成分股
+        self.component_hsggt_sgt_dict = {} # 深港通成分股
 
     def OnWorking(self): # 供具体策略继承调用，在 运行 前执行一些操作
         if self.subscribe == False:
@@ -59,6 +67,38 @@ class Panel(QDialog):
         self.trader = trader.Trader().GetTrader("hbzq_ape") # 华宝顶点 APE
         if self.trader == None:
             self.logger.SendMessage("E", 4, self.log_cate, "获取标识为 hbzq_ape 的交易服务失败！", "M")
+        
+        self.trade_unit_dict = {}
+        self.min_price_chg_dict = {}
+        self.security_name_dict = {}
+        result = self.basicx.GetSecurityInfo_HK()
+        if not result.empty:
+            for index, row in result.iterrows():
+                key_security_info = row["market"] + row["code"]
+                self.trade_unit_dict[key_security_info] = row["trade_unit"]
+                self.min_price_chg_dict[key_security_info] = row["min_price_chg"]
+                self.security_name_dict[key_security_info] = row["name"]
+            self.log_text = "获取 H股证券信息 %d 个。" % len(self.security_name_dict)
+            self.logger.SendMessage("pron", 2, self.log_cate, self.log_text, "T")
+        else:
+            self.logger.SendMessage("W", 3, self.log_cate, "获取 H股证券信息 为空！", "T")
+        
+        self.component_hsggt_hgt_dict = {}
+        self.component_hsggt_sgt_dict = {}
+        result = self.basicx.GetComponentHSGGT()
+        if not result.empty:
+            for index, row in result.iterrows():
+                key_component_hsggt = row["market"] + row["code"]
+                if row["comp_type"] == 1: # 沪港通
+                    self.component_hsggt_hgt_dict[key_component_hsggt] = key_component_hsggt
+                if row["comp_type"] == 4: # 深港通
+                    self.component_hsggt_sgt_dict[key_component_hsggt] = key_component_hsggt
+            self.log_text = "获取 沪港通成分股 %d 个。" % len(self.component_hsggt_hgt_dict)
+            self.logger.SendMessage("pron", 2, self.log_cate, self.log_text, "T")
+            self.log_text = "获取 深港通成分股 %d 个。" % len(self.component_hsggt_sgt_dict)
+            self.logger.SendMessage("pron", 2, self.log_cate, self.log_text, "T")
+        else:
+            self.logger.SendMessage("W", 3, self.log_cate, "获取 沪深港通成分股 为空！", "T")
 
     def OnSuspend(self): # 供具体策略继承调用，在 暂停 前执行一些操作
         pass
@@ -134,6 +174,25 @@ class Panel(QDialog):
         self.label_volume_unit = QLabel("股")
         self.label_volume_unit.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         
+        self.line_edit_tips_exchange = QLineEdit("")
+        self.line_edit_tips_exchange.setReadOnly(True)
+        self.line_edit_tips_exchange.setFixedWidth(60)
+        self.line_edit_tips_exchange.setToolTip("沪深港通")
+        self.line_edit_tips_exchange.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.line_edit_tips_exchange.setStyleSheet("background-color:rgb(240,240,240)")
+        self.line_edit_tips_trade_unit = QLineEdit("0")
+        self.line_edit_tips_trade_unit.setReadOnly(True)
+        self.line_edit_tips_trade_unit.setFixedWidth(42)
+        self.line_edit_tips_trade_unit.setToolTip("买卖单位")
+        self.line_edit_tips_trade_unit.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.line_edit_tips_trade_unit.setStyleSheet("background-color:rgb(240,240,240)")
+        self.line_edit_tips_min_price_chg = QLineEdit("0.0")
+        self.line_edit_tips_min_price_chg.setReadOnly(True)
+        self.line_edit_tips_min_price_chg.setFixedWidth(42)
+        self.line_edit_tips_min_price_chg.setToolTip("最小变动价格")
+        self.line_edit_tips_min_price_chg.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.line_edit_tips_min_price_chg.setStyleSheet("background-color:rgb(240,240,240)")
+        
         self.combo_exchange = QComboBox()
         self.combo_exchange.addItems(self.list_exchange)
         self.line_edit_symbol = QLineEdit("")
@@ -185,10 +244,13 @@ class Panel(QDialog):
         self.grid_layout_essential.addWidget(self.line_edit_can_sell, 5, 1, 1, 1)
         self.grid_layout_essential.addWidget(self.spin_price,         6, 1, 1, 1)
         self.grid_layout_essential.addWidget(self.spin_volume,        7, 1, 1, 1)
-        self.grid_layout_essential.addWidget(self.label_can_use_unit,  4, 2, 1, 1)
-        self.grid_layout_essential.addWidget(self.label_can_sell_unit, 5, 2, 1, 1)
-        self.grid_layout_essential.addWidget(self.label_price_unit,    6, 2, 1, 1)
-        self.grid_layout_essential.addWidget(self.label_volume_unit,   7, 2, 1, 1)
+        self.grid_layout_essential.addWidget(self.line_edit_tips_exchange, 1, 2, 1, 2)
+        self.grid_layout_essential.addWidget(self.label_can_use_unit,      4, 2, 1, 1)
+        self.grid_layout_essential.addWidget(self.label_can_sell_unit,     5, 2, 1, 1)
+        self.grid_layout_essential.addWidget(self.label_price_unit,        6, 2, 1, 1)
+        self.grid_layout_essential.addWidget(self.label_volume_unit,       7, 2, 1, 1)
+        self.grid_layout_essential.addWidget(self.line_edit_tips_min_price_chg, 6, 3, 1, 1)
+        self.grid_layout_essential.addWidget(self.line_edit_tips_trade_unit,    7, 3, 1, 1)
         
         self.radio_button_buy = QRadioButton("买 入")
         self.radio_button_buy.setStyleSheet("color:red")
@@ -271,33 +333,33 @@ class Panel(QDialog):
         self.label_bid_5.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.label_low_limit.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         
-        self.label_high_limit_price = QLabel("0.00")
+        self.label_high_limit_price = QLabel("0.000")
         self.label_high_limit_price.setMinimumWidth(60)
-        self.label_ask_price_5 = QLabel("0.00")
-        self.label_ask_price_4 = QLabel("0.00")
-        self.label_ask_price_3 = QLabel("0.00")
-        self.label_ask_price_2 = QLabel("0.00")
-        self.label_ask_price_1 = QLabel("0.00")
+        self.label_ask_price_5 = QLabel("0.000")
+        self.label_ask_price_4 = QLabel("0.000")
+        self.label_ask_price_3 = QLabel("0.000")
+        self.label_ask_price_2 = QLabel("0.000")
+        self.label_ask_price_1 = QLabel("0.000")
         self.label_ask_volume_5 = QLabel("0")
         self.label_ask_volume_4 = QLabel("0")
         self.label_ask_volume_3 = QLabel("0")
         self.label_ask_volume_2 = QLabel("0")
         self.label_ask_volume_1 = QLabel("0")
-        self.label_last_price = QLabel("0.00")
+        self.label_last_price = QLabel("0.000")
         self.label_last_price.setMinimumWidth(60)
         self.label_last_up_down = QLabel("0.00%")
         self.label_last_up_down.setMinimumWidth(60)
-        self.label_bid_price_1 = QLabel("0.00")
-        self.label_bid_price_2 = QLabel("0.00")
-        self.label_bid_price_3 = QLabel("0.00")
-        self.label_bid_price_4 = QLabel("0.00")
-        self.label_bid_price_5 = QLabel("0.00")
+        self.label_bid_price_1 = QLabel("0.000")
+        self.label_bid_price_2 = QLabel("0.000")
+        self.label_bid_price_3 = QLabel("0.000")
+        self.label_bid_price_4 = QLabel("0.000")
+        self.label_bid_price_5 = QLabel("0.000")
         self.label_bid_volume_1 = QLabel("0")
         self.label_bid_volume_2 = QLabel("0")
         self.label_bid_volume_3 = QLabel("0")
         self.label_bid_volume_4 = QLabel("0")
         self.label_bid_volume_5 = QLabel("0")
-        self.label_low_limit_price = QLabel("0.00")
+        self.label_low_limit_price = QLabel("0.000")
         self.label_low_limit_price.setMinimumWidth(60)
         
         self.label_high_limit_price.setPalette(self.color_red)
@@ -429,30 +491,52 @@ class Panel(QDialog):
         self.spin_price.setValue(0)
         self.spin_volume.setValue(0)
         
-        self.label_high_limit_price.setText("0.00")
-        self.label_ask_price_5.setText("0.00")
-        self.label_ask_price_4.setText("0.00")
-        self.label_ask_price_3.setText("0.00")
-        self.label_ask_price_2.setText("0.00")
-        self.label_ask_price_1.setText("0.00")
+        self.label_high_limit_price.setText("0.000")
+        self.label_ask_price_5.setText("0.000")
+        self.label_ask_price_4.setText("0.000")
+        self.label_ask_price_3.setText("0.000")
+        self.label_ask_price_2.setText("0.000")
+        self.label_ask_price_1.setText("0.000")
         self.label_ask_volume_5.setText("0")
         self.label_ask_volume_4.setText("0")
         self.label_ask_volume_3.setText("0")
         self.label_ask_volume_2.setText("0")
         self.label_ask_volume_1.setText("0")
-        self.label_last_price.setText("0.00")
+        self.label_last_price.setText("0.000")
         self.label_last_up_down.setText("0.00%")
-        self.label_bid_price_1.setText("0.00")
-        self.label_bid_price_2.setText("0.00")
-        self.label_bid_price_3.setText("0.00")
-        self.label_bid_price_4.setText("0.00")
-        self.label_bid_price_5.setText("0.00")
+        self.label_bid_price_1.setText("0.000")
+        self.label_bid_price_2.setText("0.000")
+        self.label_bid_price_3.setText("0.000")
+        self.label_bid_price_4.setText("0.000")
+        self.label_bid_price_5.setText("0.000")
         self.label_bid_volume_1.setText("0")
         self.label_bid_volume_2.setText("0")
         self.label_bid_volume_3.setText("0")
         self.label_bid_volume_4.setText("0")
         self.label_bid_volume_5.setText("0")
-        self.label_low_limit_price.setText("0.00")
+        self.label_low_limit_price.setText("0.000")
+        
+        dict_key = "HK" + self.symbol
+        tips_exchange = ""
+        if dict_key in self.security_name_dict.keys():
+            tips_exchange = "HK"
+            self.line_edit_name.setText(self.security_name_dict[dict_key])
+        if dict_key in self.component_hsggt_hgt_dict.keys():
+            if dict_key in self.component_hsggt_sgt_dict.keys():
+                tips_exchange = "HGT SGT"
+            else:
+                tips_exchange = "HGT"
+        elif dict_key in self.component_hsggt_sgt_dict.keys():
+            tips_exchange = "SGT"
+        self.line_edit_tips_exchange.setText(tips_exchange)
+        tips_trade_unit = "0"
+        if dict_key in self.trade_unit_dict.keys():
+            tips_trade_unit = "%d" % self.trade_unit_dict[dict_key]
+        self.line_edit_tips_trade_unit.setText(tips_trade_unit)
+        tips_min_price_chg = "0.0"
+        if dict_key in self.min_price_chg_dict.keys():
+            tips_min_price_chg = "%.3f" % self.min_price_chg_dict[dict_key]
+        self.line_edit_tips_min_price_chg.setText(tips_min_price_chg)
 
     def OnChangeBuySell(self):
         if self.radio_button_buy.isChecked():
@@ -474,26 +558,26 @@ class Panel(QDialog):
         try:
             self.exchange = data[3].decode() # 证券市场
             self.line_edit_name.setText(str(data[1].decode("gbk"))) # 证券名称 #QString.fromLocal8Bit(data[1].decode("gbk")) # 含中文
-            self.label_ask_price_5.setText(str(round(data[13][4], price_round)))
-            self.label_ask_price_4.setText(str(round(data[13][3], price_round)))
-            self.label_ask_price_3.setText(str(round(data[13][2], price_round)))
-            self.label_ask_price_2.setText(str(round(data[13][1], price_round)))
+            #self.label_ask_price_5.setText(str(round(data[13][4], price_round)))
+            #self.label_ask_price_4.setText(str(round(data[13][3], price_round)))
+            #self.label_ask_price_3.setText(str(round(data[13][2], price_round)))
+            #self.label_ask_price_2.setText(str(round(data[13][1], price_round)))
             self.label_ask_price_1.setText(str(round(data[13][0], price_round)))
-            self.label_ask_volume_5.setText(str(data[14][4]))
-            self.label_ask_volume_4.setText(str(data[14][3]))
-            self.label_ask_volume_3.setText(str(data[14][2]))
-            self.label_ask_volume_2.setText(str(data[14][1]))
+            #self.label_ask_volume_5.setText(str(data[14][4]))
+            #self.label_ask_volume_4.setText(str(data[14][3]))
+            #self.label_ask_volume_3.setText(str(data[14][2]))
+            #self.label_ask_volume_2.setText(str(data[14][1]))
             self.label_ask_volume_1.setText(str(data[14][0]))
             self.label_bid_price_1.setText(str(round(data[15][0], price_round)))
-            self.label_bid_price_2.setText(str(round(data[15][1], price_round)))
-            self.label_bid_price_3.setText(str(round(data[15][2], price_round)))
-            self.label_bid_price_4.setText(str(round(data[15][3], price_round)))
-            self.label_bid_price_5.setText(str(round(data[15][4], price_round)))
+            #self.label_bid_price_2.setText(str(round(data[15][1], price_round)))
+            #self.label_bid_price_3.setText(str(round(data[15][2], price_round)))
+            #self.label_bid_price_4.setText(str(round(data[15][3], price_round)))
+            #self.label_bid_price_5.setText(str(round(data[15][4], price_round)))
             self.label_bid_volume_1.setText(str(data[16][0]))
-            self.label_bid_volume_2.setText(str(data[16][1]))
-            self.label_bid_volume_3.setText(str(data[16][2]))
-            self.label_bid_volume_4.setText(str(data[16][3]))
-            self.label_bid_volume_5.setText(str(data[16][4]))
+            #self.label_bid_volume_2.setText(str(data[16][1]))
+            #self.label_bid_volume_3.setText(str(data[16][2]))
+            #self.label_bid_volume_4.setText(str(data[16][3]))
+            #self.label_bid_volume_5.setText(str(data[16][4]))
             self.label_high_limit_price.setText(str(round(data[17], price_round))) # 涨停价
             self.label_low_limit_price.setText(str(round(data[18], price_round))) # 跌停价
             self.label_last_price.setText(str(round(data[5], price_round))) # 最新价
@@ -540,6 +624,29 @@ class Panel(QDialog):
                     n_exch_side = 1
                 elif self.radio_button_sell.isChecked():
                     n_exch_side = 2
+                trade_unit = int(self.line_edit_tips_trade_unit.text())
+                min_price_chg = float(self.line_edit_tips_min_price_chg.text())
+                if trade_unit <= 0:
+                    QMessageBox.warning(self, "提示", "没有 买卖单位 信息！", QMessageBox.Ok)
+                    return
+                else: # trade_unit > 0
+                    if n_amount < trade_unit:
+                        QMessageBox.warning(self, "提示", "委托数量 < 买卖单位 %d！" % trade_unit, QMessageBox.Ok)
+                        return
+                    if n_entr_type == 1 or n_entr_type == 2: # 竞价限价、增强限价
+                        if n_amount % trade_unit != 0:
+                            QMessageBox.warning(self, "提示", "委托数量不为 %d 的整数倍！" % trade_unit, QMessageBox.Ok)
+                            return
+                if min_price_chg <= 0.0:
+                    QMessageBox.warning(self, "提示", "没有 最小变动价格 信息！", QMessageBox.Ok)
+                    return
+                else: # min_price_chg > 0.0
+                    if f_price < min_price_chg:
+                        QMessageBox.warning(self, "提示", "委托价格 < 最小变动价格 %.3f！" % min_price_chg, QMessageBox.Ok)
+                        return
+                    if f_price % min_price_chg != 0.0:
+                        QMessageBox.warning(self, "提示", "委托价格不为 %.3f 的整数倍！" % min_price_chg, QMessageBox.Ok)
+                        return
                 order = self.trader.Order(symbol = str_symbol, exchange = "HK", price = f_price, amount = n_amount, entr_type = n_entr_type, exch_side = n_exch_side)
                 task_place = self.trader.PlaceOrder(order, str_exchange, self.strategy)
                 QMessageBox.information(self, "提示", "委托下单提交完成。", QMessageBox.Ok)
