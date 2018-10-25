@@ -119,7 +119,7 @@ class Panel(QDialog):
         return QDialog.event(self, event)
 
     def OnTraderEvent(self, trader, ret_func, task_item): # 交易模块事件通知，供具体策略继承调用
-        if ret_func == define.trade_placeorder_s_func:
+        if ret_func == define.trade_placeorder_hk_s_func: # HK
             self.log_text = "%s：%s %d：%d" % (self.strategy, trader, ret_func, task_item.order.order_id)
             self.logger.SendMessage("H", 2, self.log_cate, self.log_text, "T")
 
@@ -273,6 +273,7 @@ class Panel(QDialog):
         self.line_edit_order_id.setFixedWidth(70)
         self.line_edit_order_id.setStyleSheet("color:blue")
         self.line_edit_order_id.setFont(QFont("SimSun", 9))
+        self.line_edit_order_id.setToolTip("注意选择正确的交易市场信息")
         self.button_cancel_order = QPushButton("撤 单")
         self.button_cancel_order.setFont(QFont("SimSun", 9))
         self.button_cancel_order.setStyleSheet("font:bold;color:blue")
@@ -644,11 +645,11 @@ class Panel(QDialog):
                     if f_price < min_price_chg:
                         QMessageBox.warning(self, "提示", "委托价格 < 最小变动价格 %.3f！" % min_price_chg, QMessageBox.Ok)
                         return
-                    if f_price % min_price_chg != 0.0:
+                    if (f_price * 1000) % (min_price_chg * 1000) != 0: # min_price_chg 最小 0.001
                         QMessageBox.warning(self, "提示", "委托价格不为 %.3f 的整数倍！" % min_price_chg, QMessageBox.Ok)
                         return
                 order = self.trader.Order(symbol = str_symbol, exchange = "HK", price = f_price, amount = n_amount, entr_type = n_entr_type, exch_side = n_exch_side)
-                task_place = self.trader.PlaceOrder(order, str_exchange, self.strategy)
+                task_place = self.trader.PlaceOrderHK(order, str_exchange, self.strategy) # HK
                 QMessageBox.information(self, "提示", "委托下单提交完成。", QMessageBox.Ok)
         else:
             self.logger.SendMessage("E", 4, self.log_cate, "交易服务尚未获取！", "M")
@@ -661,9 +662,15 @@ class Panel(QDialog):
                 if self.line_edit_order_id.text() == "":
                     QMessageBox.warning(self, "提示", "撤单委托编号为空！", QMessageBox.Ok)
                     return
+                str_exchange = "" # 注意会取 self.combo_exchange 的值
+                if self.combo_exchange.currentText() == define.DEF_EXCHANGE_STOCK_HGT:
+                    str_exchange = "SH"
+                elif self.combo_exchange.currentText() == define.DEF_EXCHANGE_STOCK_SGT:
+                    str_exchange = "SZ"
                 order = self.trader.Order()
+                order.exchange = "HK" #
                 order.order_id = int(self.line_edit_order_id.text()) # int
-                task_cancel = self.trader.CancelOrder(order, str_exchange, self.strategy)
+                task_cancel = self.trader.CancelOrderHK(order, str_exchange, self.strategy) # HK
                 QMessageBox.information(self, "提示", "委托撤单提交完成。", QMessageBox.Ok)
         else:
             self.logger.SendMessage("E", 4, self.log_cate, "交易服务尚未获取！", "M")
