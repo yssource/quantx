@@ -27,7 +27,7 @@ import panel_trader_stk_vip
 
 class Strategy_Trader_STK_VIP(strategy_base.StrategyBase):
     def __init__(self):
-        strategy_base.StrategyBase.__init__(self, "Strategy_Trader_STK_VIP", "Trader_STK_VIP", "手动交易-股票-A股-VIP")
+        strategy_base.StrategyBase.__init__(self, "Strategy_Trader_STK_VIP", "Trader_STK_VIP", "手动交易-股票-VIP-A股")
         self.log_cate = "Strategy_Trader_STK_VIP"
         self.panel = panel_trader_stk_vip.Panel(strategy = self.strategy)
 

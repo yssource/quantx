@@ -23,13 +23,13 @@
 from math import ceil, floor
 
 import strategy_base
-import panel_trader_stk_hk_ape
+import panel_trader_stk_ape_hk
 
-class Strategy_Trader_STK_HK_APE(strategy_base.StrategyBase):
+class Strategy_Trader_STK_APE_HK(strategy_base.StrategyBase):
     def __init__(self):
-        strategy_base.StrategyBase.__init__(self, "Strategy_Trader_STK_HK_APE", "Trader_STK_HK_APE", "手动交易-股票-H股-APE")
-        self.log_cate = "Strategy_Trader_STK_HK_APE"
-        self.panel = panel_trader_stk_hk_ape.Panel(strategy = self.strategy)
+        strategy_base.StrategyBase.__init__(self, "Strategy_Trader_STK_APE_HK", "Trader_STK_APE_HK", "手动交易-股票-APE-H股")
+        self.log_cate = "Strategy_Trader_STK_APE_HK"
+        self.panel = panel_trader_stk_ape_hk.Panel(strategy = self.strategy)
 
     def OnDoubleClick(self):
         self.panel.show()

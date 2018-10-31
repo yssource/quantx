@@ -103,7 +103,7 @@ class Panel(QDialog):
         self.list_exchange = [define.DEF_EXCHANGE_STOCK_SH, define.DEF_EXCHANGE_STOCK_SZ]
         self.list_entr_type = [define.DEF_PRICE_TYPE_STOCK_LIMIT, define.DEF_PRICE_TYPE_STOCK_MARKET]
         
-        self.setWindowTitle("手动交易-股票-A股-VIP %s" % self.version_info)
+        self.setWindowTitle("手动交易-股票-VIP-A股 %s" % self.version_info)
         self.resize(380, 300)
         self.setFont(QFont("SimSun", 9))
         

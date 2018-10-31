@@ -37,7 +37,7 @@ class Panel(QDialog):
         self.strategy = kwargs.get("strategy", "")
         self.version_info = "V0.1.0-Beta Build 20181015"
         self.log_text = ""
-        self.log_cate = "Panel_Trader_STK_HK_APE"
+        self.log_cate = "Panel_Trader_STK_APE_HK"
         self.logger = logger.Logger()
         
         self.InitUserInterface()
@@ -113,7 +113,7 @@ class Panel(QDialog):
             self.subscribe = False
 
     def event(self, event):
-        if event.type() == define.DEF_EVENT_TRADER_STK_HK_APE_UPDATE_QUOTE:
+        if event.type() == define.DEF_EVENT_TRADER_STK_APE_HK_UPDATE_QUOTE:
             if self.quote_data != None:
                 self.OnUpdateQuote(self.quote_data, self.price_round_stock)
         return QDialog.event(self, event)
@@ -128,7 +128,7 @@ class Panel(QDialog):
             str_code = msg.data[0].decode()
             if str_code == self.symbol:
                 self.quote_data = msg.data
-                QApplication.postEvent(self, QEvent(define.DEF_EVENT_TRADER_STK_HK_APE_UPDATE_QUOTE)) # postEvent异步，sendEvent同步
+                QApplication.postEvent(self, QEvent(define.DEF_EVENT_TRADER_STK_APE_HK_UPDATE_QUOTE)) # postEvent异步，sendEvent同步
         except Exception as e:
             self.log_text = "%s：函数 OnQuoteStock 异常！%s" % (self.strategy, e)
             self.logger.SendMessage("E", 4, self.log_cate, self.log_text, "M")
@@ -144,7 +144,7 @@ class Panel(QDialog):
         self.list_exchange = [define.DEF_EXCHANGE_STOCK_HGT, define.DEF_EXCHANGE_STOCK_SGT]
         self.list_entr_type = [define.DEF_PRICE_TYPE_STOCK_HK_BOOST_LIMIT, define.DEF_PRICE_TYPE_STOCK_HK_AUCTION_LIMIT, define.DEF_PRICE_TYPE_STOCK_HK_ODDMENT]
         
-        self.setWindowTitle("手动交易-股票-H股-APE %s" % self.version_info)
+        self.setWindowTitle("手动交易-股票-APE-H股 %s" % self.version_info)
         self.resize(380, 300)
         self.setFont(QFont("SimSun", 9))
         
@@ -680,6 +680,6 @@ class Panel(QDialog):
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)
-    panel = Panel(strategy = "Strategy_Trader_STK_HK_APE")
+    panel = Panel(strategy = "Strategy_Trader_STK_APE_HK")
     panel.show()
     sys.exit(app.exec_())
