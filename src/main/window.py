@@ -55,7 +55,7 @@ import ultimate
 import strategy_base # 只是为了打包时能被编译到
 import analysis_base # 只是为了打包时能被编译到
 import panel_trader_fue_ctp # 只是为了打包时能被编译到
-import panel_trader_stk_ape # 只是为了打包时能被编译到
+import panel_trader_stk_vip # 只是为了打包时能被编译到
 import panel_trader_stk_hk_ape # 只是为了打包时能被编译到
 
 class MainWindow(QMainWindow):
